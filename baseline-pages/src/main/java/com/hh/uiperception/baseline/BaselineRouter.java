@@ -1,6 +1,9 @@
 package com.hh.uiperception.baseline;
 
 import android.content.Context;
+import android.content.Intent;
+
+import com.hh.uiperception.baseline.web.WebBaselinePlaceholderActivity;
 
 public final class BaselineRouter {
     private BaselineRouter() {
@@ -11,8 +14,11 @@ public final class BaselineRouter {
             return false;
         }
 
-        // Step 2 only defines the routing boundary. Concrete routes are connected when
-        // baseline pages are added in later steps.
+        if (BaselineRoutes.WEB_HOME_PLACEHOLDER.equals(route)) {
+            context.startActivity(new Intent(context, WebBaselinePlaceholderActivity.class));
+            return true;
+        }
+
         return false;
     }
 }

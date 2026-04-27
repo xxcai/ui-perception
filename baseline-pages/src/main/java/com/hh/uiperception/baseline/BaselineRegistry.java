@@ -9,6 +9,17 @@ import java.util.Map;
 public final class BaselineRegistry {
     private static final Map<String, BaselineSpec> SPECS = new LinkedHashMap<>();
 
+    static {
+        register(new BaselineSpec(
+                "web_home_placeholder",
+                "Web 首页占位",
+                "Phase1 基准 Web 页面入口占位，当前不实现 H5 页面内容。",
+                BaselineType.WEB,
+                BaselineRoutes.WEB_HOME_PLACEHOLDER,
+                ""
+        ));
+    }
+
     private BaselineRegistry() {
     }
 
