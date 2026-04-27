@@ -3,6 +3,10 @@
 
     <application>
         <activity
+            android:name=".nativepage.NativeHomeActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".web.WebBaselinePlaceholderActivity"
             android:exported="false" />
     </application>

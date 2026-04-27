@@ -11,6 +11,14 @@ public final class BaselineRegistry {
 
     static {
         register(new BaselineSpec(
+                "native_home_message",
+                "原生首页-消息",
+                "复刻应用首页的消息 Tab，用于测试标题区、搜索区、筛选 Tab、提示 Banner、会话列表和底部导航识别。",
+                BaselineType.NATIVE,
+                BaselineRoutes.NATIVE_HOME_MESSAGE,
+                "baseline_intents/native_home_message.json"
+        ));
+        register(new BaselineSpec(
                 "web_home_placeholder",
                 "Web 首页占位",
                 "Phase1 基准 Web 页面入口占位，当前不实现 H5 页面内容。",
