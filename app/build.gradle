@@ -37,5 +37,5 @@ android {
 dependencies {
     implementation project(':baseline-pages')
     implementation project(':capture')
-    implementation project(':capture-native-xml')
+    implementation project(':native-plugin')
 }

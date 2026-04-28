@@ -1,4 +1,4 @@
-package com.hh.uiperception.capture.nativexml;
+package com.hh.uiperception.nativeplugin;
 
 import com.hh.uiperception.capture.CaptureChannelRegistry;
 import com.hh.uiperception.capture.CapturePlugin;

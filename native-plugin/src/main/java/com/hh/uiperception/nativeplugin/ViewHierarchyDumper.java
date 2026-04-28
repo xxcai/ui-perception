@@ -1,4 +1,4 @@
-package com.hh.uiperception.capture.nativexml;
+package com.hh.uiperception.nativeplugin;
 
 import android.app.Activity;
 import android.text.TextUtils;

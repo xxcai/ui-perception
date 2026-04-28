@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.hh.uiperception.capture.nativexml'
+    namespace 'com.hh.uiperception.nativeplugin'
     compileSdk 34
     buildToolsVersion '34.0.0'
 
