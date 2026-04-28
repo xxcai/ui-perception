@@ -20,5 +20,5 @@ android {
 }
 
 dependencies {
-    implementation project(':capture')
+    implementation project(':perception-core')
 }

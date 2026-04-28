@@ -4,19 +4,15 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 
-import com.hh.uiperception.nativeplugin.NativeXmlPlugin;
-
 /**
  * 应用入口。
- * 注册抓取插件，并通过 ActivityLifecycleCallbacks 管理浮动抓取按钮的可见性。
+ * 通过 ActivityLifecycleCallbacks 管理浮动抓取按钮的可见性。
  */
 public class App extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
-        // 注册抓取通道
-        new NativeXmlPlugin().register();
 
         // 管理浮动抓取按钮的可见性和点击处理
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {

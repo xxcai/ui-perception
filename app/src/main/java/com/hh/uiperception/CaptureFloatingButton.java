@@ -12,9 +12,14 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.hh.uiperception.capture.CaptureExecutor;
-import com.hh.uiperception.capture.CaptureRequest;
-import com.hh.uiperception.capture.CaptureResult;
+import com.hh.uiperception.core.CaptureResult;
+import com.hh.uiperception.core.PerceptionComposer;
+import com.hh.uiperception.core.PerceptionRequest;
+import com.hh.uiperception.core.PerceptionResult;
+import com.hh.uiperception.core.TrimResult;
+import com.hh.uiperception.baseline.BaselineRoutes;
+import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
+import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,13 +28,15 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 抓取浮动按钮。
+ * 感知浮动按钮。
  * 使用 Application context + TYPE_APPLICATION_OVERLAY 创建独立窗口，
  * 不绑定任何 Activity 的 window token，因此不受 Activity 进出场动画影响。
  *
  * 参考 mobile-agent FloatingBallManager 的实现模式。
  */
 public final class CaptureFloatingButton {
+
+    private static final NativePerceptionPlugin NATIVE_PLUGIN = new NativePerceptionPlugin();
 
     /** 单例视图，整个应用只有一个浮动按钮 */
     private static View buttonView;
@@ -42,7 +49,7 @@ public final class CaptureFloatingButton {
     }
 
     /**
-     * 显示浮动抓取按钮。
+     * 显示浮动感知按钮。
      * 首次调用时创建视图并添加到 WindowManager，后续调用仅更新可见性。
      */
     public static void show(Context context) {
@@ -72,7 +79,7 @@ public final class CaptureFloatingButton {
     }
 
     /**
-     * 隐藏浮动抓取按钮。
+     * 隐藏浮动感知按钮。
      */
     public static void hide() {
         if (attached && buttonView != null) {
@@ -110,33 +117,58 @@ public final class CaptureFloatingButton {
     }
 
     /**
-     * 在给定 Activity 上触发抓取流程。
+     * 在给定 Activity 上触发感知流程。
      * 通过 ActivityLifecycleCallbacks 调用，由 App 管理。
      */
     static void attachClickHandler(Activity activity) {
         if (buttonView != null) {
-            buttonView.setOnClickListener(v -> executeCapture(activity));
+            buttonView.setOnClickListener(v -> executePerception(activity));
         }
     }
 
-    private static void executeCapture(Activity activity) {
+    private static void executePerception(Activity activity) {
         String baselineId = resolveBaselineId(activity);
 
-        CaptureRequest request = new CaptureRequest(baselineId, "native_xml");
-        List<CaptureResult> results = CaptureExecutor.execute(activity,
+        PerceptionRequest request = new PerceptionRequest(
+                baselineId,
+                NATIVE_PLUGIN,
+                true
+        );
+        List<PerceptionResult> results = PerceptionComposer.execute(activity,
                 Collections.singletonList(request));
 
-        for (CaptureResult result : results) {
-            if (result.isSuccess()) {
-                writeToFile(activity, result);
+        for (PerceptionResult result : results) {
+            CaptureResult captureResult = result.captureResult();
+            if (captureResult != null && captureResult.isSuccess()) {
+                writeCaptureToFile(activity, captureResult);
+            }
+            TrimResult trimResult = result.trimResult();
+            if (trimResult != null && trimResult.isSuccess()) {
+                writeTrimToFile(activity, trimResult);
             }
         }
     }
 
-    private static void writeToFile(Context context, CaptureResult result) {
-        File captureDir = new File(context.getExternalFilesDir(null), "captures/" + result.baselineId());
+    private static void writeCaptureToFile(Context context, CaptureResult result) {
+        File captureDir = new File(context.getExternalFilesDir(null),
+                "captures/" + result.baselineId() + "/raw");
         captureDir.mkdirs();
-        String filename = result.channelName() + "_" + result.timestampMs() + ".xml";
+        String filename = result.channelName() + "_" + result.timestampMs()
+                + extensionFor(result.contentType());
+        File file = new File(captureDir, filename);
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write(result.content());
+        } catch (IOException e) {
+            // 静默失败，开发阶段暂不处理
+        }
+    }
+
+    private static void writeTrimToFile(Context context, TrimResult result) {
+        File captureDir = new File(context.getExternalFilesDir(null),
+                "captures/" + result.baselineId() + "/trimmed");
+        captureDir.mkdirs();
+        String filename = result.toolName() + "_" + result.timestampMs()
+                + extensionFor(result.contentType());
         File file = new File(captureDir, filename);
         try (FileWriter writer = new FileWriter(file)) {
             writer.write(result.content());
@@ -146,11 +178,31 @@ public final class CaptureFloatingButton {
     }
 
     private static String resolveBaselineId(Activity activity) {
-        String className = activity.getClass().getName();
-        if (className.contains("NativeHome")) {
+        if (activity instanceof NativeHomeActivity) {
+            String route = activity.getIntent().getStringExtra(NativeHomeActivity.EXTRA_ROUTE);
+            if (BaselineRoutes.NATIVE_HOME_MAIL.equals(route)) {
+                return "native_home_mail";
+            } else if (BaselineRoutes.NATIVE_HOME_CONTACTS.equals(route)) {
+                return "native_home_contacts";
+            } else if (BaselineRoutes.NATIVE_HOME_WORK.equals(route)) {
+                return "native_home_business";
+            }
             return "native_home_message";
         }
+
+        String className = activity.getClass().getName();
         return className.substring(className.lastIndexOf('.') + 1);
+    }
+
+    private static String extensionFor(String contentType) {
+        if ("text/xml".equals(contentType)) {
+            return ".xml";
+        } else if ("application/json".equals(contentType)) {
+            return ".json";
+        } else if ("text/html".equals(contentType)) {
+            return ".html";
+        }
+        return ".txt";
     }
 
     private static int dp(Context context, int value) {

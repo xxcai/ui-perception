@@ -1,4 +1,4 @@
-package com.hh.uiperception.capture;
+package com.hh.uiperception.core;
 
 /**
  * 抓取结果：通道执行一次抓取后的输出。

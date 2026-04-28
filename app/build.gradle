@@ -36,6 +36,6 @@ android {
 
 dependencies {
     implementation project(':baseline-pages')
-    implementation project(':capture')
+    implementation project(':perception-core')
     implementation project(':native-plugin')
 }

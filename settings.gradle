@@ -17,5 +17,5 @@ dependencyResolutionManagement {
 rootProject.name = 'ui-perception'
 include ':app'
 include ':baseline-pages'
-include ':capture'
+include ':perception-core'
 include ':native-plugin'

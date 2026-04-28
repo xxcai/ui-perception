@@ -1,4 +1,4 @@
-package com.hh.uiperception.capture;
+package com.hh.uiperception.core;
 
 /**
  * 抓取请求：描述对哪个页面执行哪个通道的抓取。
