@@ -7,7 +7,8 @@ import com.hh.uiperception.capture.CaptureRequest;
 import com.hh.uiperception.capture.CaptureResult;
 
 /**
- * 原生 XML 抓取通道：遍历 Activity View 层级，输出完整结构化 XML。
+ * 原生 XML 抓取通道：遍历 Activity View 层级，输出属性过滤后的 XML。
+ * 只保留 index/class/resource-id/text/bounds 五个核心属性。
  * 必须在 UI 线程调用。
  */
 public final class NativeXmlChannel implements CaptureChannel {
@@ -21,7 +22,7 @@ public final class NativeXmlChannel implements CaptureChannel {
 
     @Override
     public String description() {
-        return "遍历原生 View 层级，输出包含完整属性的 XML。";
+        return "遍历原生 View 层级，输出属性过滤后的 XML（保留 index/class/resource-id/text/bounds）。";
     }
 
     @Override
@@ -30,9 +31,10 @@ public final class NativeXmlChannel implements CaptureChannel {
         if (!result.success) {
             return CaptureResult.error(NAME, request.baselineId(), result.errorMessage);
         }
+        String trimmedXml = XmlTrimmer.trim(result.xml);
         return CaptureResult.success(
                 NAME, request.baselineId(),
-                "text/xml", result.xml,
+                "text/xml", trimmedXml,
                 result.activityClassName
         );
     }
