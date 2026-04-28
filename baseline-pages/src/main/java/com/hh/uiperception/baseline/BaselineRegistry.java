@@ -27,6 +27,14 @@ public final class BaselineRegistry {
                 "baseline_intents/native_home_mail.json"
         ));
         register(new BaselineSpec(
+                "native_home_contacts",
+                "原生首页-通讯录",
+                "复刻应用首页的通讯录 Tab，用于测试搜索入口、快捷入口、分组联系人列表和字母索引识别。",
+                BaselineType.NATIVE,
+                BaselineRoutes.NATIVE_HOME_CONTACTS,
+                "baseline_intents/native_home_contacts.json"
+        ));
+        register(new BaselineSpec(
                 "web_home_placeholder",
                 "Web 首页占位",
                 "Phase1 基准 Web 页面入口占位，当前不实现 H5 页面内容。",

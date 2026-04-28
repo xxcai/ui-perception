@@ -58,7 +58,13 @@ public class NativeHomeActivity extends Activity {
 
         setContentView(root);
         String route = getIntent().getStringExtra(EXTRA_ROUTE);
-        selectTab(BaselineRoutes.NATIVE_HOME_MAIL.equals(route) ? TAB_MAIL : TAB_MESSAGE);
+        if (BaselineRoutes.NATIVE_HOME_MAIL.equals(route)) {
+            selectTab(TAB_MAIL);
+        } else if (BaselineRoutes.NATIVE_HOME_CONTACTS.equals(route)) {
+            selectTab(TAB_CONTACTS);
+        } else {
+            selectTab(TAB_MESSAGE);
+        }
     }
 
     private void selectTab(int tab) {
@@ -66,6 +72,8 @@ public class NativeHomeActivity extends Activity {
         Fragment fragment;
         if (tab == TAB_MAIL) {
             fragment = new MailHomeFragment();
+        } else if (tab == TAB_CONTACTS) {
+            fragment = new ContactsHomeFragment();
         } else {
             fragment = new MessageHomeFragment();
             selectedTab = TAB_MESSAGE;
@@ -82,13 +90,17 @@ public class NativeHomeActivity extends Activity {
         bottomTabs.addView(bottomTab(R.drawable.ic_assistant, "助理", selectedTab == TAB_ASSISTANT, null), weightParams());
         bottomTabs.addView(bottomTab(R.drawable.ic_chat, "消息", selectedTab == TAB_MESSAGE, () -> selectTab(TAB_MESSAGE)), weightParams());
         bottomTabs.addView(bottomTab(R.drawable.ic_mail, "邮件", selectedTab == TAB_MAIL, () -> selectTab(TAB_MAIL)), weightParams());
-        bottomTabs.addView(bottomTab(R.drawable.ic_contacts, "通讯录", selectedTab == TAB_CONTACTS, null), weightParams());
+        bottomTabs.addView(bottomTab(R.drawable.ic_contacts, "通讯录", selectedTab == TAB_CONTACTS, () -> selectTab(TAB_CONTACTS)), weightParams());
         bottomTabs.addView(bottomTab(R.drawable.ic_grid, "业务", selectedTab == TAB_WORK, null), weightParams());
         bottomTabs.addView(bottomTab(R.drawable.ic_doc, "知识", selectedTab == TAB_KNOWLEDGE, null), weightParams());
     }
 
     void openMailTab() {
         selectTab(TAB_MAIL);
+    }
+
+    void openContactsTab() {
+        selectTab(TAB_CONTACTS);
     }
 
     private View bottomTab(int iconRes, String label, boolean selected, Runnable action) {
