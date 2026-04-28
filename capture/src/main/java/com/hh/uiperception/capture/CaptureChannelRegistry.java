@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * 抓取通道注册表。
- * 静态注册所有可用的抓取通道，支持按名称查找。
+ * 初始为空，由各 CapturePlugin 在启动时注册通道。
  */
 public final class CaptureChannelRegistry {
 
