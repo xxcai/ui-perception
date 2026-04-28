@@ -15,7 +15,10 @@ public final class BaselineRouter {
             return false;
         }
 
-        if (BaselineRoutes.NATIVE_HOME_MESSAGE.equals(route)) {
+        if (BaselineRoutes.NATIVE_HOME_MESSAGE.equals(route)
+                || BaselineRoutes.NATIVE_HOME_MAIL.equals(route)
+                || BaselineRoutes.NATIVE_HOME_CONTACTS.equals(route)
+                || BaselineRoutes.NATIVE_HOME_WORK.equals(route)) {
             Intent intent = new Intent(context, NativeHomeActivity.class);
             intent.putExtra(NativeHomeActivity.EXTRA_ROUTE, route);
             context.startActivity(intent);
