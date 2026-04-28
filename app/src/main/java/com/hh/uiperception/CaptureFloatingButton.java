@@ -13,9 +13,10 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.hh.uiperception.core.CaptureResult;
+import com.hh.uiperception.core.PerceptionEntryResult;
 import com.hh.uiperception.core.PerceptionComposer;
-import com.hh.uiperception.core.PerceptionRequest;
-import com.hh.uiperception.core.PerceptionResult;
+import com.hh.uiperception.core.PerceptionPlan;
+import com.hh.uiperception.core.PerceptionRunResult;
 import com.hh.uiperception.core.TrimResult;
 import com.hh.uiperception.baseline.BaselineRoutes;
 import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
@@ -25,7 +26,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * 感知浮动按钮。
@@ -129,29 +129,30 @@ public final class CaptureFloatingButton {
     private static void executePerception(Activity activity) {
         String baselineId = resolveBaselineId(activity);
 
-        PerceptionRequest request = new PerceptionRequest(
+        PerceptionPlan plan = new PerceptionPlan(
                 baselineId,
-                NATIVE_PLUGIN,
+                Collections.singletonList(NATIVE_PLUGIN),
                 true
         );
-        List<PerceptionResult> results = PerceptionComposer.execute(activity,
-                Collections.singletonList(request));
+        PerceptionRunResult runResult = PerceptionComposer.execute(activity, plan);
 
-        for (PerceptionResult result : results) {
-            CaptureResult captureResult = result.captureResult();
+        for (PerceptionEntryResult entry : runResult.entries()) {
+            CaptureResult captureResult = entry.captureResult();
             if (captureResult != null && captureResult.isSuccess()) {
-                writeCaptureToFile(activity, captureResult);
+                writeCaptureToFile(activity, runResult, entry.pluginName(), captureResult);
             }
-            TrimResult trimResult = result.trimResult();
+            TrimResult trimResult = entry.trimResult();
             if (trimResult != null && trimResult.isSuccess()) {
-                writeTrimToFile(activity, trimResult);
+                writeTrimToFile(activity, runResult, entry.pluginName(), trimResult);
             }
         }
     }
 
-    private static void writeCaptureToFile(Context context, CaptureResult result) {
+    private static void writeCaptureToFile(Context context, PerceptionRunResult runResult,
+                                           String pluginName, CaptureResult result) {
         File captureDir = new File(context.getExternalFilesDir(null),
-                "captures/" + result.baselineId() + "/raw");
+                "captures/" + runResult.baselineId() + "/runs/" + runResult.runId()
+                        + "/" + pluginName + "/raw");
         captureDir.mkdirs();
         String filename = result.channelName() + "_" + result.timestampMs()
                 + extensionFor(result.contentType());
@@ -163,9 +164,11 @@ public final class CaptureFloatingButton {
         }
     }
 
-    private static void writeTrimToFile(Context context, TrimResult result) {
+    private static void writeTrimToFile(Context context, PerceptionRunResult runResult,
+                                        String pluginName, TrimResult result) {
         File captureDir = new File(context.getExternalFilesDir(null),
-                "captures/" + result.baselineId() + "/trimmed");
+                "captures/" + runResult.baselineId() + "/runs/" + runResult.runId()
+                        + "/" + pluginName + "/trimmed");
         captureDir.mkdirs();
         String filename = result.toolName() + "_" + result.timestampMs()
                 + extensionFor(result.contentType());

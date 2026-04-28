@@ -29,6 +29,24 @@ public final class PerceptionComposer {
         return results;
     }
 
+    /**
+     * 执行一个多技术方向感知计划。
+     */
+    public static PerceptionRunResult execute(Activity activity, PerceptionPlan plan) {
+        long startedAtMs = System.currentTimeMillis();
+        List<PerceptionEntryResult> entries = new ArrayList<>(plan.plugins().size());
+        for (PerceptionPlugin plugin : plan.plugins()) {
+            entries.add(executePlugin(activity, plan, plugin));
+        }
+        return new PerceptionRunResult(
+                plan.baselineId(),
+                plan.runId(),
+                startedAtMs,
+                System.currentTimeMillis(),
+                entries
+        );
+    }
+
     private static PerceptionResult executeSingle(Activity activity, PerceptionRequest request) {
         CaptureResult captureResult = executeCapture(activity, request);
         if (!captureResult.isSuccess() || !request.hasTrimStep()) {
@@ -37,6 +55,13 @@ public final class PerceptionComposer {
 
         TrimResult trimResult = executeTrim(request, captureResult);
         return new PerceptionResult(captureResult, trimResult);
+    }
+
+    private static PerceptionEntryResult executePlugin(Activity activity, PerceptionPlan plan,
+                                                       PerceptionPlugin plugin) {
+        PerceptionRequest request = new PerceptionRequest(plan.baselineId(), plugin, plan.trimEnabled());
+        PerceptionResult result = executeSingle(activity, request);
+        return new PerceptionEntryResult(plugin.name(), result.captureResult(), result.trimResult());
     }
 
     private static CaptureResult executeCapture(Activity activity, PerceptionRequest request) {
