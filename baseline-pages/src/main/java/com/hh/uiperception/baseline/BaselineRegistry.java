@@ -19,6 +19,14 @@ public final class BaselineRegistry {
                 "baseline_intents/native_home_message.json"
         ));
         register(new BaselineSpec(
+                "native_home_mail",
+                "原生首页-邮件",
+                "复刻应用首页的邮件 Tab，用于测试邮件标题区、搜索入口、邮件列表和底部导航识别。",
+                BaselineType.NATIVE,
+                BaselineRoutes.NATIVE_HOME_MAIL,
+                "baseline_intents/native_home_mail.json"
+        ));
+        register(new BaselineSpec(
                 "web_home_placeholder",
                 "Web 首页占位",
                 "Phase1 基准 Web 页面入口占位，当前不实现 H5 页面内容。",
