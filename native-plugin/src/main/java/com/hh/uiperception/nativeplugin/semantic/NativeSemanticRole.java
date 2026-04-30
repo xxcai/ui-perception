@@ -1,0 +1,40 @@
+package com.hh.uiperception.nativeplugin.semantic;
+
+/**
+ * Android native semantic snapshot 第一版 role 集合。
+ */
+public enum NativeSemanticRole {
+    SCREEN("screen"),
+    TOOLBAR("toolbar"),
+    TABBAR("tabbar"),
+    TAB("tab"),
+    LIST("list"),
+    GRID("grid"),
+    LIST_ITEM("listitem"),
+    SCROLL("scroll"),
+    CARD("card"),
+    SECTION("section"),
+    DIALOG("dialog"),
+    SHEET("sheet"),
+    TEXT("text"),
+    IMAGE("image"),
+    BUTTON("button"),
+    INPUT("input"),
+    CHECKBOX("checkbox"),
+    RADIO("radio"),
+    SWITCH("switch"),
+    SLIDER("slider"),
+    PICKER("picker"),
+    PROGRESS("progress"),
+    GENERIC("generic");
+
+    private final String snapshotName;
+
+    NativeSemanticRole(String snapshotName) {
+        this.snapshotName = snapshotName;
+    }
+
+    public String snapshotName() {
+        return snapshotName;
+    }
+}
