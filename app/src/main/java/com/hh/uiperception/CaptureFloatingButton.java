@@ -17,7 +17,7 @@ import com.hh.uiperception.core.PerceptionEntryResult;
 import com.hh.uiperception.core.PerceptionComposer;
 import com.hh.uiperception.core.PerceptionPlan;
 import com.hh.uiperception.core.PerceptionRunResult;
-import com.hh.uiperception.core.TrimResult;
+import com.hh.uiperception.core.TransformResult;
 import com.hh.uiperception.baseline.BaselineRoutes;
 import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
 import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
@@ -141,9 +141,9 @@ public final class CaptureFloatingButton {
             if (captureResult != null && captureResult.isSuccess()) {
                 writeCaptureToFile(activity, runResult, entry.pluginName(), captureResult);
             }
-            TrimResult trimResult = entry.trimResult();
-            if (trimResult != null && trimResult.isSuccess()) {
-                writeTrimToFile(activity, runResult, entry.pluginName(), trimResult);
+            TransformResult transformResult = entry.transformResult();
+            if (transformResult != null && transformResult.isSuccess()) {
+                writeTransformToFile(activity, runResult, entry.pluginName(), transformResult);
             }
         }
     }
@@ -164,15 +164,15 @@ public final class CaptureFloatingButton {
         }
     }
 
-    private static void writeTrimToFile(Context context, PerceptionRunResult runResult,
-                                        String pluginName, TrimResult result) {
-        File captureDir = new File(context.getExternalFilesDir(null),
+    private static void writeTransformToFile(Context context, PerceptionRunResult runResult,
+                                             String pluginName, TransformResult result) {
+        File transformDir = new File(context.getExternalFilesDir(null),
                 "captures/" + runResult.baselineId() + "/runs/" + runResult.runId()
-                        + "/" + pluginName + "/trimmed");
-        captureDir.mkdirs();
+                        + "/" + pluginName + "/transformed");
+        transformDir.mkdirs();
         String filename = result.toolName() + "_" + result.timestampMs()
                 + extensionFor(result.contentType());
-        File file = new File(captureDir, filename);
+        File file = new File(transformDir, filename);
         try (FileWriter writer = new FileWriter(file)) {
             writer.write(result.content());
         } catch (IOException e) {

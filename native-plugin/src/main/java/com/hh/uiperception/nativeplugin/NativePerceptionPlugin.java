@@ -5,12 +5,12 @@ import android.app.Activity;
 import com.hh.uiperception.core.CaptureRequest;
 import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionPlugin;
-import com.hh.uiperception.core.TrimRequest;
-import com.hh.uiperception.core.TrimResult;
+import com.hh.uiperception.core.TransformRequest;
+import com.hh.uiperception.core.TransformResult;
 
 /**
  * Native 技术方向工具集。
- * 直接暴露 native 方向支持的抓取和裁剪能力。
+ * 直接暴露 native 方向支持的抓取和转换能力。
  */
 public final class NativePerceptionPlugin implements PerceptionPlugin {
 
@@ -25,7 +25,7 @@ public final class NativePerceptionPlugin implements PerceptionPlugin {
     }
 
     @Override
-    public TrimResult trim(TrimRequest request) {
-        return NativeXmlTrimTool.trim(request);
+    public TransformResult transform(TransformRequest request) {
+        return NativeXmlTransformTool.transform(request);
     }
 }

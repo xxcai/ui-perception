@@ -1,9 +1,9 @@
 package com.hh.uiperception.core;
 
 /**
- * 裁剪请求：由 composer 基于抓取结果构造，描述待裁剪的原始内容。
+ * 转换请求：由 composer 基于抓取结果构造，描述待处理的原始内容。
  */
-public final class TrimRequest {
+public final class TransformRequest {
 
     private final String baselineId;
     private final String sourceToolName;
@@ -11,8 +11,8 @@ public final class TrimRequest {
     private final String sourceContent;
     private final String activityClassName;
 
-    public TrimRequest(String baselineId, String sourceToolName, String sourceContentType,
-                       String sourceContent, String activityClassName) {
+    public TransformRequest(String baselineId, String sourceToolName, String sourceContentType,
+                            String sourceContent, String activityClassName) {
         this.baselineId = requireText(baselineId, "baselineId");
         this.sourceToolName = requireText(sourceToolName, "sourceToolName");
         this.sourceContentType = sourceContentType == null ? "" : sourceContentType;
@@ -20,8 +20,8 @@ public final class TrimRequest {
         this.activityClassName = activityClassName == null ? "" : activityClassName;
     }
 
-    public static TrimRequest fromCaptureResult(CaptureResult result) {
-        return new TrimRequest(
+    public static TransformRequest fromCaptureResult(CaptureResult result) {
+        return new TransformRequest(
                 result.baselineId(),
                 result.channelName(),
                 result.contentType(),

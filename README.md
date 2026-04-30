@@ -2,7 +2,7 @@
 
 UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不同 UI 抓取方向的效果，并把手机屏幕上的 UI 信息转换成适合大模型理解的数据表示。
 
-本项目只关注 UI 感知数据的准备、采集、裁剪、融合和评测，不包含 Agent 决策、规划或执行操作。
+本项目只关注 UI 感知数据的准备、采集、转换、融合和评测，不包含 Agent 决策、规划或执行操作。
 
 ## 项目边界
 
@@ -11,7 +11,7 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 - 基准页面与基准意图准备
 - 当前页面内容采集
 - 不同抓取方向的效果对比
-- 多来源 UI 数据裁剪与清洗
+- 多来源 UI 数据转换、清洗与格式整理
 - 面向大模型的数据表达
 - 感知结果与基准意图的评测
 
@@ -56,7 +56,7 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 - `:app`：应用入口、基准页面列表、浮动感知按钮、当前插件装配点。
 - `:baseline-pages`：基准页面、页面路由、基准意图资产。
 - `:perception-core`：感知编排核心，定义统一插件接口、请求/结果模型和 `PerceptionComposer`。
-- `:native-plugin`：Native 技术方向工具集，已实现 native 页面抓取与 native XML 裁剪。
+- `:native-plugin`：Native 技术方向工具集，已实现 native 页面抓取与 native XML 转换。
 - `:web-plugin`：Web 技术方向占位模块，尚未实现插件类。
 - `:ocr-plugin`：OCR 技术方向占位模块，尚未实现插件类。
 - `:small-model-plugin`：小模型视觉理解方向占位模块，尚未实现插件类。
@@ -79,19 +79,19 @@ NativePerceptionPlugin.capture()
   ↓
 raw native XML
   ↓
-NativePerceptionPlugin.trim()
+NativePerceptionPlugin.transform()
   ↓
-trimmed native XML
+transformed native XML
   ↓
 captures/{baselineId}/runs/{runId}/native/raw
-captures/{baselineId}/runs/{runId}/native/trimmed
+captures/{baselineId}/runs/{runId}/native/transformed
 ```
 
 已验证的 native 产物示例：
 
 ```text
 captures/native_home_mail/runs/{runId}/native/raw/native_xml_{timestamp}.xml
-captures/native_home_mail/runs/{runId}/native/trimmed/native_xml_basic_trim_{timestamp}.xml
+captures/native_home_mail/runs/{runId}/native/transformed/native_xml_basic_transform_{timestamp}.xml
 ```
 
 ## 核心接口
@@ -104,7 +104,7 @@ public interface PerceptionPlugin {
 
     CaptureResult capture(Activity activity, CaptureRequest request);
 
-    TrimResult trim(TrimRequest request);
+    TransformResult transform(TransformRequest request);
 }
 ```
 
@@ -113,7 +113,7 @@ public interface PerceptionPlugin {
 - 一个插件代表一个技术方向，例如 `native`、`web`、`ocr`、`small_model`。
 - 插件本身不保存页面状态，作为无状态工具集使用。
 - `capture()` 负责产出本技术方向的原始数据。
-- `trim()` 负责裁剪或清洗该技术方向的原始数据。
+- `transform()` 负责将该技术方向的原始数据处理成适合后续模型消费的表示，可包含裁剪、清洗、结构压缩或格式转换。
 - 暂不支持的阶段直接返回 `null`，由 `PerceptionComposer` 转成错误结果。
 - 具体实现可以拆成包内 helper，但对外只暴露一个插件类。
 
@@ -123,7 +123,7 @@ public interface PerceptionPlugin {
 native-plugin
 ├── NativePerceptionPlugin
 │   ├── capture() -> NativeViewCaptureTool
-│   └── trim()    -> NativeXmlTrimTool
+│   └── transform() -> NativeXmlTransformTool
 ├── ViewHierarchyDumper
 └── XmlTrimmer
 ```
@@ -136,7 +136,7 @@ native-plugin
 PerceptionPlan
 ├── baselineId
 ├── runId
-├── trimEnabled
+├── transformEnabled
 └── plugins
     ├── NativePerceptionPlugin
     ├── WebPerceptionPlugin
@@ -147,9 +147,9 @@ PerceptionPlan
 执行方式：
 
 ```text
-plugin A: capture -> optional trim
-plugin B: capture -> optional trim
-plugin C: capture -> optional trim
+plugin A: capture -> optional transform
+plugin B: capture -> optional transform
+plugin C: capture -> optional transform
 ```
 
 输出结构：
@@ -175,7 +175,7 @@ PerceptionRunResult
 
 ```text
 captures/{baselineId}/runs/{runId}/{pluginName}/raw/{source}_{timestamp}.{ext}
-captures/{baselineId}/runs/{runId}/{pluginName}/trimmed/{source}_{timestamp}.{ext}
+captures/{baselineId}/runs/{runId}/{pluginName}/transformed/{source}_{timestamp}.{ext}
 ```
 
 这样同一次页面抓取中，native、web、ocr、小模型的结果可以放在同一个 `runId` 下，方便后续对比。
@@ -183,7 +183,7 @@ captures/{baselineId}/runs/{runId}/{pluginName}/trimmed/{source}_{timestamp}.{ex
 当前 native 链路输出：
 
 - raw：完整原生 View 层级 XML。
-- trimmed：只保留 `index`、`class`、`resource-id`、`text`、`bounds` 的 XML。
+- transformed：只保留 `index`、`class`、`resource-id`、`text`、`bounds` 的 XML。
 
 ## 添加 Web 能力
 
@@ -195,7 +195,7 @@ captures/{baselineId}/runs/{runId}/{pluginName}/trimmed/{source}_{timestamp}.{ex
 web-plugin
 ├── WebPerceptionPlugin
 ├── WebDomCaptureTool
-└── WebDomTrimTool
+└── WebDomTransformTool
 ```
 
 实现 `WebPerceptionPlugin`：
@@ -215,8 +215,8 @@ public final class WebPerceptionPlugin implements PerceptionPlugin {
     }
 
     @Override
-    public TrimResult trim(TrimRequest request) {
-        // 对 DOM 做裁剪、去噪、结构压缩。
+    public TransformResult transform(TransformRequest request) {
+        // 对 DOM 做裁剪、去噪、结构压缩或格式转换。
         // 暂未实现时返回 null。
         return null;
     }
@@ -240,7 +240,7 @@ ocr-plugin
 ├── OcrPerceptionPlugin
 ├── ScreenshotCaptureTool
 ├── OcrEngineAdapter
-└── OcrTrimTool
+└── OcrTransformTool
 ```
 
 实现 `OcrPerceptionPlugin`：
@@ -260,7 +260,7 @@ public final class OcrPerceptionPlugin implements PerceptionPlugin {
     }
 
     @Override
-    public TrimResult trim(TrimRequest request) {
+    public TransformResult transform(TransformRequest request) {
         // 合并文本块、过滤噪声、规范化坐标和置信度。
         // 暂未实现时返回 null。
         return null;
@@ -271,7 +271,7 @@ public final class OcrPerceptionPlugin implements PerceptionPlugin {
 OCR 输出建议：
 
 - raw 输出保留 OCR 引擎原始信息。
-- trimmed 输出稳定 JSON，至少包含文本、bounds、置信度和阅读顺序。
+- transformed 输出稳定 JSON，至少包含文本、bounds、置信度和阅读顺序。
 
 ## 添加小模型能力
 
@@ -283,7 +283,7 @@ OCR 输出建议：
 small-model-plugin
 ├── SmallModelPerceptionPlugin
 ├── SmallModelCaptureTool
-└── SmallModelTrimTool
+└── SmallModelTransformTool
 ```
 
 建议插件名：
@@ -295,14 +295,14 @@ public final class SmallModelPerceptionPlugin implements PerceptionPlugin
 职责建议：
 
 - `capture()`：输入截图或页面上下文，产出小模型原始理解结果。
-- `trim()`：压缩小模型输出，保留对象、文本、区域、层级或动作相关语义。
+- `transform()`：压缩小模型输出，保留对象、文本、区域、层级或动作相关语义。
 
 ## 开发原则
 
 - 新技术方向优先实现一个 `PerceptionPlugin`，不要先改 composer。
 - 插件对外保持单一入口，内部可以拆无状态 helper。
-- capture 输出原始信息，trim 输出适合模型消费的裁剪结果。
-- 不要在 capture 内部私自做 trim。
+- capture 输出原始信息，transform 输出适合模型消费的转换结果。
+- 不要在 capture 内部私自做 transform。
 - 不要在插件内部做跨技术方向融合；融合应由后续 composer 或独立编排层负责。
 - 每个新增能力都应提供可验证的基准页面、输入、输出和验收方式。
 
@@ -312,15 +312,15 @@ public final class SmallModelPerceptionPlugin implements PerceptionPlugin
 
 - Native 基准页面：消息、邮件、通讯录、业务。
 - Native 原始 XML 抓取。
-- Native XML 裁剪。
+- Native XML 转换。
 - `:perception-core` 多插件 plan / run / entry 结果结构。
-- 通过浮动按钮触发 native capture -> trim 链路。
+- 通过浮动按钮触发 native capture -> transform 链路。
 - `:web-plugin`、`:ocr-plugin`、`:small-model-plugin` 模块占位。
 
 未完成：
 
 - 真实 Web 基准页与 Web DOM 抓取。
-- OCR 截图、识别与裁剪能力。
+- OCR 截图、识别与转换能力。
 - 小模型视觉理解能力。
 - 多源融合。
 - 自动评测链路。

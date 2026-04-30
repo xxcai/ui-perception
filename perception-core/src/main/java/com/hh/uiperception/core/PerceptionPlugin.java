@@ -19,7 +19,7 @@ public interface PerceptionPlugin {
     CaptureResult capture(Activity activity, CaptureRequest request);
 
     /**
-     * 执行本技术方向的裁剪能力；不支持时返回 null。
+     * 执行本技术方向的转换能力；不支持时返回 null。
      */
-    TrimResult trim(TrimRequest request);
+    TransformResult transform(TransformRequest request);
 }

@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 感知编排器：按上层请求串联技术工具。
  *
- * 当前实现为最小串行链路：capture -> optional trim。
+ * 当前实现为最小串行链路：capture -> optional transform。
  * 后续可在此基础上扩展多源融合或任务图。
  */
 public final class PerceptionComposer {
@@ -49,19 +49,19 @@ public final class PerceptionComposer {
 
     private static PerceptionResult executeSingle(Activity activity, PerceptionRequest request) {
         CaptureResult captureResult = executeCapture(activity, request);
-        if (!captureResult.isSuccess() || !request.hasTrimStep()) {
+        if (!captureResult.isSuccess() || !request.hasTransformStep()) {
             return new PerceptionResult(captureResult, null);
         }
 
-        TrimResult trimResult = executeTrim(request, captureResult);
-        return new PerceptionResult(captureResult, trimResult);
+        TransformResult transformResult = executeTransform(request, captureResult);
+        return new PerceptionResult(captureResult, transformResult);
     }
 
     private static PerceptionEntryResult executePlugin(Activity activity, PerceptionPlan plan,
                                                        PerceptionPlugin plugin) {
-        PerceptionRequest request = new PerceptionRequest(plan.baselineId(), plugin, plan.trimEnabled());
+        PerceptionRequest request = new PerceptionRequest(plan.baselineId(), plugin, plan.transformEnabled());
         PerceptionResult result = executeSingle(activity, request);
-        return new PerceptionEntryResult(plugin.name(), result.captureResult(), result.trimResult());
+        return new PerceptionEntryResult(plugin.name(), result.captureResult(), result.transformResult());
     }
 
     private static CaptureResult executeCapture(Activity activity, PerceptionRequest request) {
@@ -77,9 +77,9 @@ public final class PerceptionComposer {
                 "插件不支持抓取: " + request.pluginName());
     }
 
-    private static TrimResult executeTrim(PerceptionRequest request, CaptureResult captureResult) {
-        TrimResult result = request.plugin().trim(TrimRequest.fromCaptureResult(captureResult));
-        return result != null ? result : TrimResult.error(request.pluginName(), captureResult.channelName(),
-                request.baselineId(), "插件不支持裁剪: " + request.pluginName());
+    private static TransformResult executeTransform(PerceptionRequest request, CaptureResult captureResult) {
+        TransformResult result = request.plugin().transform(TransformRequest.fromCaptureResult(captureResult));
+        return result != null ? result : TransformResult.error(request.pluginName(), captureResult.channelName(),
+                request.baselineId(), "插件不支持转换: " + request.pluginName());
     }
 }

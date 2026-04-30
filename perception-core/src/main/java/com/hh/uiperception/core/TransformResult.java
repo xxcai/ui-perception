@@ -1,9 +1,9 @@
 package com.hh.uiperception.core;
 
 /**
- * 裁剪结果：裁剪工具执行一次处理后的输出。
+ * 转换结果：转换工具执行一次处理后的输出。
  */
-public final class TrimResult {
+public final class TransformResult {
 
     private final boolean success;
     private final String toolName;
@@ -15,9 +15,9 @@ public final class TrimResult {
     private final long timestampMs;
     private final String errorMessage;
 
-    private TrimResult(boolean success, String toolName, String sourceToolName, String baselineId,
-                       String contentType, String content, String activityClassName,
-                       long timestampMs, String errorMessage) {
+    private TransformResult(boolean success, String toolName, String sourceToolName, String baselineId,
+                            String contentType, String content, String activityClassName,
+                            long timestampMs, String errorMessage) {
         this.success = success;
         this.toolName = toolName;
         this.sourceToolName = sourceToolName;
@@ -29,16 +29,16 @@ public final class TrimResult {
         this.errorMessage = errorMessage;
     }
 
-    public static TrimResult success(String toolName, String sourceToolName, String baselineId,
-                                     String contentType, String content, String activityClassName) {
-        return new TrimResult(true, toolName, sourceToolName, baselineId,
+    public static TransformResult success(String toolName, String sourceToolName, String baselineId,
+                                          String contentType, String content, String activityClassName) {
+        return new TransformResult(true, toolName, sourceToolName, baselineId,
                 contentType, content, activityClassName,
                 System.currentTimeMillis(), null);
     }
 
-    public static TrimResult error(String toolName, String sourceToolName, String baselineId,
-                                   String errorMessage) {
-        return new TrimResult(false, toolName, sourceToolName, baselineId,
+    public static TransformResult error(String toolName, String sourceToolName, String baselineId,
+                                        String errorMessage) {
+        return new TransformResult(false, toolName, sourceToolName, baselineId,
                 null, null, null,
                 System.currentTimeMillis(), errorMessage);
     }

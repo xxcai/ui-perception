@@ -7,12 +7,12 @@ public final class PerceptionEntryResult {
 
     private final String pluginName;
     private final CaptureResult captureResult;
-    private final TrimResult trimResult;
+    private final TransformResult transformResult;
 
-    public PerceptionEntryResult(String pluginName, CaptureResult captureResult, TrimResult trimResult) {
+    public PerceptionEntryResult(String pluginName, CaptureResult captureResult, TransformResult transformResult) {
         this.pluginName = pluginName;
         this.captureResult = captureResult;
-        this.trimResult = trimResult;
+        this.transformResult = transformResult;
     }
 
     public String pluginName() {
@@ -23,15 +23,15 @@ public final class PerceptionEntryResult {
         return captureResult;
     }
 
-    public TrimResult trimResult() {
-        return trimResult;
+    public TransformResult transformResult() {
+        return transformResult;
     }
 
     public boolean captureSucceeded() {
         return captureResult != null && captureResult.isSuccess();
     }
 
-    public boolean trimSucceeded() {
-        return trimResult != null && trimResult.isSuccess();
+    public boolean transformSucceeded() {
+        return transformResult != null && transformResult.isSuccess();
     }
 }

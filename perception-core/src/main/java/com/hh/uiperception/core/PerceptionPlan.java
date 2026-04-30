@@ -11,21 +11,21 @@ public final class PerceptionPlan {
 
     private final String baselineId;
     private final List<PerceptionPlugin> plugins;
-    private final boolean trimEnabled;
+    private final boolean transformEnabled;
     private final String runId;
 
-    public PerceptionPlan(String baselineId, List<PerceptionPlugin> plugins, boolean trimEnabled) {
-        this(baselineId, plugins, trimEnabled, String.valueOf(System.currentTimeMillis()));
+    public PerceptionPlan(String baselineId, List<PerceptionPlugin> plugins, boolean transformEnabled) {
+        this(baselineId, plugins, transformEnabled, String.valueOf(System.currentTimeMillis()));
     }
 
     public PerceptionPlan(String baselineId, List<PerceptionPlugin> plugins,
-                          boolean trimEnabled, String runId) {
+                          boolean transformEnabled, String runId) {
         this.baselineId = requireText(baselineId, "baselineId");
         if (plugins == null || plugins.isEmpty()) {
             throw new IllegalArgumentException("plugins must not be empty");
         }
         this.plugins = Collections.unmodifiableList(new ArrayList<>(plugins));
-        this.trimEnabled = trimEnabled;
+        this.transformEnabled = transformEnabled;
         this.runId = requireText(runId, "runId");
     }
 
@@ -37,8 +37,8 @@ public final class PerceptionPlan {
         return plugins;
     }
 
-    public boolean trimEnabled() {
-        return trimEnabled;
+    public boolean transformEnabled() {
+        return transformEnabled;
     }
 
     public String runId() {
