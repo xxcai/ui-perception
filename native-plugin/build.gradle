@@ -21,4 +21,5 @@ android {
 
 dependencies {
     implementation project(':perception-core')
+    testImplementation 'junit:junit:4.13.2'
 }
