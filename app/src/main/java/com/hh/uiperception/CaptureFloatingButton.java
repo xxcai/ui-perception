@@ -200,6 +200,8 @@ public final class CaptureFloatingButton {
     private static String extensionFor(String contentType) {
         if ("text/xml".equals(contentType)) {
             return ".xml";
+        } else if ("text/yaml".equals(contentType)) {
+            return ".yml";
         } else if ("application/json".equals(contentType)) {
             return ".json";
         } else if ("text/html".equals(contentType)) {
