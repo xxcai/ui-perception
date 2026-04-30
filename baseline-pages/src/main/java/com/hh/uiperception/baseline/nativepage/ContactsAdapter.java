@@ -84,12 +84,14 @@ final class ContactsAdapter extends BaseAdapter {
         search.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
         search.setCompoundDrawablePadding(dp(parent, 8));
         search.setBackgroundResource(R.drawable.bg_search);
+        UiKit.markClickable(search);
         row.addView(search, new LinearLayout.LayoutParams(0, dp(parent, 36), 1f));
 
         LinearLayout service = new LinearLayout(parent.getContext());
         service.setOrientation(LinearLayout.VERTICAL);
         service.setGravity(Gravity.CENTER);
         service.setPadding(dp(parent, 12), 0, 0, 0);
+        UiKit.markClickable(service);
         service.addView(UiKit.iconImage(parent.getContext(), R.drawable.ic_headset, 0),
                 new LinearLayout.LayoutParams(dp(parent, 22), dp(parent, 22)));
         TextView label = text(parent, "客服", UiKit.TEXT_PRIMARY, 12);
@@ -126,6 +128,7 @@ final class ContactsAdapter extends BaseAdapter {
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
         item.setPadding(dp(parent, 8), 0, dp(parent, 8), 0);
+        UiKit.markClickable(item);
 
         ImageView icon = UiKit.iconImage(parent.getContext(), iconRes, R.drawable.bg_avatar_light);
         item.addView(icon, new LinearLayout.LayoutParams(dp(parent, 52), dp(parent, 52)));

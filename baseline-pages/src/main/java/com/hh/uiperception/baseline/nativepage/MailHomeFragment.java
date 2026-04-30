@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -35,6 +36,16 @@ public class MailHomeFragment extends Fragment {
         recyclerView.setBackgroundColor(Color.WHITE);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(new MailAdapter(createMailItems()));
+        recyclerView.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    View child = rv.findChildViewUnder(event.getX(), event.getY());
+                    return child != null;
+                }
+                return false;
+            }
+        });
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         root.addView(recyclerView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -54,13 +65,15 @@ public class MailHomeFragment extends Fragment {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue),
-                new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView profile = UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue);
+        UiKit.markClickable(profile);
+        titleRow.addView(profile, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         LinearLayout titleGroup = new LinearLayout(getActivity());
         titleGroup.setOrientation(LinearLayout.HORIZONTAL);
         titleGroup.setGravity(Gravity.CENTER_VERTICAL);
         titleGroup.setPadding(dp(18), 0, 0, 0);
+        UiKit.markClickable(titleGroup);
 
         TextView title = UiKit.title(getActivity(), "邮件");
         titleGroup.addView(title);
@@ -71,9 +84,12 @@ public class MailHomeFragment extends Fragment {
 
         ImageView filter = UiKit.iconImage(getActivity(), R.drawable.ic_toggle_filter, 0);
         filter.setAlpha(0.35f);
+        UiKit.markClickable(filter);
         titleRow.addView(filter, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView plus = UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0);
+        UiKit.markClickable(plus);
+        titleRow.addView(plus, new LinearLayout.LayoutParams(dp(40), dp(40)));
         top.addView(titleRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(48)
@@ -108,12 +124,14 @@ public class MailHomeFragment extends Fragment {
         search.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
         search.setCompoundDrawablePadding(dp(8));
         search.setBackgroundResource(R.drawable.bg_search);
+        UiKit.markClickable(search);
         row.addView(search, new LinearLayout.LayoutParams(0, dp(36), 1f));
 
         LinearLayout service = new LinearLayout(getActivity());
         service.setOrientation(LinearLayout.VERTICAL);
         service.setGravity(Gravity.CENTER);
         service.setPadding(dp(12), 0, 0, 0);
+        UiKit.markClickable(service);
         ImageView icon = UiKit.iconImage(getActivity(), R.drawable.ic_headset, 0);
         service.addView(icon, new LinearLayout.LayoutParams(dp(22), dp(22)));
         TextView label = new TextView(getActivity());

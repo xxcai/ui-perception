@@ -12,12 +12,16 @@ public final class NativeSemanticTreeBuilder {
         if (root == null) {
             return null;
         }
-        return buildNode(root);
+        return buildNode(root, null);
     }
 
-    private static NativeSemanticNode buildNode(NativeViewNode viewNode) {
+    private static NativeSemanticNode buildNode(NativeViewNode viewNode, NativeSemanticRole parentRole) {
         NativeRoleDecision roleDecision = NativeRoleResolver.resolve(viewNode);
         NativeSemanticRole role = roleDecision.role();
+        if (shouldTreatAsCollectionItem(parentRole, role)) {
+            role = NativeSemanticRole.LIST_ITEM;
+            roleDecision = new NativeRoleDecision(role, "structure:collection-item", 0.75);
+        }
         String name = NativeRoleResolver.resolveName(viewNode, role);
 
         NativeSemanticNode.Builder builder = NativeSemanticNode.builder(role)
@@ -31,7 +35,7 @@ public final class NativeSemanticTreeBuilder {
         appendStates(builder, viewNode);
 
         for (NativeViewNode child : viewNode.children()) {
-            NativeSemanticNode semanticChild = buildNode(child);
+            NativeSemanticNode semanticChild = buildNode(child, role);
             if (semanticChild != null) {
                 builder.addChild(semanticChild);
             }
@@ -39,6 +43,15 @@ public final class NativeSemanticTreeBuilder {
 
         NativeSemanticNode node = builder.build();
         return shouldFoldGeneric(node) ? node.children().get(0) : node;
+    }
+
+    private static boolean shouldTreatAsCollectionItem(NativeSemanticRole parentRole, NativeSemanticRole role) {
+        if (parentRole != NativeSemanticRole.LIST && parentRole != NativeSemanticRole.GRID) {
+            return false;
+        }
+        return role == NativeSemanticRole.GENERIC
+                || role == NativeSemanticRole.CARD
+                || role == NativeSemanticRole.SECTION;
     }
 
     private static void appendStates(NativeSemanticNode.Builder builder, NativeViewNode viewNode) {

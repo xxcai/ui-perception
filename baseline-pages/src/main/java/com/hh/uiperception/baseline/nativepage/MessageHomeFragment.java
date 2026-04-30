@@ -53,15 +53,21 @@ public class MessageHomeFragment extends Fragment {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue),
-                new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView profile = UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue);
+        UiKit.markClickable(profile);
+        titleRow.addView(profile, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         TextView title = UiKit.title(getActivity(), "消息");
         title.setPadding(dp(18), 0, 0, 0);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_phone, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView phone = UiKit.iconImage(getActivity(), R.drawable.ic_phone, 0);
+        UiKit.markClickable(phone);
+        titleRow.addView(phone, new LinearLayout.LayoutParams(dp(40), dp(40)));
+
+        ImageView plus = UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0);
+        UiKit.markClickable(plus);
+        titleRow.addView(plus, new LinearLayout.LayoutParams(dp(40), dp(40)));
         top.addView(titleRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(48)
@@ -89,6 +95,7 @@ public class MessageHomeFragment extends Fragment {
         search.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
         search.setCompoundDrawablePadding(dp(8));
         search.setBackgroundResource(R.drawable.bg_search);
+        UiKit.markClickable(search);
         searchRow.addView(search, new LinearLayout.LayoutParams(0, dp(36), 1f));
 
         searchRow.addView(serviceEntry(), new LinearLayout.LayoutParams(dp(64), dp(42)));
@@ -100,6 +107,7 @@ public class MessageHomeFragment extends Fragment {
         service.setOrientation(LinearLayout.VERTICAL);
         service.setGravity(Gravity.CENTER);
         service.setPadding(dp(12), 0, 0, 0);
+        UiKit.markClickable(service);
 
         ImageView icon = UiKit.iconImage(getActivity(), R.drawable.ic_headset, 0);
         service.addView(icon, new LinearLayout.LayoutParams(dp(22), dp(22)));
@@ -143,6 +151,7 @@ public class MessageHomeFragment extends Fragment {
         banner.setGravity(Gravity.CENTER_VERTICAL);
         banner.setPadding(dp(16), 0, dp(12), 0);
         banner.setBackgroundResource(R.drawable.bg_banner);
+        UiKit.markClickable(banner);
 
         banner.addView(UiKit.iconImage(getActivity(), R.drawable.ic_star_filled, 0), new LinearLayout.LayoutParams(dp(30), dp(30)));
 
@@ -189,6 +198,8 @@ public class MessageHomeFragment extends Fragment {
         row.setGravity(Gravity.TOP);
         row.setPadding(dp(16), dp(10), dp(16), 0);
         row.setMinimumHeight(dp(72));
+        UiKit.markClickable(row);
+        row.setOnLongClickListener(v -> true);
 
         TextView avatar = iconBox(avatarText, avatarFg, avatarBgRes);
         row.addView(avatar, new LinearLayout.LayoutParams(dp(40), dp(40)));
@@ -256,6 +267,7 @@ public class MessageHomeFragment extends Fragment {
         item.setOrientation(LinearLayout.HORIZONTAL);
         item.setGravity(Gravity.CENTER);
         item.setPadding(dp(5), 0, dp(5), 0);
+        UiKit.markClickable(item);
 
         ImageView icon = UiKit.iconImage(getActivity(), iconRes, 0);
         icon.setColorFilter(active ? UiKit.BLUE : 0xFF676A6F);
@@ -286,4 +298,5 @@ public class MessageHomeFragment extends Fragment {
     private int dp(int value) {
         return UiKit.dp(getActivity(), value);
     }
+
 }

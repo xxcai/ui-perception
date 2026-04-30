@@ -34,6 +34,9 @@ public class BusinessHomeFragment extends Fragment {
         listView.setSelector(android.R.color.transparent);
         listView.setCacheColorHint(Color.TRANSPARENT);
         listView.setAdapter(new BusinessAdapter(createRows()));
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+        });
+        listView.setOnItemLongClickListener((parent, view, position, id) -> true);
         root.addView(listView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 0,
@@ -52,15 +55,21 @@ public class BusinessHomeFragment extends Fragment {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue),
-                new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView profile = UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_blue);
+        UiKit.markClickable(profile);
+        titleRow.addView(profile, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         TextView title = UiKit.title(getActivity(), "业务");
         title.setPadding(dp(18), 0, 0, 0);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_his_mall, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView mall = UiKit.iconImage(getActivity(), R.drawable.ic_his_mall, 0);
+        UiKit.markClickable(mall);
+        titleRow.addView(mall, new LinearLayout.LayoutParams(dp(40), dp(40)));
+
+        ImageView plus = UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0);
+        UiKit.markClickable(plus);
+        titleRow.addView(plus, new LinearLayout.LayoutParams(dp(40), dp(40)));
         top.addView(titleRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(48)

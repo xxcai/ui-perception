@@ -93,12 +93,14 @@ final class BusinessAdapter extends BaseAdapter {
         search.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
         search.setCompoundDrawablePadding(dp(parent, 8));
         search.setBackgroundResource(R.drawable.bg_search);
+        UiKit.markClickable(search);
         row.addView(search, new LinearLayout.LayoutParams(0, dp(parent, 36), 1f));
 
         LinearLayout service = new LinearLayout(parent.getContext());
         service.setOrientation(LinearLayout.VERTICAL);
         service.setGravity(Gravity.CENTER);
         service.setPadding(dp(parent, 12), 0, 0, 0);
+        UiKit.markClickable(service);
         service.addView(UiKit.iconImage(parent.getContext(), R.drawable.ic_headset, 0),
                 new LinearLayout.LayoutParams(dp(parent, 22), dp(parent, 22)));
         TextView label = text(parent, "客服", UiKit.TEXT_PRIMARY, 12);
@@ -170,6 +172,7 @@ final class BusinessAdapter extends BaseAdapter {
         body.addView(hint, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         FrameLayout action = new FrameLayout(parent.getContext());
+        UiKit.markClickable(action);
         ImageView circle = new ImageView(parent.getContext());
         circle.setImageResource(R.drawable.bg_business_punch);
         circle.setScaleType(ImageView.ScaleType.FIT_XY);
@@ -197,6 +200,7 @@ final class BusinessAdapter extends BaseAdapter {
             LinearLayout line = new LinearLayout(parent.getContext());
             line.setGravity(Gravity.CENTER_VERTICAL);
             line.setPadding(dp(parent, 20), dp(parent, 9), dp(parent, 20), dp(parent, 9));
+            UiKit.markClickable(line);
             TextView name = text(parent, parts[0], UiKit.TEXT_PRIMARY, 17);
             line.addView(name, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             String count = parts.length > 1 ? parts[1] : "";
@@ -222,6 +226,7 @@ final class BusinessAdapter extends BaseAdapter {
         for (String item : row.items) {
             TextView tab = text(parent, item, UiKit.BLUE, 16);
             tab.setGravity(Gravity.CENTER);
+            UiKit.markClickable(tab);
             tabs.addView(tab, new LinearLayout.LayoutParams(0, dp(parent, 40), 1f));
         }
         card.addView(tabs);
@@ -234,6 +239,7 @@ final class BusinessAdapter extends BaseAdapter {
         LinearLayout body = new LinearLayout(parent.getContext());
         body.setGravity(Gravity.CENTER_VERTICAL);
         body.setPadding(dp(parent, 20), dp(parent, 8), dp(parent, 20), dp(parent, 16));
+        UiKit.markClickable(body);
         body.addView(UiKit.iconImage(parent.getContext(), R.drawable.ic_business_notice, 0),
                 new LinearLayout.LayoutParams(dp(parent, 34), dp(parent, 34)));
         TextView message = text(parent, row.subtitle, UiKit.TEXT_PRIMARY, 17);
@@ -251,6 +257,7 @@ final class BusinessAdapter extends BaseAdapter {
         LinearLayout top = new LinearLayout(parent.getContext());
         top.setPadding(dp(parent, 20), dp(parent, 8), dp(parent, 20), dp(parent, 14));
         top.setGravity(Gravity.CENTER_VERTICAL);
+        UiKit.markClickable(top);
         top.addView(UiKit.iconImage(parent.getContext(), R.drawable.ic_business_report, 0),
                 new LinearLayout.LayoutParams(dp(parent, 108), dp(parent, 82)));
         LinearLayout textGroup = new LinearLayout(parent.getContext());
@@ -267,6 +274,7 @@ final class BusinessAdapter extends BaseAdapter {
             LinearLayout line = new LinearLayout(parent.getContext());
             line.setGravity(Gravity.CENTER_VERTICAL);
             line.setPadding(dp(parent, 28), dp(parent, 7), dp(parent, 20), dp(parent, 7));
+            UiKit.markClickable(line);
             View dot = new View(parent.getContext());
             dot.setBackgroundResource(R.drawable.bg_business_bullet_dot);
             LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(parent, 5), dp(parent, 5));
@@ -308,6 +316,7 @@ final class BusinessAdapter extends BaseAdapter {
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
         item.setPadding(dp(parent, 4), 0, dp(parent, 4), 0);
+        UiKit.markClickable(item);
         item.addView(UiKit.iconImage(parent.getContext(), iconRes, 0),
                 new LinearLayout.LayoutParams(dp(parent, 52), dp(parent, 52)));
         TextView text = text(parent, label, UiKit.TEXT_PRIMARY, 14);
@@ -324,6 +333,7 @@ final class BusinessAdapter extends BaseAdapter {
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
         item.setPadding(dp(parent, 4), dp(parent, 8), dp(parent, 4), dp(parent, 8));
+        UiKit.markClickable(item);
         item.addView(UiKit.iconImage(parent.getContext(), iconRes, 0),
                 new LinearLayout.LayoutParams(dp(parent, 52), dp(parent, 52)));
         TextView text = text(parent, label, UiKit.TEXT_PRIMARY, 14);
@@ -342,6 +352,7 @@ final class BusinessAdapter extends BaseAdapter {
         LinearLayout row = new LinearLayout(parent.getContext());
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(parent, 20), dp(parent, 14), dp(parent, 20), dp(parent, 8));
+        UiKit.markClickable(row);
         TextView titleView = text(parent, title, UiKit.TEXT_PRIMARY, 18);
         titleView.setSingleLine(true);
         row.addView(titleView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));

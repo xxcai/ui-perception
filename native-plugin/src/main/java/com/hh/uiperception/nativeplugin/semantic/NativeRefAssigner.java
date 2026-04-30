@@ -31,6 +31,7 @@ public final class NativeRefAssigner {
                 || role == NativeSemanticRole.PICKER
                 || role == NativeSemanticRole.LIST
                 || role == NativeSemanticRole.GRID
+                || role == NativeSemanticRole.LIST_ITEM
                 || role == NativeSemanticRole.SCROLL;
     }
 
@@ -49,7 +50,7 @@ public final class NativeRefAssigner {
             for (String state : node.states()) {
                 builder.addState(state);
             }
-            if (shouldAssignRef(node)) {
+            if (shouldAssignRef(node) && !isListItemWithExecutableDescendant(node)) {
                 builder.ref("n" + nextRef++);
             } else if (node.hasRef()) {
                 builder.ref(node.ref());
@@ -58,6 +59,22 @@ public final class NativeRefAssigner {
                 builder.addChild(assignNode(child));
             }
             return builder.build();
+        }
+
+        private boolean isListItemWithExecutableDescendant(NativeSemanticNode node) {
+            if (node.role() != NativeSemanticRole.LIST_ITEM) {
+                return false;
+            }
+            return hasExecutableDescendant(node);
+        }
+
+        private boolean hasExecutableDescendant(NativeSemanticNode node) {
+            for (NativeSemanticNode child : node.children()) {
+                if (shouldAssignRef(child) || hasExecutableDescendant(child)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

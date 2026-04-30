@@ -67,4 +67,46 @@ public final class NativeRefAssignerTest {
 
         assertEquals("status", assigned.ref());
     }
+
+    @Test
+    public void assignsRefsToListItemsWithoutExecutableDescendants() {
+        NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeSemanticNode.builder(NativeSemanticRole.TEXT)
+                                .name("标题")
+                                .bounds(NativeBounds.parse("[42,120][400,180]"))
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode assigned = NativeRefAssigner.assign(root);
+
+        assertEquals("n1", assigned.ref());
+        assertEquals("n2", assigned.children().get(0).ref());
+        assertFalse(assigned.children().get(0).children().get(0).hasRef());
+    }
+
+    @Test
+    public void skipsListItemRefWhenItWrapsExecutableDescendant() {
+        NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeSemanticNode.builder(NativeSemanticRole.GENERIC)
+                                .addChild(NativeSemanticNode.builder(NativeSemanticRole.BUTTON)
+                                        .name("搜索")
+                                        .bounds(NativeBounds.parse("[42,120][400,180]"))
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode assigned = NativeRefAssigner.assign(root);
+        NativeSemanticNode item = assigned.children().get(0);
+
+        assertFalse(item.hasRef());
+        assertEquals("n2", item.children().get(0).children().get(0).ref());
+    }
 }

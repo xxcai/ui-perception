@@ -81,4 +81,52 @@ public final class NativeSemanticTreeBuilderTest {
         assertEquals(NativeSemanticRole.GENERIC, semantic.role());
         assertEquals(2, semantic.children().size());
     }
+
+    @Test
+    public void treatsDirectCollectionContainerChildrenAsListItems() {
+        NativeViewNode root = NativeViewNode.builder()
+                .className("androidx.recyclerview.widget.RecyclerView")
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeViewNode.builder()
+                        .className("android.widget.LinearLayout")
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeViewNode.builder()
+                                .className("android.widget.TextView")
+                                .text("标题")
+                                .bounds(NativeBounds.parse("[42,120][400,180]"))
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+
+        assertNotNull(semantic);
+        assertEquals(NativeSemanticRole.LIST, semantic.role());
+        assertEquals(1, semantic.children().size());
+        assertEquals(NativeSemanticRole.LIST_ITEM, semantic.children().get(0).role());
+        assertEquals("structure:collection-item", semantic.children().get(0).roleDecision().source());
+    }
+
+    @Test
+    public void keepsExplicitClickableCollectionChildrenAsButtons() {
+        NativeViewNode root = NativeViewNode.builder()
+                .className("android.widget.ListView")
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeViewNode.builder()
+                        .className("android.widget.LinearLayout")
+                        .clickable(true)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeViewNode.builder()
+                                .className("android.widget.TextView")
+                                .text("标题")
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+
+        assertNotNull(semantic);
+        assertEquals(NativeSemanticRole.BUTTON, semantic.children().get(0).role());
+        assertEquals("attribute:clickable", semantic.children().get(0).roleDecision().source());
+    }
 }

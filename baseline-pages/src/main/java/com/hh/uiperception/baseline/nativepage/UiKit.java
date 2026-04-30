@@ -3,6 +3,7 @@ package com.hh.uiperception.baseline.nativepage;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -39,5 +40,10 @@ final class UiKit {
         view.setTypeface(Typeface.DEFAULT_BOLD);
         view.setGravity(Gravity.CENTER_VERTICAL);
         return view;
+    }
+
+    static void markClickable(View view) {
+        view.setOnClickListener(v -> {
+        });
     }
 }

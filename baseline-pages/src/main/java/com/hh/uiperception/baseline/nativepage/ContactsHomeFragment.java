@@ -36,6 +36,9 @@ public class ContactsHomeFragment extends Fragment {
         listView.setCacheColorHint(Color.TRANSPARENT);
         listView.setSelector(android.R.color.transparent);
         listView.setAdapter(new ContactsAdapter(createRows()));
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+        });
+        listView.setOnItemLongClickListener((parent, view, position, id) -> true);
         listFrame.addView(listView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -60,13 +63,16 @@ public class ContactsHomeFragment extends Fragment {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_light),
-                new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView profile = UiKit.iconImage(getActivity(), R.drawable.ic_profile, R.drawable.bg_avatar_light);
+        UiKit.markClickable(profile);
+        titleRow.addView(profile, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         TextView title = UiKit.title(getActivity(), "通讯录");
         title.setPadding(dp(18), 0, 0, 0);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        titleRow.addView(UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0), new LinearLayout.LayoutParams(dp(40), dp(40)));
+        ImageView plus = UiKit.iconImage(getActivity(), R.drawable.ic_plus, 0);
+        UiKit.markClickable(plus);
+        titleRow.addView(plus, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         top.addView(titleRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -87,6 +93,7 @@ public class ContactsHomeFragment extends Fragment {
             view.setTextColor(UiKit.TEXT_PRIMARY);
             view.setTextSize(12);
             view.setGravity(Gravity.CENTER);
+            UiKit.markClickable(view);
             index.addView(view, new LinearLayout.LayoutParams(dp(24), dp(22)));
         }
         return index;
