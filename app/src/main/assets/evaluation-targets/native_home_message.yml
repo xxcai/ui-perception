@@ -1,0 +1,6 @@
+page: native_home_message
+targets:
+  - id: message-label-count
+    role: text
+    name: 消息
+    minCount: 2

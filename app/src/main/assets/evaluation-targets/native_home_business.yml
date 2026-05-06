@@ -1,0 +1,6 @@
+page: native_home_business
+targets:
+  - id: business-label-count
+    role: text
+    name: 业务
+    minCount: 2

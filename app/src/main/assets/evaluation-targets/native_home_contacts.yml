@@ -1,0 +1,6 @@
+page: native_home_contacts
+targets:
+  - id: contacts-label-count
+    role: text
+    name: 通讯录
+    minCount: 2
