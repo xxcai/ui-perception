@@ -1,0 +1,132 @@
+- screen:
+  - generic "content":
+    - generic:
+      - generic:
+        - generic:
+          - image
+          - text "消息"
+          - image
+          - image
+        - generic:
+          - text "搜索"
+          - generic:
+            - text "客服"
+            - text
+      - scroll [ref=n1] [bounds=0,436,1080,541]:
+        - generic:
+          - image
+          - generic:
+            - text "@"
+            - text "我"
+          - generic:
+            - image
+            - text "稍后"
+          - generic:
+            - text "◔"
+            - text "未读"
+          - generic:
+            - image
+            - text "特别关注"
+          - image
+      - generic:
+        - image
+        - text "添加特别关注，重要消息不遗漏"
+        - text ">"
+      - scroll [ref=n2] [bounds=0,636,1080,2190]:
+        - generic:
+          - generic:
+            - text "1"
+            - generic:
+              - generic:
+                - text "1"
+                - text "04/22"
+              - text "早上好"
+              - generic
+          - generic:
+            - text "辉"
+            - generic:
+              - generic:
+                - text "彭子辉"
+                - text "04/22"
+              - text "明天上班"
+              - generic
+          - generic:
+            - text "文件"
+            - generic:
+              - generic:
+                - text "文件号"
+                - text "04/20"
+              - text
+              - generic
+          - generic:
+            - text "应用"
+            - generic:
+              - generic:
+                - text "应用号"
+                - text "04/20"
+              - generic:
+                - text
+                - image
+              - generic
+          - generic:
+            - text "云"
+            - generic:
+              - generic:
+                - text "杨兵"
+                - text "04/02"
+              - text "早上好"
+              - generic
+          - generic:
+            - text "组"
+            - generic:
+              - generic:
+                - text "消息卡片测试小组-UAT"
+                - text "团队"
+                - text "04/01"
+              - text "杨兵: [卡片]testy_26040102"
+              - generic
+          - generic:
+            - text "柳"
+            - generic:
+              - generic:
+                - text "谢传柳"
+                - text "03/31"
+              - text "明天放假"
+              - generic
+          - generic:
+            - text "峰"
+            - generic:
+              - generic:
+                - text "蔡峰"
+                - text "03/20"
+              - text "晚上要加班"
+              - generic
+          - generic:
+            - text "叶"
+            - generic:
+              - generic:
+                - text "叶明星"
+                - text "03/20"
+              - text "周报已提交"
+              - generic
+      - generic:
+        - generic:
+          - text "●"
+          - text "助理"
+        - generic:
+          - image
+          - text "消息"
+        - generic:
+          - image
+          - text "邮件"
+        - generic:
+          - text "◎"
+          - text "通讯录"
+        - generic:
+          - image
+          - text "业务"
+        - generic:
+          - image
+          - text "知识"
+  - generic "navigationBarBackground"
+  - generic "statusBarBackground"
