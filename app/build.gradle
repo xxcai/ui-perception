@@ -38,4 +38,5 @@ dependencies {
     implementation project(':baseline-pages')
     implementation project(':perception-core')
     implementation project(':native-plugin')
+    testImplementation 'junit:junit:4.13.2'
 }

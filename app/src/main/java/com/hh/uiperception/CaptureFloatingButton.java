@@ -20,6 +20,7 @@ import com.hh.uiperception.core.PerceptionRunResult;
 import com.hh.uiperception.core.TransformResult;
 import com.hh.uiperception.baseline.BaselineRoutes;
 import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
+import com.hh.uiperception.evaluation.OnDeviceEvaluationRunner;
 import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 
 import java.io.File;
@@ -146,6 +147,7 @@ public final class CaptureFloatingButton {
                 writeTransformToFile(activity, runResult, entry.pluginName(), transformResult);
             }
         }
+        OnDeviceEvaluationRunner.generate(activity, runResult);
     }
 
     private static void writeCaptureToFile(Context context, PerceptionRunResult runResult,
