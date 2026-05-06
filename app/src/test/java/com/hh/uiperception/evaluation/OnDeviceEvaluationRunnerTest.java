@@ -49,6 +49,34 @@ public final class OnDeviceEvaluationRunnerTest {
         assertTrue(json.contains("\"status\": \"FAIL\""));
     }
 
+    @Test
+    public void writesCountResultsForMinimumTextCount() throws Exception {
+        File runDir = temporaryFolder.newFolder("run");
+        write(new File(runDir, "native/transformed/native_semantic_snapshot_101.yml"),
+                ""
+                        + "- text \"邮件\"\n"
+                        + "- button [ref=n1]:\n"
+                        + "  - text \"邮件\"\n");
+
+        File result = OnDeviceEvaluationRunner.generate(
+                runDir, "native_home_mail", "100", 1234L,
+                ""
+                        + "page: native_home_mail\n"
+                        + "targets:\n"
+                        + "  - id: mail-label-count\n"
+                        + "    role: text\n"
+                        + "    name: 邮件\n"
+                        + "    minCount: 2\n");
+
+        String json = read(result);
+        assertTrue(json.contains("\"countResults\""));
+        assertTrue(json.contains("\"id\": \"mail-label-count\""));
+        assertTrue(json.contains("\"minCount\": 2"));
+        assertTrue(json.contains("\"actualCount\": 2"));
+        assertTrue(json.contains("\"countTargetPassCount\": 1"));
+        assertTrue(json.contains("\"status\": \"PASS\""));
+    }
+
     private static void write(File file, String content) throws Exception {
         File parent = file.getParentFile();
         if (!parent.exists() && !parent.mkdirs()) {

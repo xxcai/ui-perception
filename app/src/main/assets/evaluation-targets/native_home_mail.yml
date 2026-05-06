@@ -1,0 +1,6 @@
+page: native_home_mail
+targets:
+  - id: mail-label-count
+    role: text
+    name: 邮件
+    minCount: 2
