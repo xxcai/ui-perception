@@ -199,6 +199,8 @@ captures/{baselineId}/runs/{runId}/{pluginName}/transformed/{source}_{timestamp}
 - raw：完整原生 View 层级 XML。
 - transformed：标准 LLM 输入快照，当前沿用 native semantic snapshot 文本结构。
 
+标准格式见 [LLM Input Snapshot v1](docs/llm-input-snapshot-standard.md)。
+
 参与测评的 transformed 产物约定：
 
 ```text
@@ -368,5 +370,6 @@ public final class SmallModelPerceptionPlugin implements PerceptionPlugin
 
 ## 相关文档
 
+- [LLM Input Snapshot v1 标准](docs/llm-input-snapshot-standard.md)
 - [Native XML 处理路线](docs/android-native-xml-transform-route.md)
 - [其他采集方式评测接入说明](docs/plugin-evaluation-integration.md)

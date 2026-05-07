@@ -2,6 +2,8 @@
 
 本文说明 Web、OCR、小模型等采集方式如何接入当前端上评测框架。核心原则是：被测评对象必须是实际提供给 LLM 的输入，不额外生成只用于测评的中间产物。
 
+统一 transform 输出格式见 [LLM Input Snapshot v1](llm-input-snapshot-standard.md)。
+
 ## 核心原则
 
 - 各插件可以有不同的采集方式。
@@ -72,7 +74,7 @@ native/transformed/native_semantic_snapshot_{timestamp}.yml
 
 ## LLM 输入格式
 
-标准 LLM 输入格式沿用当前 native semantic snapshot 的文本结构：
+标准 LLM 输入格式沿用当前 native semantic snapshot 的文本结构，完整标准见 [LLM Input Snapshot v1](llm-input-snapshot-standard.md)。
 
 ```yaml
 - text "消息"
@@ -80,13 +82,6 @@ native/transformed/native_semantic_snapshot_{timestamp}.yml
 - listitem [ref=n2]:
   - text "平台通知"
 ```
-
-字段含义：
-
-- `text`、`button`、`listitem` 是 role。
-- 引号中的内容是 name。
-- `[ref=n1]` 可选，用于后续定位或操作引用。
-- 缩进表示层级关系。
 
 当前评测优先使用 role、name 和 minCount 做统一检查。其他插件不需要实现 native 内部逻辑，只需要把自己的 transformed 输出写成同一套 LLM 输入格式。
 

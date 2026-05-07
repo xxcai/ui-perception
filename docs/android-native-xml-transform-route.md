@@ -2,7 +2,7 @@
 
 ## 背景
 
-路线一的目标是把 Android 原生页面抓取到的 raw view tree XML，转换成更适合模型消费和后续动作定位的 native semantic snapshot。
+路线一的目标是把 Android 原生页面抓取到的 raw view tree XML，转换成更适合模型消费和后续动作定位的 native semantic snapshot。该格式当前也是项目统一 transform 输出标准 [LLM Input Snapshot v1](llm-input-snapshot-standard.md) 的 native 实现。
 
 原始 XML 保留了大量 View 层级、布局容器和系统节点。它适合完整还原页面结构，但直接给模型使用时存在几个问题：
 
@@ -242,6 +242,8 @@ transform 输出为 `text/yaml`，文件扩展名为 `.yml`。
 captures/{baselineId}/runs/{runId}/native/raw/native_xml_{timestamp}.xml
 captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{timestamp}.yml
 ```
+
+该 transformed 产物在评测侧统一视为 `native.llm_input`。跨插件统一格式见 [LLM Input Snapshot v1](llm-input-snapshot-standard.md)。
 
 ## 数据量对比
 
