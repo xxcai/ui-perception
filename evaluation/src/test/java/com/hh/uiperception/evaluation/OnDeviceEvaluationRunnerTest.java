@@ -29,10 +29,42 @@ public final class OnDeviceEvaluationRunnerTest {
         String json = read(result);
         assertTrue(json.contains("\"baselineId\": \"native_home_message\""));
         assertTrue(json.contains("\"runId\": \"100\""));
-        assertTrue(json.contains("\"id\": \"native-raw-xml\""));
+        assertTrue(json.contains("\"id\": \"native.raw_xml\""));
+        assertTrue(json.contains("\"stage\": \"raw\""));
+        assertTrue(json.contains("\"type\": \"raw_xml\""));
         assertTrue(json.contains("\"path\": \"native/raw/native_xml_100.xml\""));
-        assertTrue(json.contains("\"id\": \"native-semantic-snapshot\""));
+        assertTrue(json.contains("\"id\": \"native.llm_input\""));
+        assertTrue(json.contains("\"stage\": \"transformed\""));
+        assertTrue(json.contains("\"type\": \"llm_input\""));
         assertTrue(json.contains("\"artifactCount\": 2"));
+        assertTrue(json.contains("\"status\": \"PASS\""));
+    }
+
+    @Test
+    public void acceptsGenericLlmInputArtifact() throws Exception {
+        File runDir = temporaryFolder.newFolder("run");
+        write(new File(runDir, "ocr/transformed/llm_input_100.yml"),
+                "- text \"搜索\"\n");
+
+        File result = OnDeviceEvaluationRunner.generate(
+                runDir, "native_home_message", "100", 1234L,
+                ""
+                        + "page: native_home_message\n"
+                        + "targets:\n"
+                        + "  - id: search-readable\n"
+                        + "    type: information\n"
+                        + "    description: LLM 输入中是否包含搜索文字\n"
+                        + "    evidence:\n"
+                        + "      - id: search-text\n"
+                        + "        role: text\n"
+                        + "        name: 搜索\n");
+
+        String json = read(result);
+        assertTrue(json.contains("\"id\": \"ocr.llm_input\""));
+        assertTrue(json.contains("\"plugin\": \"ocr\""));
+        assertTrue(json.contains("\"type\": \"llm_input\""));
+        assertTrue(json.contains("\"id\": \"search-text\""));
+        assertTrue(json.contains("\"actualCount\": 1"));
         assertTrue(json.contains("\"status\": \"PASS\""));
     }
 

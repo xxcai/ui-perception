@@ -56,11 +56,12 @@ public final class OnDeviceEvaluationRunner {
     static File generate(File runDir, String baselineId, String runId, long generatedAt,
                          String targetsYaml) throws IOException {
         List<EvaluationArtifact> artifacts = scanArtifacts(runDir);
+        List<EvidenceSource> evidenceSources = adaptEvidenceSources(runDir, artifacts);
         List<CountTarget> countTargets = CountTargetsParser.parse(targetsYaml);
         List<InformationTarget> informationTargets = InformationTargetsParser.parse(targetsYaml);
-        List<CountResult> countResults = evaluateCounts(runDir, artifacts, countTargets);
+        List<CountResult> countResults = evaluateCounts(evidenceSources, countTargets);
         List<TargetResult> targetResults = evaluateInformationTargets(
-                runDir, artifacts, informationTargets);
+                evidenceSources, informationTargets);
         File evaluationDir = new File(runDir, "evaluation");
         if (!evaluationDir.exists() && !evaluationDir.mkdirs()) {
             throw new IOException("创建评测目录失败: " + evaluationDir.getAbsolutePath());
@@ -98,12 +99,16 @@ public final class OnDeviceEvaluationRunner {
         if (files == null) {
             return;
         }
+        String stage = dir.getName();
         for (File file : files) {
             String contentType = contentTypeFor(file.getName());
             String schemaStatus = contentType.isEmpty() || file.length() <= 0 ? STATUS_FAIL : STATUS_PASS;
+            String type = artifactTypeFor(plugin, stage, file.getName(), contentType);
             artifacts.add(new EvaluationArtifact(
-                    artifactIdFor(file.getName(), contentType),
+                    artifactIdFor(plugin, type, file.getName()),
                     plugin,
+                    stage,
+                    type,
                     relativePath(runDir, file),
                     contentType,
                     file.length(),
@@ -112,13 +117,31 @@ public final class OnDeviceEvaluationRunner {
         }
     }
 
-    private static List<CountResult> evaluateCounts(
+    private static List<EvidenceSource> adaptEvidenceSources(
             File runDir,
-            List<EvaluationArtifact> artifacts,
+            List<EvaluationArtifact> artifacts) {
+        List<EvidenceSource> sources = new ArrayList<>();
+        for (EvaluationArtifact artifact : artifacts) {
+            if (!STATUS_PASS.equals(artifact.schemaStatus())) {
+                continue;
+            }
+            if ("llm_input".equals(artifact.type())) {
+                File file = new File(runDir, artifact.path());
+                sources.add(new EvidenceSource(
+                        artifact.id(),
+                        artifact.plugin(),
+                        artifact.type(),
+                        SnapshotNodeParser.parse(readFileOrEmpty(file))
+                ));
+            }
+        }
+        return sources;
+    }
+
+    private static List<CountResult> evaluateCounts(
+            List<EvidenceSource> sources,
             List<CountTarget> targets) {
-        File snapshotFile = findSemanticSnapshot(runDir, artifacts);
-        List<SnapshotNode> nodes = snapshotFile != null
-                ? SnapshotNodeParser.parse(readFileOrEmpty(snapshotFile)) : new ArrayList<>();
+        List<SnapshotNode> nodes = collectNodes(sources);
         List<CountResult> results = new ArrayList<>();
         for (CountTarget target : targets) {
             int count = 0;
@@ -138,12 +161,9 @@ public final class OnDeviceEvaluationRunner {
     }
 
     private static List<TargetResult> evaluateInformationTargets(
-            File runDir,
-            List<EvaluationArtifact> artifacts,
+            List<EvidenceSource> sources,
             List<InformationTarget> targets) {
-        File snapshotFile = findSemanticSnapshot(runDir, artifacts);
-        List<SnapshotNode> nodes = snapshotFile != null
-                ? SnapshotNodeParser.parse(readFileOrEmpty(snapshotFile)) : new ArrayList<>();
+        List<SnapshotNode> nodes = collectNodes(sources);
         List<TargetResult> results = new ArrayList<>();
         for (InformationTarget target : targets) {
             List<EvidenceResult> evidenceResults = new ArrayList<>();
@@ -158,6 +178,14 @@ public final class OnDeviceEvaluationRunner {
         return results;
     }
 
+    private static List<SnapshotNode> collectNodes(List<EvidenceSource> sources) {
+        List<SnapshotNode> nodes = new ArrayList<>();
+        for (EvidenceSource source : sources) {
+            nodes.addAll(source.nodes());
+        }
+        return nodes;
+    }
+
     private static int countMatches(List<SnapshotNode> nodes, CountTarget target) {
         int count = 0;
         for (SnapshotNode node : nodes) {
@@ -170,16 +198,6 @@ public final class OnDeviceEvaluationRunner {
             count++;
         }
         return count;
-    }
-
-    private static File findSemanticSnapshot(File runDir, List<EvaluationArtifact> artifacts) {
-        for (EvaluationArtifact artifact : artifacts) {
-            if ("native-semantic-snapshot".equals(artifact.id())
-                    && STATUS_PASS.equals(artifact.schemaStatus())) {
-                return new File(runDir, artifact.path());
-            }
-        }
-        return null;
     }
 
     private static String renderResult(String baselineId, String runId, long generatedAt,
@@ -224,6 +242,8 @@ public final class OnDeviceEvaluationRunner {
                 builder.append("    {\n");
                 appendStringField(builder, 3, "id", artifact.id(), true);
                 appendStringField(builder, 3, "plugin", artifact.plugin(), true);
+                appendStringField(builder, 3, "stage", artifact.stage(), true);
+                appendStringField(builder, 3, "type", artifact.type(), true);
                 appendStringField(builder, 3, "path", artifact.path(), true);
                 appendStringField(builder, 3, "contentType", artifact.contentType(), true);
                 appendNumberField(builder, 3, "bytes", artifact.bytes(), true);
@@ -456,12 +476,33 @@ public final class OnDeviceEvaluationRunner {
         return "";
     }
 
-    private static String artifactIdFor(String filename, String contentType) {
-        if (filename.startsWith("native_xml_") && "text/xml".equals(contentType)) {
-            return "native-raw-xml";
+    private static String artifactTypeFor(String plugin, String stage, String filename,
+                                          String contentType) {
+        if ("native".equals(plugin) && "raw".equals(stage)
+                && filename.startsWith("native_xml_") && "text/xml".equals(contentType)) {
+            return "raw_xml";
         }
-        if (filename.startsWith("native_semantic_snapshot_") && "text/yaml".equals(contentType)) {
-            return "native-semantic-snapshot";
+        if ("native".equals(plugin) && "transformed".equals(stage)
+                && filename.startsWith("native_semantic_snapshot_")
+                && "text/yaml".equals(contentType)) {
+            return "llm_input";
+        }
+        if ("transformed".equals(stage)
+                && filename.startsWith("llm_input_")
+                && "text/yaml".equals(contentType)) {
+            return "llm_input";
+        }
+        if ("text/xml".equals(contentType)) {
+            return "xml";
+        }
+        if ("text/yaml".equals(contentType)) {
+            return "yaml";
+        }
+        if ("application/json".equals(contentType)) {
+            return "json";
+        }
+        if ("text/html".equals(contentType)) {
+            return "html";
         }
         String name = filename;
         int dot = name.lastIndexOf('.');
@@ -469,6 +510,18 @@ public final class OnDeviceEvaluationRunner {
             name = name.substring(0, dot);
         }
         return name.replace('_', '-');
+    }
+
+    private static String artifactIdFor(String plugin, String type, String filename) {
+        if (type == null || type.isEmpty()) {
+            String name = filename;
+            int dot = name.lastIndexOf('.');
+            if (dot > 0) {
+                name = name.substring(0, dot);
+            }
+            type = name.replace('_', '-');
+        }
+        return plugin + "." + type;
     }
 
     private static String relativePath(File root, File file) {
@@ -507,15 +560,19 @@ public final class OnDeviceEvaluationRunner {
     private static final class EvaluationArtifact {
         private final String id;
         private final String plugin;
+        private final String stage;
+        private final String type;
         private final String path;
         private final String contentType;
         private final long bytes;
         private final String schemaStatus;
 
-        EvaluationArtifact(String id, String plugin, String path, String contentType,
-                           long bytes, String schemaStatus) {
+        EvaluationArtifact(String id, String plugin, String stage, String type, String path,
+                           String contentType, long bytes, String schemaStatus) {
             this.id = id;
             this.plugin = plugin;
+            this.stage = stage;
+            this.type = type;
             this.path = path;
             this.contentType = contentType;
             this.bytes = bytes;
@@ -528,6 +585,14 @@ public final class OnDeviceEvaluationRunner {
 
         String plugin() {
             return plugin;
+        }
+
+        String stage() {
+            return stage;
+        }
+
+        String type() {
+            return type;
         }
 
         String path() {
@@ -544,6 +609,37 @@ public final class OnDeviceEvaluationRunner {
 
         String schemaStatus() {
             return schemaStatus;
+        }
+    }
+
+    private static final class EvidenceSource {
+        private final String candidateId;
+        private final String plugin;
+        private final String sourceType;
+        private final List<SnapshotNode> nodes;
+
+        EvidenceSource(String candidateId, String plugin, String sourceType,
+                       List<SnapshotNode> nodes) {
+            this.candidateId = candidateId;
+            this.plugin = plugin;
+            this.sourceType = sourceType;
+            this.nodes = nodes;
+        }
+
+        String candidateId() {
+            return candidateId;
+        }
+
+        String plugin() {
+            return plugin;
+        }
+
+        String sourceType() {
+            return sourceType;
+        }
+
+        List<SnapshotNode> nodes() {
+            return nodes;
         }
     }
 
