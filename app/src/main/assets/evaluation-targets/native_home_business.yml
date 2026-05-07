@@ -5,6 +5,7 @@ targets:
     description: LLM 能否判断当前页面是业务页，并知道底部导航中业务处于当前页面
     evidence:
       - id: business-title-and-tab
+        capability: navigational
         role: text
         name: 业务
         minCount: 2
@@ -41,9 +42,11 @@ targets:
     description: LLM 能否知道业务页提供搜索和客服入口
     evidence:
       - id: business-search-entry
+        capability: textual_content
         role: button
         name: 搜索
       - id: business-customer-service
+        capability: textual_content
         role: text
         name: 客服
   - id: business-list-understanding
@@ -51,8 +54,10 @@ targets:
     description: LLM 能否理解页面主体是可滚动的业务应用和服务列表
     evidence:
       - id: business-list-container
+        capability: structural
         role: list
       - id: business-list-items
+        capability: structural
         role: listitem
         minCount: 4
   - id: recent-apps-understanding
@@ -60,15 +65,19 @@ targets:
     description: LLM 能否知道业务页有最近使用应用分组
     evidence:
       - id: business-recent-used
+        capability: textual_content
         role: text
         name: 最近使用
       - id: business-app-wifi
+        capability: textual_content
         role: text
         name: 华为Wi-Fi
       - id: business-app-device-management
+        capability: textual_content
         role: text
         name: 设备管理
       - id: business-his-mall-guidance
+        capability: textual_content
         role: text
         name: 前往HIS MALL发现更多应用
   - id: business-service-readability
@@ -76,15 +85,19 @@ targets:
     description: LLM 能否读出业务服务卡片的名称和服务状态
     evidence:
       - id: business-service-news
+        capability: textual_content
         role: text
         name: 一般资讯高级版1
       - id: business-service-unavailable
+        capability: textual_content
         role: text
         name: 服务不可用(10308)
       - id: business-service-decision-online
+        capability: textual_content
         role: text
         name: 决策在线
       - id: business-service-top-issue
+        capability: textual_content
         role: text
         name: Top问题直通车
   - id: service-card-visual-preview
@@ -100,21 +113,27 @@ targets:
     description: LLM 能否知道当前 app 的底部主导航结构
     evidence:
       - id: business-bottom-assistant
+        capability: navigational
         role: text
         name: 助理
       - id: business-bottom-message
+        capability: navigational
         role: text
         name: 消息
       - id: business-bottom-mail
+        capability: navigational
         role: text
         name: 邮件
       - id: business-bottom-contacts
+        capability: navigational
         role: text
         name: 通讯录
       - id: business-bottom-business
+        capability: navigational
         role: text
         name: 业务
         minCount: 2
       - id: business-bottom-knowledge
+        capability: navigational
         role: text
         name: 知识

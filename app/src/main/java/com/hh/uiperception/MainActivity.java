@@ -1,6 +1,7 @@
 package com.hh.uiperception;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -68,13 +69,6 @@ public class MainActivity extends Activity {
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(dp(16), dp(14), dp(16), dp(14));
         row.setBackgroundColor(0xFFFFFFFF);
-        row.setClickable(true);
-        row.setOnClickListener(v -> {
-            boolean opened = BaselineRouter.open(this, spec.route());
-            if (!opened) {
-                Toast.makeText(this, "入口暂未实现：" + spec.title(), Toast.LENGTH_SHORT).show();
-            }
-        });
 
         TextView title = new TextView(this);
         title.setText(spec.title());
@@ -93,9 +87,42 @@ public class MainActivity extends Activity {
         route.setTextSize(12);
         route.setPadding(0, dp(8), 0, 0);
 
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setPadding(0, dp(12), 0, 0);
+
+        TextView open = actionButton("打开页面", 0xFFE8F0FE);
+        open.setOnClickListener(v -> {
+            boolean opened = BaselineRouter.open(this, spec.route());
+            if (!opened) {
+                Toast.makeText(this, "入口暂未实现：" + spec.title(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        TextView evaluation = actionButton("查看最新评测", 0xFFE8F0FE);
+        evaluation.setOnClickListener(v -> {
+            Intent intent = new Intent(this, EvaluationResultActivity.class);
+            intent.putExtra(EvaluationResultActivity.EXTRA_BASELINE_ID, spec.id());
+            startActivity(intent);
+        });
+
+        actions.addView(open, new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+        LinearLayout.LayoutParams evaluationParams = new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+        );
+        evaluationParams.setMargins(dp(10), 0, 0, 0);
+        actions.addView(evaluation, evaluationParams);
+
         row.addView(title);
         row.addView(description);
         row.addView(route);
+        row.addView(actions);
 
         LinearLayout wrapper = new LinearLayout(this);
         wrapper.setOrientation(LinearLayout.VERTICAL);
@@ -105,6 +132,19 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
         return wrapper;
+    }
+
+    private TextView actionButton(String text, int backgroundColor) {
+        TextView button = new TextView(this);
+        button.setText(text);
+        button.setTextColor(0xFF1A73E8);
+        button.setTextSize(14);
+        button.setGravity(Gravity.CENTER);
+        button.setMinHeight(dp(40));
+        button.setPadding(dp(8), dp(8), dp(8), dp(8));
+        button.setBackgroundColor(backgroundColor);
+        button.setClickable(true);
+        return button;
     }
 
     private int dp(int value) {

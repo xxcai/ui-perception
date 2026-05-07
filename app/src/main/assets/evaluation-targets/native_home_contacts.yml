@@ -5,6 +5,7 @@ targets:
     description: LLM 能否判断当前页面是通讯录页，并知道底部导航中通讯录处于当前页面
     evidence:
       - id: contacts-title-and-tab
+        capability: navigational
         role: text
         name: 通讯录
         minCount: 2
@@ -37,9 +38,11 @@ targets:
     description: LLM 能否知道通讯录页提供搜索和客服入口
     evidence:
       - id: contacts-search-entry
+        capability: textual_content
         role: button
         name: 搜索
       - id: contacts-customer-service
+        capability: textual_content
         role: text
         name: 客服
   - id: shortcut-entry-understanding
@@ -47,15 +50,19 @@ targets:
     description: LLM 能否知道通讯录顶部提供常用联系人入口
     evidence:
       - id: contacts-shortcut-xiaowei
+        capability: navigational
         role: text
         name: 小微
       - id: contacts-shortcut-organization
+        capability: navigational
         role: text
         name: 组织
       - id: contacts-shortcut-team
+        capability: navigational
         role: text
         name: 团队
       - id: contacts-shortcut-follow
+        capability: navigational
         role: text
         name: 关注
   - id: contact-list-understanding
@@ -63,17 +70,22 @@ targets:
     description: LLM 能否理解页面主体是按字母分组的联系人列表
     evidence:
       - id: contacts-list-container
+        capability: structural
         role: list
       - id: contacts-list-items
+        capability: structural
         role: listitem
         minCount: 4
       - id: contacts-letter-c
+        capability: structural
         role: text
         name: C
       - id: contacts-letter-l
+        capability: structural
         role: text
         name: L
       - id: contacts-letter-w
+        capability: structural
         role: text
         name: W
   - id: contact-content-readability
@@ -81,33 +93,43 @@ targets:
     description: LLM 能否读出联系人姓名、账号和所属组织信息
     evidence:
       - id: contacts-name-chen-yuqing
+        capability: textual_content
         role: text
         name: 陈雨晴
       - id: contacts-account-chen-yuqing
+        capability: textual_content
         role: text
         name: WX1035278
       - id: contacts-dept-chen-yuqing
+        capability: textual_content
         role: text
         name: 产品体验部@深圳
       - id: contacts-name-cheng-yuan
+        capability: textual_content
         role: text
         name: 程远
       - id: contacts-account-cheng-yuan
+        capability: textual_content
         role: text
         name: 30078216
       - id: contacts-tag-cooperator
+        capability: textual_content
         role: text
         name: 合作人员
       - id: contacts-name-li-ruikang
+        capability: textual_content
         role: text
         name: 李瑞康
       - id: contacts-account-li-ruikang
+        capability: textual_content
         role: text
         name: WX1160068
       - id: contacts-name-liu-siyuan
+        capability: textual_content
         role: text
         name: 刘思远
       - id: contacts-name-wang-anran
+        capability: textual_content
         role: text
         name: 王安然
   - id: alphabet-index-understanding
@@ -135,21 +157,27 @@ targets:
     description: LLM 能否知道当前 app 的底部主导航结构
     evidence:
       - id: contacts-bottom-assistant
+        capability: navigational
         role: text
         name: 助理
       - id: contacts-bottom-message
+        capability: navigational
         role: text
         name: 消息
       - id: contacts-bottom-mail
+        capability: navigational
         role: text
         name: 邮件
       - id: contacts-bottom-contacts
+        capability: navigational
         role: text
         name: 通讯录
         minCount: 2
       - id: contacts-bottom-business
+        capability: navigational
         role: text
         name: 业务
       - id: contacts-bottom-knowledge
+        capability: navigational
         role: text
         name: 知识

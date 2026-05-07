@@ -5,6 +5,7 @@ targets:
     description: LLM 能否判断当前页面是邮件页，并知道底部导航中邮件处于当前页面
     evidence:
       - id: mail-title-and-tab
+        capability: navigational
         role: text
         name: 邮件
         minCount: 2
@@ -49,9 +50,11 @@ targets:
     description: LLM 能否知道邮件页提供搜索和客服入口
     evidence:
       - id: mail-search-entry
+        capability: textual_content
         role: button
         name: 搜索
       - id: mail-customer-service
+        capability: textual_content
         role: text
         name: 客服
   - id: mail-list-understanding
@@ -59,8 +62,10 @@ targets:
     description: LLM 能否理解页面主体是邮件列表
     evidence:
       - id: mail-list-container
+        capability: structural
         role: list
       - id: mail-list-items
+        capability: structural
         role: listitem
         minCount: 6
   - id: mail-content-readability
@@ -68,33 +73,43 @@ targets:
     description: LLM 能否读出邮件列表里的发件人、主题和摘要内容
     evidence:
       - id: mail-sender-platform-notice
+        capability: textual_content
         role: text
         name: 平台通知
       - id: mail-subject-test-plan
+        capability: textual_content
         role: text
         name: 测试计划同步
       - id: mail-sender-product-operation
+        capability: textual_content
         role: text
         name: 产品运营
       - id: mail-subject-homepage-feedback
+        capability: textual_content
         role: text
         name: 首页改版体验反馈
       - id: mail-sender-quality
+        capability: textual_content
         role: text
         name: 质量保障部
       - id: mail-subject-inspection-report
+        capability: textual_content
         role: text
         name: 自动化巡检日报
       - id: mail-sender-project-office
+        capability: textual_content
         role: text
         name: 项目管理办公室
       - id: mail-sender-system-reminder
+        capability: textual_content
         role: text
         name: 系统提醒
       - id: mail-sender-dev-platform
+        capability: textual_content
         role: text
         name: 研发效能平台
       - id: mail-sender-security
+        capability: textual_content
         role: text
         name: 安全合规
   - id: mail-metadata-understanding
@@ -102,21 +117,27 @@ targets:
     description: LLM 能否理解邮件列表包含时间和日期元信息
     evidence:
       - id: mail-time-morning
+        capability: textual_content
         role: text
         name: 09:12
       - id: mail-date-yesterday
+        capability: textual_content
         role: text
         name: 昨天
       - id: mail-date-monday
+        capability: textual_content
         role: text
         name: 周一
       - id: mail-date-april-25
+        capability: textual_content
         role: text
         name: 04/25
       - id: mail-date-april-24
+        capability: textual_content
         role: text
         name: 04/24
       - id: mail-date-april-22
+        capability: textual_content
         role: text
         name: 04/22
   - id: bottom-navigation-understanding
@@ -124,21 +145,27 @@ targets:
     description: LLM 能否知道当前 app 的底部主导航结构
     evidence:
       - id: mail-bottom-assistant
+        capability: navigational
         role: text
         name: 助理
       - id: mail-bottom-message
+        capability: navigational
         role: text
         name: 消息
       - id: mail-bottom-mail
+        capability: navigational
         role: text
         name: 邮件
         minCount: 2
       - id: mail-bottom-contacts
+        capability: navigational
         role: text
         name: 通讯录
       - id: mail-bottom-business
+        capability: navigational
         role: text
         name: 业务
       - id: mail-bottom-knowledge
+        capability: navigational
         role: text
         name: 知识

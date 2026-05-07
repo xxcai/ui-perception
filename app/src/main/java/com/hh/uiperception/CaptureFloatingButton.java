@@ -2,6 +2,7 @@ package com.hh.uiperception;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -148,6 +149,13 @@ public final class CaptureFloatingButton {
             }
         }
         OnDeviceEvaluationRunner.generate(activity, runResult);
+        openEvaluationResult(activity, runResult.baselineId());
+    }
+
+    private static void openEvaluationResult(Activity activity, String baselineId) {
+        Intent intent = new Intent(activity, EvaluationResultActivity.class);
+        intent.putExtra(EvaluationResultActivity.EXTRA_BASELINE_ID, baselineId);
+        activity.startActivity(intent);
     }
 
     private static void writeCaptureToFile(Context context, PerceptionRunResult runResult,
