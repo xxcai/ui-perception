@@ -2,6 +2,7 @@ package com.hh.uiperception;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -20,6 +21,7 @@ import com.hh.uiperception.core.PerceptionRunResult;
 import com.hh.uiperception.core.TransformResult;
 import com.hh.uiperception.baseline.BaselineRoutes;
 import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
+import com.hh.uiperception.evaluation.OnDeviceEvaluationRunner;
 import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 
 import java.io.File;
@@ -146,6 +148,14 @@ public final class CaptureFloatingButton {
                 writeTransformToFile(activity, runResult, entry.pluginName(), transformResult);
             }
         }
+        OnDeviceEvaluationRunner.generate(activity, runResult);
+        openEvaluationResult(activity, runResult.baselineId());
+    }
+
+    private static void openEvaluationResult(Activity activity, String baselineId) {
+        Intent intent = new Intent(activity, EvaluationResultActivity.class);
+        intent.putExtra(EvaluationResultActivity.EXTRA_BASELINE_ID, baselineId);
+        activity.startActivity(intent);
     }
 
     private static void writeCaptureToFile(Context context, PerceptionRunResult runResult,

@@ -111,22 +111,22 @@ public class ContactsHomeFragment extends Fragment {
         rows.add(ContactRow.search());
         rows.add(ContactRow.shortcuts());
         addSection(rows, "C",
-                new ContactPerson("陈", "陈雨晴", "WX1035278", "", "产品体验部@深圳", R.drawable.bg_avatar_light, UiKit.BLUE, false),
-                new ContactPerson("程", "程远", "30078216", "合作人员", "测试平台项目组", R.drawable.bg_avatar_cyan, 0xFF00A6D6, true)
+                new ContactPerson("程", "程可欣", "EMP-A1001", "", "产品体验部@深圳", R.drawable.bg_avatar_light, UiKit.BLUE, false),
+                new ContactPerson("曹", "曹景行", "EXT-B2002", "合作人员", "测试平台项目组", R.drawable.bg_avatar_cyan, 0xFF00A6D6, true)
         );
         addSection(rows, "L",
-                new ContactPerson("李", "李瑞康", "WX1160068", "", "研发效能部@上海", R.drawable.bg_avatar_blue, 0xFFFFFFFF, false),
-                new ContactPerson("刘", "刘思远", "30091027", "", "质量保障中心", R.drawable.bg_avatar_violet, 0xFFFFFFFF, false)
+                new ContactPerson("林", "林知远", "EMP-A1003", "", "研发效能部@上海", R.drawable.bg_avatar_blue, 0xFFFFFFFF, false),
+                new ContactPerson("陆", "陆明澈", "EMP-A1004", "", "质量保障中心", R.drawable.bg_avatar_violet, 0xFFFFFFFF, false)
         );
         addSection(rows, "W",
-                new ContactPerson("王", "王安然", "WX1082394", "", "前端基础设施组", R.drawable.bg_avatar_purple, 0xFFFFFFFF, false)
+                new ContactPerson("吴", "吴清越", "EMP-A1005", "", "前端基础设施组", R.drawable.bg_avatar_purple, 0xFFFFFFFF, false)
         );
         addSection(rows, "X",
-                new ContactPerson("强", "向强", "30066825", "合作人员", "1231232qqq", R.drawable.bg_avatar_light, UiKit.BLUE, true),
-                new ContactPerson("谢", "谢传柳", "WX1002765", "", "移动体验实验室", R.drawable.bg_avatar_gray, 0xFFFFFFFF, false)
+                new ContactPerson("徐", "徐一航", "EXT-B2006", "合作人员", "1231232qqq", R.drawable.bg_avatar_light, UiKit.BLUE, true),
+                new ContactPerson("夏", "夏若辰", "EMP-A1007", "", "移动体验实验室", R.drawable.bg_avatar_gray, 0xFFFFFFFF, false)
         );
         addSection(rows, "Y",
-                new ContactPerson("杨", "杨兵", "WX1168354", "", "测试@李瑞康", R.drawable.bg_avatar_light, UiKit.BLUE, false)
+                new ContactPerson("姚", "姚明远", "EMP-A1008", "", "测试@林知远", R.drawable.bg_avatar_light, UiKit.BLUE, false)
         );
         rows.add(ContactRow.footer(8));
         return rows;

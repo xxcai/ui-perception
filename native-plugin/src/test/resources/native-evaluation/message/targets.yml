@@ -1,0 +1,19 @@
+page: message
+targets:
+  - id: search-entry
+    role: text
+    name: 搜索
+    requiredRef: false
+    bounds: 42,312,870,407
+  - id: filter-unread
+    role: text
+    name: 未读
+    requiredRef: false
+  - id: message-scroll
+    role: scroll
+    requiredRef: true
+    bounds: 0,636,1080,2190
+  - id: first-conversation-title
+    role: text
+    name: "1"
+    requiredRef: false

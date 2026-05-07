@@ -2,7 +2,7 @@
 
 ## 背景
 
-路线一的目标是把 Android 原生页面抓取到的 raw view tree XML，转换成更适合模型消费和后续动作定位的 native semantic snapshot。
+路线一的目标是把 Android 原生页面抓取到的 raw view tree XML，转换成更适合模型消费和后续动作定位的 native semantic snapshot。该格式当前也是项目统一 transform 输出标准 [LLM Input Snapshot v1](llm-input-snapshot-standard.md) 的 native 实现。
 
 原始 XML 保留了大量 View 层级、布局容器和系统节点。它适合完整还原页面结构，但直接给模型使用时存在几个问题：
 
@@ -243,6 +243,8 @@ captures/{baselineId}/runs/{runId}/native/raw/native_xml_{timestamp}.xml
 captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{timestamp}.yml
 ```
 
+该 transformed 产物在评测侧统一视为 `native.llm_input`。跨插件统一格式见 [LLM Input Snapshot v1](llm-input-snapshot-standard.md)。
+
 ## 数据量对比
 
 以下数据来自真机手工验收阶段的四个 native 首页样本。
@@ -290,7 +292,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
                 bounds="[0,825][1080,1014]"
                 clickable="true" focusable="true">
             <node class="android.widget.TextView" text="辉" bounds="[42,851][147,956]" />
-            <node class="android.widget.TextView" text="彭子辉" bounds="[184,851][870,914]" />
+            <node class="android.widget.TextView" text="梁晓舟" bounds="[184,851][870,914]" />
             <node class="android.widget.TextView" text="明天上班" bounds="[184,925][1038,978]" />
           </node>
           ...
@@ -316,7 +318,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
           - button [ref=n16] [bounds=0,825,1080,1014]:
             - text "辉"
             - generic:
-              - text "彭子辉"
+              - text "梁晓舟"
               - text "明天上班"
 ```
 

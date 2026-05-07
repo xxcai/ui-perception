@@ -50,7 +50,7 @@ public final class NativeSemanticTreeBuilderTest {
                 .className("android.widget.LinearLayout")
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.TextView")
-                        .text("张三")
+                        .text("吴示例")
                         .build())
                 .build();
 
@@ -58,7 +58,7 @@ public final class NativeSemanticTreeBuilderTest {
 
         assertNotNull(semantic);
         assertEquals(NativeSemanticRole.TEXT, semantic.role());
-        assertEquals("张三", semantic.name());
+        assertEquals("吴示例", semantic.name());
     }
 
     @Test
@@ -67,11 +67,11 @@ public final class NativeSemanticTreeBuilderTest {
                 .className("android.widget.LinearLayout")
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.TextView")
-                        .text("张三")
+                        .text("吴示例")
                         .build())
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.TextView")
-                        .text("李四")
+                        .text("郑样例")
                         .build())
                 .build();
 

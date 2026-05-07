@@ -1,0 +1,183 @@
+page: native_home_message
+targets:
+  - id: page-identity
+    type: information
+    description: LLM 能否判断当前页面是消息页，并知道底部导航中消息处于当前页面
+    evidence:
+      - id: message-title-and-tab
+        capability: navigational
+        role: text
+        name: 消息
+        minCount: 2
+  - id: global-action-structure
+    type: information
+    description: LLM 能否知道页面顶部存在可操作入口
+    evidence:
+      - id: message-top-action-buttons
+        capability: actionable
+        role: button
+        minCount: 3
+  - id: global-action-semantics
+    type: information
+    description: LLM 能否知道顶部操作入口包含电话和新增
+    evidence:
+      - id: top-phone-action
+        capability: semantic_label
+        role: button
+        name: 电话
+      - id: top-add-action
+        capability: semantic_label
+        role: button
+        name: 新增
+  - id: global-action-visual-state
+    type: information
+    description: LLM 能否知道新增入口带有红点提示
+    evidence:
+      - id: top-add-red-dot
+        capability: visual_state
+        role: visual_state
+        name: 红点提示
+  - id: search-and-service-entry
+    type: information
+    description: LLM 能否知道消息页提供搜索和客服入口
+    evidence:
+      - id: message-search-entry
+        capability: textual_content
+        role: button
+        name: 搜索
+      - id: message-customer-service
+        capability: textual_content
+        role: text
+        name: 客服
+  - id: message-filter-capability
+    type: information
+    description: LLM 能否知道消息页提供筛选能力
+    evidence:
+      - id: message-filter-scroll
+        capability: structural
+        role: scroll
+      - id: message-filter-me
+        capability: textual_content
+        role: text
+        name: 我
+      - id: message-filter-later
+        capability: textual_content
+        role: text
+        name: 稍后
+      - id: message-filter-unread
+        capability: textual_content
+        role: text
+        name: 未读
+      - id: message-filter-special-follow
+        capability: textual_content
+        role: text
+        name: 特别关注
+  - id: special-follow-guidance
+    type: information
+    description: LLM 能否知道页面有特别关注引导
+    evidence:
+      - id: message-special-follow-banner
+        capability: textual_content
+        role: text
+        name: 添加特别关注，重要消息不遗漏
+  - id: conversation-list-understanding
+    type: information
+    description: LLM 能否理解页面主体是消息会话列表
+    evidence:
+      - id: message-main-scroll-count
+        capability: structural
+        role: scroll
+        minCount: 2
+      - id: message-clickable-row-count
+        capability: actionable
+        role: button
+        minCount: 20
+  - id: conversation-content-readability
+    type: information
+    description: LLM 能否读出会话列表里的关键会话名称和摘要内容
+    evidence:
+      - id: message-conversation-peng-zihui
+        capability: textual_content
+        role: text
+        name: 梁晓舟
+      - id: message-conversation-file-account
+        capability: textual_content
+        role: text
+        name: 文件号
+      - id: message-conversation-app-account
+        capability: textual_content
+        role: text
+        name: 应用号
+      - id: message-conversation-yang-bing
+        capability: textual_content
+        role: text
+        name: 姚明远
+      - id: message-conversation-test-group
+        capability: textual_content
+        role: text
+        name: 消息卡片测试小组-UAT
+      - id: message-conversation-xie-chuanliu
+        capability: textual_content
+        role: text
+        name: 夏若辰
+      - id: message-conversation-cai-feng
+        capability: textual_content
+        role: text
+        name: 文景行
+      - id: message-summary-good-morning
+        capability: textual_content
+        role: text
+        name: 早上好
+      - id: message-summary-work-tomorrow
+        capability: textual_content
+        role: text
+        name: 明天上班
+  - id: conversation-metadata-understanding
+    type: information
+    description: LLM 能否理解会话列表包含时间、标签和状态等元信息
+    evidence:
+      - id: message-date-april-22
+        capability: textual_content
+        role: text
+        name: 04/22
+      - id: message-date-april-20
+        capability: textual_content
+        role: text
+        name: 04/20
+      - id: message-date-april-01
+        capability: textual_content
+        role: text
+        name: 04/01
+      - id: message-team-label
+        capability: textual_content
+        role: text
+        name: 团队
+  - id: bottom-navigation-understanding
+    type: information
+    description: LLM 能否知道当前 app 的底部主导航结构
+    evidence:
+      - id: message-bottom-assistant
+        capability: navigational
+        role: text
+        name: 助理
+      - id: message-bottom-message
+        capability: navigational
+        role: text
+        name: 消息
+        minCount: 2
+      - id: message-bottom-mail
+        capability: navigational
+        role: text
+        name: 邮件
+      - id: message-bottom-contacts
+        capability: navigational
+        role: text
+        name: 通讯录
+      - id: message-bottom-business
+        capability: navigational
+        role: text
+        name: 业务
+      - id: message-bottom-knowledge
+        capability: navigational
+        role: text
+        name: 知识

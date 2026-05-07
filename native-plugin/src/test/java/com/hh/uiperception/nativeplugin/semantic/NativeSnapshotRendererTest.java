@@ -27,7 +27,7 @@ public final class NativeSnapshotRendererTest {
                         .bounds(NativeBounds.parse("[0,160][1080,1900]"))
                         .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
                                 .addChild(NativeSemanticNode.builder(NativeSemanticRole.TEXT)
-                                        .name("张三")
+                                        .name("吴示例")
                                         .build())
                                 .addChild(NativeSemanticNode.builder(NativeSemanticRole.BUTTON)
                                         .name("拨打")
@@ -47,7 +47,7 @@ public final class NativeSnapshotRendererTest {
                 + "    - button \"搜索\" [ref=n1] [bounds=960,40,1040,120]\n"
                 + "  - list [scrollable] [ref=n2] [bounds=0,160,1080,1900]:\n"
                 + "    - listitem:\n"
-                + "      - text \"张三\"\n"
+                + "      - text \"吴示例\"\n"
                 + "      - button \"拨打\" [ref=n3] [bounds=920,180,1040,260]", snapshot);
     }
 

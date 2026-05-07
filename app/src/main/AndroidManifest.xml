@@ -21,6 +21,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".EvaluationResultActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

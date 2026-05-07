@@ -1,0 +1,139 @@
+page: native_home_business
+targets:
+  - id: page-identity
+    type: information
+    description: LLM 能否判断当前页面是业务页，并知道底部导航中业务处于当前页面
+    evidence:
+      - id: business-title-and-tab
+        capability: navigational
+        role: text
+        name: 业务
+        minCount: 2
+  - id: top-action-structure
+    type: information
+    description: LLM 能否知道页面顶部存在业务相关操作入口
+    evidence:
+      - id: business-top-action-buttons
+        capability: actionable
+        role: button
+        minCount: 3
+  - id: top-action-semantics
+    type: information
+    description: LLM 能否知道顶部操作包含应用入口和新增入口
+    evidence:
+      - id: business-top-app-entry
+        capability: semantic_label
+        role: button
+        name: 应用
+      - id: business-top-add-action
+        capability: semantic_label
+        role: button
+        name: 新增
+  - id: top-action-visual-state
+    type: information
+    description: LLM 能否知道顶部操作入口带有红点提示
+    evidence:
+      - id: business-top-action-red-dot
+        capability: visual_state
+        role: visual_state
+        name: 红点提示
+  - id: search-and-service-entry
+    type: information
+    description: LLM 能否知道业务页提供搜索和客服入口
+    evidence:
+      - id: business-search-entry
+        capability: textual_content
+        role: button
+        name: 搜索
+      - id: business-customer-service
+        capability: textual_content
+        role: text
+        name: 客服
+  - id: business-list-understanding
+    type: information
+    description: LLM 能否理解页面主体是可滚动的业务应用和服务列表
+    evidence:
+      - id: business-list-container
+        capability: structural
+        role: list
+      - id: business-list-items
+        capability: structural
+        role: listitem
+        minCount: 4
+  - id: recent-apps-understanding
+    type: information
+    description: LLM 能否知道业务页有最近使用应用分组
+    evidence:
+      - id: business-recent-used
+        capability: textual_content
+        role: text
+        name: 最近使用
+      - id: business-app-wifi
+        capability: textual_content
+        role: text
+        name: 华为Wi-Fi
+      - id: business-app-device-management
+        capability: textual_content
+        role: text
+        name: 设备管理
+      - id: business-his-mall-guidance
+        capability: textual_content
+        role: text
+        name: 前往HIS MALL发现更多应用
+  - id: business-service-readability
+    type: information
+    description: LLM 能否读出业务服务卡片的名称和服务状态
+    evidence:
+      - id: business-service-news
+        capability: textual_content
+        role: text
+        name: 一般资讯高级版1
+      - id: business-service-unavailable
+        capability: textual_content
+        role: text
+        name: 服务不可用(10308)
+      - id: business-service-decision-online
+        capability: textual_content
+        role: text
+        name: 决策在线
+      - id: business-service-top-issue
+        capability: textual_content
+        role: text
+        name: Top问题直通车
+  - id: service-card-visual-preview
+    type: information
+    description: LLM 能否知道部分业务服务卡片带有视觉预览内容
+    evidence:
+      - id: business-service-card-images
+        capability: visual_content
+        role: image
+        minCount: 4
+  - id: bottom-navigation-understanding
+    type: information
+    description: LLM 能否知道当前 app 的底部主导航结构
+    evidence:
+      - id: business-bottom-assistant
+        capability: navigational
+        role: text
+        name: 助理
+      - id: business-bottom-message
+        capability: navigational
+        role: text
+        name: 消息
+      - id: business-bottom-mail
+        capability: navigational
+        role: text
+        name: 邮件
+      - id: business-bottom-contacts
+        capability: navigational
+        role: text
+        name: 通讯录
+      - id: business-bottom-business
+        capability: navigational
+        role: text
+        name: 业务
+        minCount: 2
+      - id: business-bottom-knowledge
+        capability: navigational
+        role: text
+        name: 知识
