@@ -175,14 +175,14 @@ public class MessageHomeFragment extends Fragment {
         LinearLayout list = new LinearLayout(getActivity());
         list.setOrientation(LinearLayout.VERTICAL);
         list.addView(conversation("1", "1", "早上好", "04/22", "", false, R.drawable.bg_avatar_gray, 0xFFFFFFFF));
-        list.addView(conversation("辉", "彭子辉", "明天上班", "04/22", "", false, R.drawable.bg_avatar_cyan, 0xFF00A6D6));
+        list.addView(conversation("梁", "梁晓舟", "明天上班", "04/22", "", false, R.drawable.bg_avatar_cyan, 0xFF00A6D6));
         list.addView(conversation("文件", "文件号", "", "04/20", "", false, R.drawable.bg_avatar_purple, 0xFFFFFFFF));
         list.addView(conversation("应用", "应用号", "", "04/20", "", true, R.drawable.bg_avatar_purple, 0xFFFFFFFF));
-        list.addView(conversation("云", "杨兵", "早上好", "04/02", "", false, R.drawable.bg_avatar_light, 0xFF7FA6FF));
-        list.addView(conversation("组", "消息卡片测试小组-UAT", "杨兵: [卡片]testy_26040102", "04/01", "团队", false, R.drawable.bg_avatar_light, UiKit.BLUE));
-        list.addView(conversation("柳", "谢传柳", "明天放假", "03/31", "", false, R.drawable.bg_avatar_light, UiKit.BLUE));
-        list.addView(conversation("峰", "蔡峰", "晚上要加班", "03/20", "", false, R.drawable.bg_avatar_violet, 0xFF7C4DFF));
-        list.addView(conversation("叶", "叶明星", "周报已提交", "03/20", "", false, R.drawable.bg_avatar_light, 0xFF527DFF));
+        list.addView(conversation("姚", "姚明远", "早上好", "04/02", "", false, R.drawable.bg_avatar_light, 0xFF7FA6FF));
+        list.addView(conversation("组", "消息卡片测试小组-UAT", "姚明远: [卡片]testy_26040102", "04/01", "团队", false, R.drawable.bg_avatar_light, UiKit.BLUE));
+        list.addView(conversation("夏", "夏若辰", "明天放假", "03/31", "", false, R.drawable.bg_avatar_light, UiKit.BLUE));
+        list.addView(conversation("文", "文景行", "晚上要加班", "03/20", "", false, R.drawable.bg_avatar_violet, 0xFF7C4DFF));
+        list.addView(conversation("岳", "岳一鸣", "周报已提交", "03/20", "", false, R.drawable.bg_avatar_light, 0xFF527DFF));
 
         scrollView.addView(list, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,

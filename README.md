@@ -30,7 +30,11 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 :app
 ├── depends on :baseline-pages
 ├── depends on :perception-core
+├── depends on :evaluation
 └── depends on :native-plugin
+
+:evaluation
+└── depends on :perception-core
 
 :native-plugin
 └── depends on :perception-core
@@ -56,6 +60,7 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 - `:app`：应用入口、基准页面列表、浮动感知按钮、当前插件装配点。
 - `:baseline-pages`：基准页面、页面路由、基准意图资产。
 - `:perception-core`：感知编排核心，定义统一插件接口、请求/结果模型和 `PerceptionComposer`。
+- `:evaluation`：端上评测模块，读取各插件提供的 LLM 输入、执行标注匹配，并生成 `evaluation-result.json`。
 - `:native-plugin`：Native 技术方向工具集，已实现 native 页面抓取与 native XML 转换。
 - `:web-plugin`：Web 技术方向占位模块，尚未实现插件类。
 - `:ocr-plugin`：OCR 技术方向占位模块，尚未实现插件类。
@@ -63,7 +68,9 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 
 ## 当前链路
 
-当前 `:app` 只装配了 `NativePerceptionPlugin`，所以一次点击只执行 native 方向。
+当前 `:app` 已打通 native 方向的采集、转换、评测和手机端结果展示。Web、OCR、小模型模块已预留，后续只要按统一 LLM 输入契约输出 transformed 产物，即可被评测模块纳入同一套标注和规则下比较。
+
+![多 Plugin 测评流程](docs/assets/evaluation-flow.png)
 
 ```text
 基准页面
@@ -81,17 +88,24 @@ raw native XML
   ↓
 NativePerceptionPlugin.transform()
   ↓
-transformed native XML
+standard LLM input snapshot
   ↓
 captures/{baselineId}/runs/{runId}/native/raw
 captures/{baselineId}/runs/{runId}/native/transformed
+  ↓
+OnDeviceEvaluationRunner
+  ↓
+captures/{baselineId}/runs/{runId}/evaluation/evaluation-result.json
+  ↓
+EvaluationResultActivity
 ```
 
 已验证的 native 产物示例：
 
 ```text
 captures/native_home_mail/runs/{runId}/native/raw/native_xml_{timestamp}.xml
-captures/native_home_mail/runs/{runId}/native/transformed/native_xml_basic_transform_{timestamp}.xml
+captures/native_home_mail/runs/{runId}/native/transformed/native_semantic_snapshot_{timestamp}.yml
+captures/native_home_mail/runs/{runId}/evaluation/evaluation-result.json
 ```
 
 ## 核心接口
@@ -167,7 +181,7 @@ PerceptionRunResult
     └── PerceptionEntryResult(small_model)
 ```
 
-当前实现是顺序执行，不做并发、不做融合、不做评测。
+当前实现是顺序执行，不做并发、不做融合。评测由 `:evaluation` 模块在本次 run 产物落盘后执行。
 
 ## 数据产物
 
@@ -183,7 +197,30 @@ captures/{baselineId}/runs/{runId}/{pluginName}/transformed/{source}_{timestamp}
 当前 native 链路输出：
 
 - raw：完整原生 View 层级 XML。
-- transformed：只保留 `index`、`class`、`resource-id`、`text`、`bounds` 的 XML。
+- transformed：标准 LLM 输入快照，当前沿用 native semantic snapshot 文本结构。
+
+参与测评的 transformed 产物约定：
+
+```text
+{pluginName}/transformed/llm_input_{timestamp}.yml
+```
+
+当前 native 旧文件名仍兼容：
+
+```text
+native/transformed/native_semantic_snapshot_{timestamp}.yml
+```
+
+评测结果中会统一识别为：
+
+```json
+{
+  "id": "native.llm_input",
+  "plugin": "native",
+  "stage": "transformed",
+  "type": "llm_input"
+}
+```
 
 ## 添加 Web 能力
 
@@ -271,7 +308,7 @@ public final class OcrPerceptionPlugin implements PerceptionPlugin {
 OCR 输出建议：
 
 - raw 输出保留 OCR 引擎原始信息。
-- transformed 输出稳定 JSON，至少包含文本、bounds、置信度和阅读顺序。
+- transformed 输出标准 LLM 输入快照，即 `{pluginName}/transformed/llm_input_{timestamp}.yml`。
 
 ## 添加小模型能力
 
@@ -312,9 +349,13 @@ public final class SmallModelPerceptionPlugin implements PerceptionPlugin
 
 - Native 基准页面：消息、邮件、通讯录、业务。
 - Native 原始 XML 抓取。
-- Native XML 转换。
+- Native XML 转换为标准 LLM 输入快照。
 - `:perception-core` 多插件 plan / run / entry 结果结构。
 - 通过浮动按钮触发 native capture -> transform 链路。
+- `:evaluation` 端上评测模块。
+- 手机端 `evaluation-result.json` 生成。
+- 手机端评测结果页。
+- 统一 LLM 输入候选产物识别，支持 `{plugin}/transformed/llm_input_*.yml`。
 - `:web-plugin`、`:ocr-plugin`、`:small-model-plugin` 模块占位。
 
 未完成：
@@ -322,5 +363,10 @@ public final class SmallModelPerceptionPlugin implements PerceptionPlugin
 - 真实 Web 基准页与 Web DOM 抓取。
 - OCR 截图、识别与转换能力。
 - 小模型视觉理解能力。
+- 不同插件的单独覆盖率统计展示。
 - 多源融合。
-- 自动评测链路。
+
+## 相关文档
+
+- [Native XML 处理路线](docs/android-native-xml-transform-route.md)
+- [其他采集方式评测接入说明](docs/plugin-evaluation-integration.md)

@@ -99,7 +99,7 @@ targets:
       - id: message-conversation-peng-zihui
         capability: textual_content
         role: text
-        name: 彭子辉
+        name: 梁晓舟
       - id: message-conversation-file-account
         capability: textual_content
         role: text
@@ -111,7 +111,7 @@ targets:
       - id: message-conversation-yang-bing
         capability: textual_content
         role: text
-        name: 杨兵
+        name: 姚明远
       - id: message-conversation-test-group
         capability: textual_content
         role: text
@@ -119,11 +119,11 @@ targets:
       - id: message-conversation-xie-chuanliu
         capability: textual_content
         role: text
-        name: 谢传柳
+        name: 夏若辰
       - id: message-conversation-cai-feng
         capability: textual_content
         role: text
-        name: 蔡峰
+        name: 文景行
       - id: message-summary-good-morning
         capability: textual_content
         role: text

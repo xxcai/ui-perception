@@ -18,7 +18,7 @@ public final class NativeViewXmlParserTest {
                 + "<node index=\"1\" class=\"android.widget.TextView\" text=\"  邮件  \" resource-id=\"com.demo:id/title\" bounds=\"[32,48][160,112]\" enabled=\"true\" />"
                 + "<node index=\"2\" class=\"android.widget.ImageButton\" desc=\"搜索\" clickable=\"true\" enabled=\"true\" bounds=\"[960,40][1040,120]\" />"
                 + "<node index=\"3\" class=\"androidx.recyclerview.widget.RecyclerView\" scrollable=\"true\" enabled=\"true\" bounds=\"[0,160][1080,1900]\">"
-                + "<node index=\"4\" class=\"android.widget.TextView\" text=\"张三\" selected=\"true\" bounds=\"[32,180][180,230]\" />"
+                + "<node index=\"4\" class=\"android.widget.TextView\" text=\"吴示例\" selected=\"true\" bounds=\"[32,180][180,230]\" />"
                 + "</node>"
                 + "</node>"
                 + "</hierarchy>";

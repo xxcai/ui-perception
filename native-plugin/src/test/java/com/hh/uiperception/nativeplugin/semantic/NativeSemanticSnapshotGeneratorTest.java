@@ -15,7 +15,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
                 + "<node class=\"android.widget.TextView\" text=\"提交\" clickable=\"true\" enabled=\"true\" bounds=\"[800,100][1000,180]\" />"
                 + "<node class=\"androidx.recyclerview.widget.RecyclerView\" scrollable=\"true\" enabled=\"true\" bounds=\"[0,160][1080,1900]\">"
                 + "<node class=\"android.widget.LinearLayout\" bounds=\"[0,160][1080,320]\">"
-                + "<node class=\"android.widget.TextView\" text=\"张三\" bounds=\"[32,180][180,230]\" />"
+                + "<node class=\"android.widget.TextView\" text=\"吴示例\" bounds=\"[32,180][180,230]\" />"
                 + "<node class=\"android.widget.Button\" text=\"拨打\" clickable=\"true\" bounds=\"[920,180][1040,260]\" />"
                 + "</node>"
                 + "</node>"
@@ -30,7 +30,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
                 + "  - button \"提交\" [ref=n1] [bounds=800,100,1000,180]\n"
                 + "  - list [scrollable] [ref=n2] [bounds=0,160,1080,1900]:\n"
                 + "    - listitem:\n"
-                + "      - text \"张三\"\n"
+                + "      - text \"吴示例\"\n"
                 + "      - button \"拨打\" [ref=n3] [bounds=920,180,1040,260]", snapshot);
     }
 

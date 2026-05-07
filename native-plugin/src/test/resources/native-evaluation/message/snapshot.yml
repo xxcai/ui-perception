@@ -46,7 +46,7 @@
             - text "辉"
             - generic:
               - generic:
-                - text "彭子辉"
+                - text "梁晓舟"
                 - text "04/22"
               - text "明天上班"
               - generic
@@ -72,7 +72,7 @@
             - text "云"
             - generic:
               - generic:
-                - text "杨兵"
+                - text "姚明远"
                 - text "04/02"
               - text "早上好"
               - generic
@@ -83,13 +83,13 @@
                 - text "消息卡片测试小组-UAT"
                 - text "团队"
                 - text "04/01"
-              - text "杨兵: [卡片]testy_26040102"
+              - text "姚明远: [卡片]testy_26040102"
               - generic
           - generic:
             - text "柳"
             - generic:
               - generic:
-                - text "谢传柳"
+                - text "夏若辰"
                 - text "03/31"
               - text "明天放假"
               - generic
@@ -97,7 +97,7 @@
             - text "峰"
             - generic:
               - generic:
-                - text "蔡峰"
+                - text "文景行"
                 - text "03/20"
               - text "晚上要加班"
               - generic
@@ -105,7 +105,7 @@
             - text "叶"
             - generic:
               - generic:
-                - text "叶明星"
+                - text "岳一鸣"
                 - text "03/20"
               - text "周报已提交"
               - generic

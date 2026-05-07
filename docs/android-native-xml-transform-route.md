@@ -290,7 +290,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
                 bounds="[0,825][1080,1014]"
                 clickable="true" focusable="true">
             <node class="android.widget.TextView" text="辉" bounds="[42,851][147,956]" />
-            <node class="android.widget.TextView" text="彭子辉" bounds="[184,851][870,914]" />
+            <node class="android.widget.TextView" text="梁晓舟" bounds="[184,851][870,914]" />
             <node class="android.widget.TextView" text="明天上班" bounds="[184,925][1038,978]" />
           </node>
           ...
@@ -316,7 +316,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
           - button [ref=n16] [bounds=0,825,1080,1014]:
             - text "辉"
             - generic:
-              - text "彭子辉"
+              - text "梁晓舟"
               - text "明天上班"
 ```
 
