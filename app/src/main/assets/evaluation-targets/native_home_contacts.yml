@@ -1,6 +1,155 @@
 page: native_home_contacts
 targets:
-  - id: contacts-label-count
-    role: text
-    name: 通讯录
-    minCount: 2
+  - id: page-identity
+    type: information
+    description: LLM 能否判断当前页面是通讯录页，并知道底部导航中通讯录处于当前页面
+    evidence:
+      - id: contacts-title-and-tab
+        role: text
+        name: 通讯录
+        minCount: 2
+  - id: top-action-structure
+    type: information
+    description: LLM 能否知道页面顶部存在通讯录相关操作入口
+    evidence:
+      - id: contacts-top-action-buttons
+        capability: actionable
+        role: button
+        minCount: 2
+  - id: top-action-semantics
+    type: information
+    description: LLM 能否知道顶部操作包含新增联系人或新增入口
+    evidence:
+      - id: contacts-top-add-action
+        capability: semantic_label
+        role: button
+        name: 新增
+  - id: top-action-visual-state
+    type: information
+    description: LLM 能否知道新增入口带有红点提示
+    evidence:
+      - id: contacts-top-add-red-dot
+        capability: visual_state
+        role: visual_state
+        name: 红点提示
+  - id: search-and-service-entry
+    type: information
+    description: LLM 能否知道通讯录页提供搜索和客服入口
+    evidence:
+      - id: contacts-search-entry
+        role: button
+        name: 搜索
+      - id: contacts-customer-service
+        role: text
+        name: 客服
+  - id: shortcut-entry-understanding
+    type: information
+    description: LLM 能否知道通讯录顶部提供常用联系人入口
+    evidence:
+      - id: contacts-shortcut-xiaowei
+        role: text
+        name: 小微
+      - id: contacts-shortcut-organization
+        role: text
+        name: 组织
+      - id: contacts-shortcut-team
+        role: text
+        name: 团队
+      - id: contacts-shortcut-follow
+        role: text
+        name: 关注
+  - id: contact-list-understanding
+    type: information
+    description: LLM 能否理解页面主体是按字母分组的联系人列表
+    evidence:
+      - id: contacts-list-container
+        role: list
+      - id: contacts-list-items
+        role: listitem
+        minCount: 4
+      - id: contacts-letter-c
+        role: text
+        name: C
+      - id: contacts-letter-l
+        role: text
+        name: L
+      - id: contacts-letter-w
+        role: text
+        name: W
+  - id: contact-content-readability
+    type: information
+    description: LLM 能否读出联系人姓名、账号和所属组织信息
+    evidence:
+      - id: contacts-name-chen-yuqing
+        role: text
+        name: 陈雨晴
+      - id: contacts-account-chen-yuqing
+        role: text
+        name: WX1035278
+      - id: contacts-dept-chen-yuqing
+        role: text
+        name: 产品体验部@深圳
+      - id: contacts-name-cheng-yuan
+        role: text
+        name: 程远
+      - id: contacts-account-cheng-yuan
+        role: text
+        name: 30078216
+      - id: contacts-tag-cooperator
+        role: text
+        name: 合作人员
+      - id: contacts-name-li-ruikang
+        role: text
+        name: 李瑞康
+      - id: contacts-account-li-ruikang
+        role: text
+        name: WX1160068
+      - id: contacts-name-liu-siyuan
+        role: text
+        name: 刘思远
+      - id: contacts-name-wang-anran
+        role: text
+        name: 王安然
+  - id: alphabet-index-understanding
+    type: information
+    description: LLM 能否知道页面右侧提供字母索引用于快速跳转联系人分组
+    evidence:
+      - id: contacts-index-c
+        capability: semantic_label
+        role: button
+        name: C
+      - id: contacts-index-l
+        capability: semantic_label
+        role: button
+        name: L
+      - id: contacts-index-w
+        capability: semantic_label
+        role: button
+        name: W
+      - id: contacts-index-x
+        capability: semantic_label
+        role: button
+        name: X
+  - id: bottom-navigation-understanding
+    type: information
+    description: LLM 能否知道当前 app 的底部主导航结构
+    evidence:
+      - id: contacts-bottom-assistant
+        role: text
+        name: 助理
+      - id: contacts-bottom-message
+        role: text
+        name: 消息
+      - id: contacts-bottom-mail
+        role: text
+        name: 邮件
+      - id: contacts-bottom-contacts
+        role: text
+        name: 通讯录
+        minCount: 2
+      - id: contacts-bottom-business
+        role: text
+        name: 业务
+      - id: contacts-bottom-knowledge
+        role: text
+        name: 知识

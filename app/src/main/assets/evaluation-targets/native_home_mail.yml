@@ -1,6 +1,144 @@
 page: native_home_mail
 targets:
-  - id: mail-label-count
-    role: text
-    name: 邮件
-    minCount: 2
+  - id: page-identity
+    type: information
+    description: LLM 能否判断当前页面是邮件页，并知道底部导航中邮件处于当前页面
+    evidence:
+      - id: mail-title-and-tab
+        role: text
+        name: 邮件
+        minCount: 2
+  - id: mailbox-switching
+    type: information
+    description: LLM 能否知道邮件标题旁有下拉入口，可切换邮箱或邮件范围
+    evidence:
+      - id: mail-title-dropdown
+        capability: semantic_label
+        role: button
+        name: 邮件
+  - id: top-action-structure
+    type: information
+    description: LLM 能否知道页面顶部存在邮件相关操作入口
+    evidence:
+      - id: mail-top-action-buttons
+        capability: actionable
+        role: button
+        minCount: 3
+  - id: top-action-semantics
+    type: information
+    description: LLM 能否知道顶部操作包含筛选和新增入口
+    evidence:
+      - id: mail-top-filter-action
+        capability: semantic_label
+        role: button
+        name: 筛选
+      - id: mail-top-add-action
+        capability: semantic_label
+        role: button
+        name: 新增
+  - id: top-action-visual-state
+    type: information
+    description: LLM 能否知道新增入口带有红点提示
+    evidence:
+      - id: mail-top-add-red-dot
+        capability: visual_state
+        role: visual_state
+        name: 红点提示
+  - id: search-and-service-entry
+    type: information
+    description: LLM 能否知道邮件页提供搜索和客服入口
+    evidence:
+      - id: mail-search-entry
+        role: button
+        name: 搜索
+      - id: mail-customer-service
+        role: text
+        name: 客服
+  - id: mail-list-understanding
+    type: information
+    description: LLM 能否理解页面主体是邮件列表
+    evidence:
+      - id: mail-list-container
+        role: list
+      - id: mail-list-items
+        role: listitem
+        minCount: 6
+  - id: mail-content-readability
+    type: information
+    description: LLM 能否读出邮件列表里的发件人、主题和摘要内容
+    evidence:
+      - id: mail-sender-platform-notice
+        role: text
+        name: 平台通知
+      - id: mail-subject-test-plan
+        role: text
+        name: 测试计划同步
+      - id: mail-sender-product-operation
+        role: text
+        name: 产品运营
+      - id: mail-subject-homepage-feedback
+        role: text
+        name: 首页改版体验反馈
+      - id: mail-sender-quality
+        role: text
+        name: 质量保障部
+      - id: mail-subject-inspection-report
+        role: text
+        name: 自动化巡检日报
+      - id: mail-sender-project-office
+        role: text
+        name: 项目管理办公室
+      - id: mail-sender-system-reminder
+        role: text
+        name: 系统提醒
+      - id: mail-sender-dev-platform
+        role: text
+        name: 研发效能平台
+      - id: mail-sender-security
+        role: text
+        name: 安全合规
+  - id: mail-metadata-understanding
+    type: information
+    description: LLM 能否理解邮件列表包含时间和日期元信息
+    evidence:
+      - id: mail-time-morning
+        role: text
+        name: 09:12
+      - id: mail-date-yesterday
+        role: text
+        name: 昨天
+      - id: mail-date-monday
+        role: text
+        name: 周一
+      - id: mail-date-april-25
+        role: text
+        name: 04/25
+      - id: mail-date-april-24
+        role: text
+        name: 04/24
+      - id: mail-date-april-22
+        role: text
+        name: 04/22
+  - id: bottom-navigation-understanding
+    type: information
+    description: LLM 能否知道当前 app 的底部主导航结构
+    evidence:
+      - id: mail-bottom-assistant
+        role: text
+        name: 助理
+      - id: mail-bottom-message
+        role: text
+        name: 消息
+      - id: mail-bottom-mail
+        role: text
+        name: 邮件
+        minCount: 2
+      - id: mail-bottom-contacts
+        role: text
+        name: 通讯录
+      - id: mail-bottom-business
+        role: text
+        name: 业务
+      - id: mail-bottom-knowledge
+        role: text
+        name: 知识

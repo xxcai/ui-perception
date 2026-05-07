@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -56,14 +57,18 @@ public final class OnDeviceEvaluationRunner {
                          String targetsYaml) throws IOException {
         List<EvaluationArtifact> artifacts = scanArtifacts(runDir);
         List<CountTarget> countTargets = CountTargetsParser.parse(targetsYaml);
+        List<InformationTarget> informationTargets = InformationTargetsParser.parse(targetsYaml);
         List<CountResult> countResults = evaluateCounts(runDir, artifacts, countTargets);
+        List<TargetResult> targetResults = evaluateInformationTargets(
+                runDir, artifacts, informationTargets);
         File evaluationDir = new File(runDir, "evaluation");
         if (!evaluationDir.exists() && !evaluationDir.mkdirs()) {
             throw new IOException("创建评测目录失败: " + evaluationDir.getAbsolutePath());
         }
         File resultFile = new File(evaluationDir, "evaluation-result.json");
         try (FileWriter writer = new FileWriter(resultFile)) {
-            writer.write(renderResult(baselineId, runId, generatedAt, artifacts, countResults));
+            writer.write(renderResult(baselineId, runId, generatedAt, artifacts,
+                    countResults, targetResults));
         }
         return resultFile;
     }
@@ -132,6 +137,41 @@ public final class OnDeviceEvaluationRunner {
         return results;
     }
 
+    private static List<TargetResult> evaluateInformationTargets(
+            File runDir,
+            List<EvaluationArtifact> artifacts,
+            List<InformationTarget> targets) {
+        File snapshotFile = findSemanticSnapshot(runDir, artifacts);
+        List<SnapshotNode> nodes = snapshotFile != null
+                ? SnapshotNodeParser.parse(readFileOrEmpty(snapshotFile)) : new ArrayList<>();
+        List<TargetResult> results = new ArrayList<>();
+        for (InformationTarget target : targets) {
+            List<EvidenceResult> evidenceResults = new ArrayList<>();
+            for (CountTarget evidence : target.evidence()) {
+                int count = countMatches(nodes, evidence);
+                evidenceResults.add(new EvidenceResult(evidence, count,
+                        count >= evidence.minCount() ? STATUS_PASS : STATUS_FAIL));
+            }
+            results.add(new TargetResult(target, evidenceResults,
+                    hasFailedEvidence(evidenceResults) ? STATUS_FAIL : STATUS_PASS));
+        }
+        return results;
+    }
+
+    private static int countMatches(List<SnapshotNode> nodes, CountTarget target) {
+        int count = 0;
+        for (SnapshotNode node : nodes) {
+            if (!target.role().isEmpty() && !target.role().equals(node.role())) {
+                continue;
+            }
+            if (!target.name().isEmpty() && !target.name().equals(node.name())) {
+                continue;
+            }
+            count++;
+        }
+        return count;
+    }
+
     private static File findSemanticSnapshot(File runDir, List<EvaluationArtifact> artifacts) {
         for (EvaluationArtifact artifact : artifacts) {
             if ("native-semantic-snapshot".equals(artifact.id())
@@ -144,9 +184,11 @@ public final class OnDeviceEvaluationRunner {
 
     private static String renderResult(String baselineId, String runId, long generatedAt,
                                        List<EvaluationArtifact> artifacts,
-                                       List<CountResult> countResults) {
+                                       List<CountResult> countResults,
+                                       List<TargetResult> targetResults) {
         String overallStatus = artifacts.isEmpty() || hasFailedArtifact(artifacts)
                 || hasFailedCount(countResults)
+                || hasFailedTarget(targetResults)
                 ? STATUS_FAIL : STATUS_PASS;
         StringBuilder builder = new StringBuilder();
         builder.append("{\n");
@@ -157,10 +199,16 @@ public final class OnDeviceEvaluationRunner {
         builder.append(",\n");
         appendCountResults(builder, countResults);
         builder.append(",\n");
+        appendTargetResults(builder, targetResults);
+        builder.append(",\n");
         builder.append("  \"summary\": {\n");
         appendNumberField(builder, 2, "artifactCount", artifacts.size(), true);
         appendNumberField(builder, 2, "countTargetCount", countResults.size(), true);
         appendNumberField(builder, 2, "countTargetPassCount", countPassed(countResults), true);
+        appendNumberField(builder, 2, "targetCount", targetResults.size(), true);
+        appendNumberField(builder, 2, "targetPassCount", targetPassed(targetResults), true);
+        appendNumberField(builder, 2, "evidenceCount", evidenceCount(targetResults), true);
+        appendNumberField(builder, 2, "evidencePassCount", evidencePassed(targetResults), true);
         appendStringField(builder, 2, "status", overallStatus, false);
         builder.append("  }\n");
         builder.append("}\n");
@@ -215,6 +263,59 @@ public final class OnDeviceEvaluationRunner {
         builder.append(']');
     }
 
+    private static void appendTargetResults(StringBuilder builder, List<TargetResult> results) {
+        builder.append("  \"targetResults\": [");
+        if (!results.isEmpty()) {
+            builder.append('\n');
+            for (int i = 0; i < results.size(); i++) {
+                TargetResult result = results.get(i);
+                builder.append("    {\n");
+                appendStringField(builder, 3, "id", result.target().id(), true);
+                appendStringField(builder, 3, "type", result.target().type(), true);
+                appendStringField(builder, 3, "description", result.target().description(), true);
+                appendNumberField(builder, 3, "passedEvidence", evidencePassed(result), true);
+                appendNumberField(builder, 3, "totalEvidence", result.evidenceResults().size(), true);
+                appendDecimalField(builder, 3, "score", score(result), true);
+                appendEvidenceResults(builder, result.evidenceResults());
+                builder.append(",\n");
+                appendStringField(builder, 3, "status", result.status(), false);
+                builder.append("    }");
+                if (i < results.size() - 1) {
+                    builder.append(',');
+                }
+                builder.append('\n');
+            }
+            builder.append("  ");
+        }
+        builder.append(']');
+    }
+
+    private static void appendEvidenceResults(StringBuilder builder, List<EvidenceResult> results) {
+        appendIndent(builder, 3);
+        builder.append("\"evidenceResults\": [");
+        if (!results.isEmpty()) {
+            builder.append('\n');
+            for (int i = 0; i < results.size(); i++) {
+                EvidenceResult result = results.get(i);
+                builder.append("        {\n");
+                appendStringField(builder, 5, "id", result.evidence().id(), true);
+                appendStringField(builder, 5, "capability", result.evidence().capability(), true);
+                appendStringField(builder, 5, "role", result.evidence().role(), true);
+                appendStringField(builder, 5, "name", result.evidence().name(), true);
+                appendNumberField(builder, 5, "minCount", result.evidence().minCount(), true);
+                appendNumberField(builder, 5, "actualCount", result.actualCount(), true);
+                appendStringField(builder, 5, "status", result.status(), false);
+                builder.append("        }");
+                if (i < results.size() - 1) {
+                    builder.append(',');
+                }
+                builder.append('\n');
+            }
+            appendIndent(builder, 3);
+        }
+        builder.append(']');
+    }
+
     private static void appendStringField(StringBuilder builder, int indent, String key,
                                           String value, boolean comma) {
         appendIndent(builder, indent);
@@ -229,6 +330,17 @@ public final class OnDeviceEvaluationRunner {
                                           long value, boolean comma) {
         appendIndent(builder, indent);
         builder.append('"').append(key).append("\": ").append(value);
+        if (comma) {
+            builder.append(',');
+        }
+        builder.append('\n');
+    }
+
+    private static void appendDecimalField(StringBuilder builder, int indent, String key,
+                                           double value, boolean comma) {
+        appendIndent(builder, indent);
+        builder.append('"').append(key).append("\": ")
+                .append(String.format(Locale.US, "%.2f", value));
         if (comma) {
             builder.append(',');
         }
@@ -257,6 +369,24 @@ public final class OnDeviceEvaluationRunner {
         return false;
     }
 
+    private static boolean hasFailedTarget(List<TargetResult> results) {
+        for (TargetResult result : results) {
+            if (!STATUS_PASS.equals(result.status())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasFailedEvidence(List<EvidenceResult> results) {
+        for (EvidenceResult result : results) {
+            if (!STATUS_PASS.equals(result.status())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static long countPassed(List<CountResult> results) {
         long count = 0;
         for (CountResult result : results) {
@@ -265,6 +395,49 @@ public final class OnDeviceEvaluationRunner {
             }
         }
         return count;
+    }
+
+    private static long targetPassed(List<TargetResult> results) {
+        long count = 0;
+        for (TargetResult result : results) {
+            if (STATUS_PASS.equals(result.status())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static long evidenceCount(List<TargetResult> results) {
+        long count = 0;
+        for (TargetResult result : results) {
+            count += result.evidenceResults().size();
+        }
+        return count;
+    }
+
+    private static long evidencePassed(List<TargetResult> results) {
+        long count = 0;
+        for (TargetResult result : results) {
+            count += evidencePassed(result);
+        }
+        return count;
+    }
+
+    private static long evidencePassed(TargetResult result) {
+        long count = 0;
+        for (EvidenceResult evidenceResult : result.evidenceResults()) {
+            if (STATUS_PASS.equals(evidenceResult.status())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static double score(TargetResult result) {
+        if (result.evidenceResults().isEmpty()) {
+            return 0.0;
+        }
+        return (double) evidencePassed(result) / result.evidenceResults().size();
     }
 
     private static String contentTypeFor(String filename) {
@@ -376,12 +549,14 @@ public final class OnDeviceEvaluationRunner {
 
     private static final class CountTarget {
         private final String id;
+        private final String capability;
         private final String role;
         private final String name;
         private final int minCount;
 
-        CountTarget(String id, String role, String name, int minCount) {
+        CountTarget(String id, String capability, String role, String name, int minCount) {
             this.id = id;
+            this.capability = capability;
             this.role = role;
             this.name = name;
             this.minCount = minCount;
@@ -389,6 +564,10 @@ public final class OnDeviceEvaluationRunner {
 
         String id() {
             return id;
+        }
+
+        String capability() {
+            return capability;
         }
 
         String role() {
@@ -421,6 +600,85 @@ public final class OnDeviceEvaluationRunner {
 
         int actualCount() {
             return actualCount;
+        }
+
+        String status() {
+            return status;
+        }
+    }
+
+    private static final class InformationTarget {
+        private final String id;
+        private final String type;
+        private final String description;
+        private final List<CountTarget> evidence;
+
+        InformationTarget(String id, String type, String description, List<CountTarget> evidence) {
+            this.id = id;
+            this.type = type;
+            this.description = description;
+            this.evidence = evidence;
+        }
+
+        String id() {
+            return id;
+        }
+
+        String type() {
+            return type;
+        }
+
+        String description() {
+            return description;
+        }
+
+        List<CountTarget> evidence() {
+            return evidence;
+        }
+    }
+
+    private static final class EvidenceResult {
+        private final CountTarget evidence;
+        private final int actualCount;
+        private final String status;
+
+        EvidenceResult(CountTarget evidence, int actualCount, String status) {
+            this.evidence = evidence;
+            this.actualCount = actualCount;
+            this.status = status;
+        }
+
+        CountTarget evidence() {
+            return evidence;
+        }
+
+        int actualCount() {
+            return actualCount;
+        }
+
+        String status() {
+            return status;
+        }
+    }
+
+    private static final class TargetResult {
+        private final InformationTarget target;
+        private final List<EvidenceResult> evidenceResults;
+        private final String status;
+
+        TargetResult(InformationTarget target, List<EvidenceResult> evidenceResults,
+                     String status) {
+            this.target = target;
+            this.evidenceResults = evidenceResults;
+            this.status = status;
+        }
+
+        InformationTarget target() {
+            return target;
+        }
+
+        List<EvidenceResult> evidenceResults() {
+            return evidenceResults;
         }
 
         String status() {
@@ -524,13 +782,14 @@ public final class OnDeviceEvaluationRunner {
             for (Map<String, String> entry : entries) {
                 String id = entry.get("id");
                 String role = entry.get("role");
-                String minCount = entry.get("minCount");
-                if (id == null || id.isEmpty() || role == null || role.isEmpty()
-                        || minCount == null || minCount.isEmpty()) {
-                    continue;
-                }
+            String minCount = entry.getOrDefault("minCount", "1");
+            if (id == null || id.isEmpty() || role == null || role.isEmpty()
+                    || minCount.isEmpty()) {
+                continue;
+            }
                 targets.add(new CountTarget(
                         id,
+                        entry.getOrDefault("capability", ""),
                         role,
                         entry.getOrDefault("name", ""),
                         parseInt(minCount)
@@ -539,12 +798,141 @@ public final class OnDeviceEvaluationRunner {
             return targets;
         }
 
-        private static int parseInt(String value) {
+        static int parseInt(String value) {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 return 0;
             }
+        }
+    }
+
+    private static final class InformationTargetsParser {
+        private InformationTargetsParser() {
+        }
+
+        static List<InformationTarget> parse(String yaml) {
+            List<YamlLine> lines = SimpleYamlParser.parseLines(yaml);
+            List<InformationTarget> targets = new ArrayList<>();
+            int sequenceStart = findSequenceStart(lines, "targets");
+            if (sequenceStart < 0) {
+                return targets;
+            }
+
+            int sequenceIndent = lines.get(sequenceStart).indent;
+            int targetIndent = -1;
+            Map<String, String> currentTarget = null;
+            Map<String, String> currentEvidence = null;
+            List<CountTarget> currentEvidenceList = new ArrayList<>();
+            int evidenceIndent = -1;
+            boolean inEvidence = false;
+
+            for (int i = sequenceStart + 1; i < lines.size(); i++) {
+                YamlLine line = lines.get(i);
+                if (line.indent <= sequenceIndent) {
+                    break;
+                }
+                if (line.isListItem && (targetIndent < 0 || line.indent == targetIndent)) {
+                    if (targetIndent < 0) {
+                        targetIndent = line.indent;
+                    }
+                    addEvidence(currentEvidenceList, currentEvidence);
+                    addInformationTarget(targets, currentTarget, currentEvidenceList);
+                    currentTarget = new LinkedHashMap<>();
+                    currentEvidence = null;
+                    currentEvidenceList = new ArrayList<>();
+                    evidenceIndent = -1;
+                    inEvidence = false;
+                    if (line.key != null && !line.key.isEmpty()) {
+                        currentTarget.put(line.key, line.value);
+                    }
+                    continue;
+                }
+                if (currentTarget == null) {
+                    continue;
+                }
+                if ("evidence".equals(line.key) && !line.isListItem) {
+                    inEvidence = true;
+                    currentEvidence = null;
+                    evidenceIndent = -1;
+                    continue;
+                }
+                if (inEvidence && line.isListItem && line.indent > targetIndent) {
+                    addEvidence(currentEvidenceList, currentEvidence);
+                    currentEvidence = new LinkedHashMap<>();
+                    evidenceIndent = line.indent;
+                    if (line.key != null && !line.key.isEmpty()) {
+                        currentEvidence.put(line.key, line.value);
+                    }
+                    continue;
+                }
+                if (currentEvidence != null && line.indent > evidenceIndent
+                        && line.key != null && !line.key.isEmpty()) {
+                    currentEvidence.put(line.key, line.value);
+                } else if (!inEvidence && line.indent > targetIndent
+                        && line.key != null && !line.key.isEmpty()) {
+                    currentTarget.put(line.key, line.value);
+                }
+            }
+            addEvidence(currentEvidenceList, currentEvidence);
+            addInformationTarget(targets, currentTarget, currentEvidenceList);
+            return targets;
+        }
+
+        private static int findSequenceStart(List<YamlLine> lines, String sequenceKey) {
+            for (int i = 0; i < lines.size(); i++) {
+                YamlLine line = lines.get(i);
+                if (line.indent == 0 && sequenceKey.equals(line.key)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private static void addInformationTarget(List<InformationTarget> targets,
+                                                 Map<String, String> entry,
+                                                 List<CountTarget> evidence) {
+            if (entry == null || evidence.isEmpty()) {
+                return;
+            }
+            String id = entry.get("id");
+            if (id == null || id.isEmpty()) {
+                return;
+            }
+            targets.add(new InformationTarget(
+                    id,
+                    entry.getOrDefault("type", "information"),
+                    entry.getOrDefault("description", ""),
+                    evidence
+            ));
+        }
+
+        private static void addEvidence(List<CountTarget> evidence,
+                                        Map<String, String> entry) {
+            if (entry == null) {
+                return;
+            }
+            CountTarget target = countTargetFrom(entry);
+            if (target != null) {
+                evidence.add(target);
+            }
+        }
+
+        private static CountTarget countTargetFrom(Map<String, String> entry) {
+            String id = entry.get("id");
+            String role = entry.get("role");
+            String minCount = entry.getOrDefault("minCount", "1");
+            if (id == null || id.isEmpty() || role == null || role.isEmpty()
+                    || minCount.isEmpty()) {
+                return null;
+            }
+            return new CountTarget(
+                    id,
+                    entry.getOrDefault("capability", ""),
+                    role,
+                    entry.getOrDefault("name", ""),
+                    CountTargetsParser.parseInt(minCount)
+            );
         }
     }
 
@@ -568,12 +956,19 @@ public final class OnDeviceEvaluationRunner {
             }
 
             Map<String, String> current = null;
+            int sequenceIndent = lines.get(sequenceStart).indent;
+            int itemIndent = -1;
+            int fieldIndent = -1;
             for (int i = sequenceStart + 1; i < lines.size(); i++) {
                 YamlLine line = lines.get(i);
-                if (line.indent == 0) {
+                if (line.indent <= sequenceIndent) {
                     break;
                 }
-                if (line.isListItem) {
+                if (line.isListItem && (itemIndent < 0 || line.indent == itemIndent)) {
+                    if (itemIndent < 0) {
+                        itemIndent = line.indent;
+                    }
+                    fieldIndent = -1;
                     if (current != null) {
                         result.add(current);
                     }
@@ -581,8 +976,14 @@ public final class OnDeviceEvaluationRunner {
                     if (line.key != null && !line.key.isEmpty()) {
                         current.put(line.key, line.value);
                     }
-                } else if (current != null && line.key != null && !line.key.isEmpty()) {
-                    current.put(line.key, line.value);
+                } else if (current != null && itemIndent >= 0 && line.indent > itemIndent
+                        && !line.isListItem && line.key != null && !line.key.isEmpty()) {
+                    if (fieldIndent < 0) {
+                        fieldIndent = line.indent;
+                    }
+                    if (line.indent == fieldIndent) {
+                        current.put(line.key, line.value);
+                    }
                 }
             }
             if (current != null) {
@@ -591,7 +992,7 @@ public final class OnDeviceEvaluationRunner {
             return result;
         }
 
-        private static List<YamlLine> parseLines(String yaml) {
+        static List<YamlLine> parseLines(String yaml) {
             List<YamlLine> lines = new ArrayList<>();
             String[] rawLines = yaml.split("\\r?\\n");
             for (String rawLine : rawLines) {

@@ -77,6 +77,85 @@ public final class OnDeviceEvaluationRunnerTest {
         assertTrue(json.contains("\"status\": \"PASS\""));
     }
 
+    @Test
+    public void writesTargetResultsForInformationEvidence() throws Exception {
+        File runDir = temporaryFolder.newFolder("run");
+        write(new File(runDir, "native/transformed/native_semantic_snapshot_101.yml"),
+                ""
+                        + "- text \"消息\"\n"
+                        + "- scroll [ref=n1]\n"
+                        + "- button \"搜索\" [ref=n2]\n"
+                        + "- button [ref=n3]:\n"
+                        + "  - text \"消息\"\n");
+
+        File result = OnDeviceEvaluationRunner.generate(
+                runDir, "native_home_message", "100", 1234L,
+                ""
+                        + "page: native_home_message\n"
+                        + "targets:\n"
+                        + "  - id: page-identity\n"
+                        + "    type: information\n"
+                        + "    description: LLM 能否判断当前页面是消息页\n"
+                        + "    evidence:\n"
+                        + "      - id: message-title-and-tab\n"
+                        + "        role: text\n"
+                        + "        name: 消息\n"
+                        + "        minCount: 2\n"
+                        + "  - id: search-entry\n"
+                        + "    type: information\n"
+                        + "    description: LLM 能否知道消息页有搜索入口\n"
+                        + "    evidence:\n"
+                        + "      - id: search-button\n"
+                        + "        role: button\n"
+                        + "        name: 搜索\n"
+                        + "        minCount: 1\n");
+
+        String json = read(result);
+        assertTrue(json.contains("\"targetResults\""));
+        assertTrue(json.contains("\"id\": \"page-identity\""));
+        assertTrue(json.contains("\"description\": \"LLM 能否判断当前页面是消息页\""));
+        assertTrue(json.contains("\"id\": \"message-title-and-tab\""));
+        assertTrue(json.contains("\"actualCount\": 2"));
+        assertTrue(json.contains("\"score\": 1.00"));
+        assertTrue(json.contains("\"targetCount\": 2"));
+        assertTrue(json.contains("\"targetPassCount\": 2"));
+        assertTrue(json.contains("\"evidenceCount\": 2"));
+        assertTrue(json.contains("\"evidencePassCount\": 2"));
+        assertTrue(json.contains("\"status\": \"PASS\""));
+    }
+
+    @Test
+    public void defaultsMinimumCountToOne() throws Exception {
+        File runDir = temporaryFolder.newFolder("run");
+        write(new File(runDir, "native/transformed/native_semantic_snapshot_101.yml"),
+                ""
+                        + "- button \"搜索\" [ref=n1]\n"
+                        + "- text \"客服\"\n");
+
+        File result = OnDeviceEvaluationRunner.generate(
+                runDir, "native_home_message", "100", 1234L,
+                ""
+                        + "page: native_home_message\n"
+                        + "targets:\n"
+                        + "  - id: search-count\n"
+                        + "    role: button\n"
+                        + "    name: 搜索\n"
+                        + "  - id: service-entry\n"
+                        + "    type: information\n"
+                        + "    description: LLM 能否知道有客服入口\n"
+                        + "    evidence:\n"
+                        + "      - id: service-text\n"
+                        + "        role: text\n"
+                        + "        name: 客服\n");
+
+        String json = read(result);
+        assertTrue(json.contains("\"id\": \"search-count\""));
+        assertTrue(json.contains("\"id\": \"service-text\""));
+        assertTrue(json.contains("\"minCount\": 1"));
+        assertTrue(json.contains("\"targetPassCount\": 1"));
+        assertTrue(json.contains("\"status\": \"PASS\""));
+    }
+
     private static void write(File file, String content) throws Exception {
         File parent = file.getParentFile();
         if (!parent.exists() && !parent.mkdirs()) {
