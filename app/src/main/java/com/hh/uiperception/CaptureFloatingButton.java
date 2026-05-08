@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.RectF;
 import android.os.Build;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -28,6 +29,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 感知浮动按钮。
@@ -39,6 +42,7 @@ import java.util.Collections;
 public final class CaptureFloatingButton {
 
     private static final NativePerceptionPlugin NATIVE_PLUGIN = new NativePerceptionPlugin();
+    private static final ExecutorService PERCEPTION_EXECUTOR = Executors.newSingleThreadExecutor();
 
     /** 单例视图，整个应用只有一个浮动按钮 */
     private static View buttonView;
@@ -46,6 +50,8 @@ public final class CaptureFloatingButton {
     private static WindowManager windowManager;
     private static boolean attached;
     private static boolean permissionToastShown;
+    private static boolean running;
+    private static float loadingAngle;
 
     private CaptureFloatingButton() {
     }
@@ -96,13 +102,29 @@ public final class CaptureFloatingButton {
 
         buttonView = new View(appContext) {
             private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            private final RectF arcBounds = new RectF();
 
             @Override
             protected void onDraw(Canvas canvas) {
                 super.onDraw(canvas);
-                paint.setColor(0xFF1593FF);
                 float radius = Math.min(getWidth(), getHeight()) / 2f;
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(running ? 0xFF6AAEF7 : 0xFF1593FF);
                 canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, radius, paint);
+
+                if (!running) {
+                    return;
+                }
+
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(appContext, 4));
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setColor(0xFFFFFFFF);
+                float inset = dp(appContext, 10);
+                arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
+                canvas.drawArc(arcBounds, loadingAngle, 260, false, paint);
+                loadingAngle = (loadingAngle + 12) % 360;
+                postInvalidateDelayed(16);
             }
         };
 
@@ -124,11 +146,45 @@ public final class CaptureFloatingButton {
      */
     static void attachClickHandler(Activity activity) {
         if (buttonView != null) {
-            buttonView.setOnClickListener(v -> executePerception(activity));
+            buttonView.setOnClickListener(v -> executePerceptionAsync(activity));
         }
     }
 
-    private static void executePerception(Activity activity) {
+    private static void executePerceptionAsync(Activity activity) {
+        if (activity == null) {
+            return;
+        }
+        if (running) {
+            Toast.makeText(activity.getApplicationContext(),
+                    "正在感知当前页面", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        setRunning(true);
+        PERCEPTION_EXECUTOR.execute(() -> {
+            PerceptionRunResult runResult = null;
+            String errorMessage = null;
+            try {
+                runResult = executePerceptionInternal(activity);
+            } catch (Exception e) {
+                errorMessage = e.getMessage() == null ? "感知失败" : e.getMessage();
+            }
+
+            PerceptionRunResult finalRunResult = runResult;
+            String finalErrorMessage = errorMessage;
+            activity.runOnUiThread(() -> {
+                setRunning(false);
+                if (finalRunResult != null) {
+                    openEvaluationResult(activity, finalRunResult.baselineId());
+                } else {
+                    Toast.makeText(activity.getApplicationContext(),
+                            finalErrorMessage, Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private static PerceptionRunResult executePerceptionInternal(Activity activity) {
         String baselineId = resolveBaselineId(activity);
 
         PerceptionPlan plan = new PerceptionPlan(
@@ -149,7 +205,15 @@ public final class CaptureFloatingButton {
             }
         }
         OnDeviceEvaluationRunner.generate(activity, runResult);
-        openEvaluationResult(activity, runResult.baselineId());
+        return runResult;
+    }
+
+    private static void setRunning(boolean value) {
+        running = value;
+        if (buttonView != null) {
+            buttonView.setEnabled(!value);
+            buttonView.invalidate();
+        }
     }
 
     private static void openEvaluationResult(Activity activity, String baselineId) {

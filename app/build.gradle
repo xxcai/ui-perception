@@ -39,5 +39,6 @@ dependencies {
     implementation project(':perception-core')
     implementation project(':evaluation')
     implementation project(':native-plugin')
+    implementation project(':small-model-plugin')
     testImplementation 'junit:junit:4.13.2'
 }

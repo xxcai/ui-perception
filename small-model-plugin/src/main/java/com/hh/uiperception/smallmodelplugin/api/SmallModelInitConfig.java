@@ -10,7 +10,7 @@ import java.io.File;
 public final class SmallModelInitConfig {
 
     public static final String DEFAULT_MODEL_RELATIVE_PATH =
-            "models/gemma-4-e4b-it/gemma-4-E4B-it.litertlm";
+            "models/gemma-4-e2b-it/gemma-4-E2B-it.litertlm";
 
     public static final int DEFAULT_MAX_TOKENS = 4096;
     public static final int DEFAULT_TOP_K = 64;
@@ -38,7 +38,7 @@ public final class SmallModelInitConfig {
     }
 
     public static SmallModelInitConfig defaultFor(Context context) {
-        File baseDir = context == null ? null : context.getExternalFilesDir(null);
+        File baseDir = context == null ? null : context.getFilesDir();
         String path = baseDir == null
                 ? DEFAULT_MODEL_RELATIVE_PATH
                 : new File(baseDir, DEFAULT_MODEL_RELATIVE_PATH).getAbsolutePath();

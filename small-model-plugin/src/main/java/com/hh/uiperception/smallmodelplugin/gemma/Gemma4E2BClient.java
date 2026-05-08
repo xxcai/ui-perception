@@ -3,6 +3,7 @@ package com.hh.uiperception.smallmodelplugin.gemma;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.Log;
 
 import com.google.ai.edge.litertlm.Backend;
 import com.google.ai.edge.litertlm.Content;
@@ -31,9 +32,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Gemma-4-E4B-it 的 LiteRT-LM Java 封装。
+ * Gemma-4-E2B-it 的 LiteRT-LM Java 封装。
  */
-public final class Gemma4E4BClient implements SmallModelVisionClient {
+public final class Gemma4E2BClient implements SmallModelVisionClient {
+
+    private static final String TAG = "Gemma4E2BClient";
 
     private final Object lock = new Object();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -50,14 +53,22 @@ public final class Gemma4E4BClient implements SmallModelVisionClient {
             SmallModelInitConfig resolvedConfig = config != null
                     ? config
                     : SmallModelInitConfig.defaultFor(context);
+            Log.i(TAG, "initialize requested. modelPath=" + resolvedConfig.modelPath()
+                    + ", preferGpu=" + resolvedConfig.preferGpu()
+                    + ", maxTokens=" + resolvedConfig.maxTokens()
+                    + ", topK=" + resolvedConfig.topK()
+                    + ", topP=" + resolvedConfig.topP()
+                    + ", temperature=" + resolvedConfig.temperature());
             SmallModelError validationError = validateInit(context, resolvedConfig);
             if (validationError != null) {
+                Log.e(TAG, "initialize validation failed: " + validationError);
                 dispatchError(callback, validationError);
                 return;
             }
 
             synchronized (lock) {
                 if (engine != null && conversation != null) {
+                    Log.i(TAG, "initialize skipped: already initialized");
                     dispatchSuccess(callback, null);
                     return;
                 }
@@ -65,16 +76,30 @@ public final class Gemma4E4BClient implements SmallModelVisionClient {
 
             try {
                 Backend backend = resolvedConfig.preferGpu() ? new Backend.GPU() : new Backend.CPU();
+                Backend visionBackend = resolvedConfig.preferGpu() ? new Backend.GPU() : new Backend.CPU();
+                File cacheDir = new File(context.getCacheDir(), "litertlm");
+                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                    Log.w(TAG, "failed to create LiteRT-LM cache dir: " + cacheDir.getAbsolutePath());
+                }
+                File modelFile = new File(resolvedConfig.modelPath());
+                Log.i(TAG, "creating LiteRT-LM engine. backend=" + backend
+                        + ", visionBackend=" + visionBackend
+                        + ", cacheDir=" + cacheDir.getAbsolutePath()
+                        + ", modelSizeBytes=" + modelFile.length()
+                        + ", canRead=" + modelFile.canRead());
                 EngineConfig engineConfig = new EngineConfig(
                         resolvedConfig.modelPath(),
                         backend,
-                        new Backend.GPU(),
+                        visionBackend,
                         null,
                         resolvedConfig.maxTokens(),
-                        context.getExternalFilesDir(null).getAbsolutePath()
+                        null,
+                        cacheDir.getAbsolutePath()
                 );
                 Engine newEngine = new Engine(engineConfig);
+                Log.i(TAG, "engine created. calling initialize()");
                 newEngine.initialize();
+                Log.i(TAG, "engine initialized. creating conversation");
                 ConversationConfig conversationConfig = new ConversationConfig(
                         null,
                         Collections.emptyList(),
@@ -88,14 +113,17 @@ public final class Gemma4E4BClient implements SmallModelVisionClient {
                         false
                 );
                 Conversation newConversation = newEngine.createConversation(conversationConfig);
+                Log.i(TAG, "conversation created");
 
                 synchronized (lock) {
                     engine = newEngine;
                     conversation = newConversation;
                     initConfig = resolvedConfig;
                 }
+                Log.i(TAG, "initialize succeeded");
                 dispatchSuccess(callback, null);
             } catch (Throwable throwable) {
+                Log.e(TAG, "initialize failed", throwable);
                 close();
                 dispatchError(callback, new SmallModelError(
                         SmallModelError.CODE_INITIALIZATION_FAILED,
@@ -224,7 +252,7 @@ public final class Gemma4E4BClient implements SmallModelVisionClient {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             return new SmallModelError(
                     SmallModelError.CODE_UNSUPPORTED_ANDROID_VERSION,
-                    "Gemma-4-E4B-it 本地运行要求 Android 12 及以上"
+                    "Gemma-4-E2B-it 本地运行要求 Android 12 及以上"
             );
         }
         if (context == null) {
@@ -233,7 +261,11 @@ public final class Gemma4E4BClient implements SmallModelVisionClient {
                     "Context 不能为空"
             );
         }
-        if (config.modelPath().trim().isEmpty() || !new File(config.modelPath()).exists()) {
+        File modelFile = new File(config.modelPath());
+        Log.i(TAG, "validate model file. exists=" + modelFile.exists()
+                + ", canRead=" + modelFile.canRead()
+                + ", sizeBytes=" + (modelFile.exists() ? modelFile.length() : -1));
+        if (config.modelPath().trim().isEmpty() || !modelFile.exists()) {
             return new SmallModelError(
                     SmallModelError.CODE_MODEL_FILE_MISSING,
                     "模型文件不存在: " + config.modelPath()
