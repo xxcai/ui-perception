@@ -33,6 +33,7 @@ public final class NativeSemanticTreeBuilder {
                 .bounds(viewNode.bounds())
                 .roleDecision(roleDecision);
         appendStates(builder, viewNode);
+        appendVisualDescriptionState(builder, viewNode, role, name);
 
         for (NativeViewNode child : viewNode.children()) {
             NativeSemanticNode semanticChild = buildNode(child, role);
@@ -73,6 +74,31 @@ public final class NativeSemanticTreeBuilder {
         if (viewNode.password()) {
             builder.addState("password");
         }
+    }
+
+    private static void appendVisualDescriptionState(
+            NativeSemanticNode.Builder builder,
+            NativeViewNode viewNode,
+            NativeSemanticRole role,
+            String name
+    ) {
+        NativeBounds bounds = viewNode.bounds();
+        if (role == NativeSemanticRole.BUTTON
+                && name.isEmpty()
+                && isButtonClass(viewNode.className())
+                && bounds != null
+                && bounds.isValid()) {
+            builder.addState("needs_visual_desc");
+        }
+    }
+
+    private static boolean isButtonClass(String className) {
+        if (className == null || className.isEmpty()) {
+            return false;
+        }
+        int index = className.lastIndexOf('.');
+        String simpleName = index >= 0 ? className.substring(index + 1) : className;
+        return simpleName.contains("Button");
     }
 
     private static boolean shouldFoldGeneric(NativeSemanticNode node) {

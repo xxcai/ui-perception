@@ -9,11 +9,14 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -37,16 +40,21 @@ public final class SmallModelDebugActivity extends Activity {
     private final Gemma4E2BClient client = new Gemma4E2BClient();
 
     private TextView statusView;
+    private TextView timingView;
+    private TextView experimentView;
     private TextView modelPathView;
     private EditText promptInput;
     private ImageView imagePreview;
     private TextView rawOutputView;
     private TextView yamlOutputView;
     private Switch backendSwitch;
+    private Spinner promptModeSpinner;
     private Button initButton;
     private Button analyzeButton;
 
     private Bitmap selectedBitmap;
+    private long lastLoadLatencyMs = -1L;
+    private long lastInferenceLatencyMs = -1L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,12 +100,20 @@ public final class SmallModelDebugActivity extends Activity {
         statusView = label("状态：未初始化");
         content.addView(statusView, matchWrap());
 
+        timingView = label("计时：加载 - / 识别 -");
+        content.addView(timingView, matchWrap());
+
+        experimentView = label("");
+        content.addView(experimentView, matchWrap());
+        updateExperimentConfig();
+
         modelPathView = label("");
         content.addView(modelPathView, matchWrap());
 
         backendSwitch = new Switch(this);
         backendSwitch.setText("使用 GPU 后端");
         backendSwitch.setChecked(true);
+        backendSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> updateExperimentConfig());
         content.addView(backendSwitch, matchWrap());
 
         initButton = new Button(this);
@@ -120,6 +136,29 @@ public final class SmallModelDebugActivity extends Activity {
         promptInput.setGravity(Gravity.TOP | Gravity.START);
         promptInput.setText(GemmaUiUnderstandingPrompt.defaultPrompt());
         content.addView(promptInput, matchWrap());
+
+        promptModeSpinner = spinner(new String[]{
+                "完整",
+                "精简",
+                "极简",
+                "Ref说明 n1+n2",
+                "Ref说明 n1",
+                "Ref说明 n2",
+                "Ref说明 顶部图标"
+        });
+        promptModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view,
+                                       int position, long id) {
+                promptInput.setText(promptForMode(promptMode()));
+                updateExperimentConfig();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        content.addView(formRow("Prompt 模式", promptModeSpinner), matchWrap());
 
         analyzeButton = new Button(this);
         analyzeButton.setText("运行识图");
@@ -158,17 +197,31 @@ public final class SmallModelDebugActivity extends Activity {
         client.close();
         rawOutputView.setText("");
         yamlOutputView.setText("");
+        lastLoadLatencyMs = -1L;
+        lastInferenceLatencyMs = -1L;
+        updateTiming();
+        updateExperimentConfig();
+        long startedAtMs = System.currentTimeMillis();
         setBusy(true, "状态：模型加载中，后端：" + backendName(preferGpu));
         client.initialize(this, config, new SmallModelCallback<Void>() {
             @Override
             public void onSuccess(Void value) {
-                runOnUiThread(() -> setBusy(false, "状态：模型已加载，后端：" + backendName(preferGpu)));
+                long latencyMs = System.currentTimeMillis() - startedAtMs;
+                runOnUiThread(() -> {
+                    lastLoadLatencyMs = latencyMs;
+                    updateTiming();
+                    setBusy(false, "状态：模型已加载，后端：" + backendName(preferGpu)
+                            + "，加载耗时 " + latencyMs + " ms");
+                });
             }
 
             @Override
             public void onError(SmallModelError error) {
+                long latencyMs = System.currentTimeMillis() - startedAtMs;
                 runOnUiThread(() -> {
-                    setBusy(false, "状态：加载失败\n" + error);
+                    lastLoadLatencyMs = latencyMs;
+                    updateTiming();
+                    setBusy(false, "状态：加载失败，耗时 " + latencyMs + " ms\n" + error);
                     rawOutputView.setText(error.toString());
                 });
             }
@@ -206,9 +259,17 @@ public final class SmallModelDebugActivity extends Activity {
         setBusy(true, "状态：推理中");
         rawOutputView.setText("");
         yamlOutputView.setText("");
+        lastInferenceLatencyMs = -1L;
+        updateTiming();
+        updateExperimentConfig();
+        long startedAtMs = System.currentTimeMillis();
         SmallModelRequest request = SmallModelRequest.builder()
                 .setImage(selectedBitmap)
                 .setPrompt(promptInput.getText().toString())
+                .putOption(SmallModelRequest.OPTION_IMAGE_CROP, SmallModelRequest.OPTION_IMAGE_CROP_FULL)
+                .putOption(SmallModelRequest.OPTION_IMAGE_MAX_EDGE, "")
+                .putOption(SmallModelRequest.OPTION_IMAGE_ENCODING, SmallModelRequest.OPTION_IMAGE_ENCODING_PNG)
+                .putOption("prompt_mode", promptMode())
                 .putOption("android_id", Settings.Secure.getString(
                         getContentResolver(),
                         Settings.Secure.ANDROID_ID
@@ -218,7 +279,11 @@ public final class SmallModelDebugActivity extends Activity {
             @Override
             public void onSuccess(SmallModelResult value) {
                 runOnUiThread(() -> {
-                    setBusy(false, "状态：推理完成，耗时 " + value.latencyMs() + " ms");
+                    long wallLatencyMs = System.currentTimeMillis() - startedAtMs;
+                    lastInferenceLatencyMs = value.latencyMs();
+                    updateTiming();
+                    setBusy(false, "状态：推理完成，识别耗时 " + value.latencyMs()
+                            + " ms，端到端耗时 " + wallLatencyMs + " ms");
                     rawOutputView.setText(value.rawText());
                     yamlOutputView.setText(value.normalizedYaml());
                 });
@@ -226,8 +291,11 @@ public final class SmallModelDebugActivity extends Activity {
 
             @Override
             public void onError(SmallModelError error) {
+                long latencyMs = System.currentTimeMillis() - startedAtMs;
                 runOnUiThread(() -> {
-                    setBusy(false, "状态：推理失败\n" + error);
+                    lastInferenceLatencyMs = latencyMs;
+                    updateTiming();
+                    setBusy(false, "状态：推理失败，耗时 " + latencyMs + " ms\n" + error);
                     rawOutputView.setText(error.toString());
                 });
             }
@@ -239,10 +307,67 @@ public final class SmallModelDebugActivity extends Activity {
         initButton.setEnabled(!busy);
         analyzeButton.setEnabled(!busy);
         backendSwitch.setEnabled(!busy);
+        promptModeSpinner.setEnabled(!busy);
     }
 
     private String backendName(boolean preferGpu) {
         return preferGpu ? "GPU" : "CPU";
+    }
+
+    private void updateTiming() {
+        if (timingView == null) {
+            return;
+        }
+        timingView.setText("计时：加载 " + formatLatency(lastLoadLatencyMs)
+                + " / 识别 " + formatLatency(lastInferenceLatencyMs));
+    }
+
+    private String formatLatency(long latencyMs) {
+        return latencyMs >= 0L ? latencyMs + " ms" : "-";
+    }
+
+    private void updateExperimentConfig() {
+        if (experimentView == null) {
+            return;
+        }
+        experimentView.setText("配置：Backend=" + backendName(backendSwitch == null || backendSwitch.isChecked())
+                + " / MaxTokens=" + SmallModelInitConfig.DEFAULT_MAX_TOKENS
+                + " / 图片长边=原图"
+                + " / 图片编码=PNG"
+                + " / Prompt=" + selectedSpinnerValue(promptModeSpinner, "完整"));
+    }
+
+    private String promptMode() {
+        return selectedSpinnerValue(promptModeSpinner, "完整");
+    }
+
+    private String promptForMode(String mode) {
+        if ("精简".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.compactPrompt();
+        }
+        if ("极简".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.minimalPrompt();
+        }
+        if ("Ref说明 n1+n2".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.refDescriptionPromptAll();
+        }
+        if ("Ref说明 n1".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.refDescriptionPromptN1();
+        }
+        if ("Ref说明 n2".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.refDescriptionPromptN2();
+        }
+        if ("Ref说明 顶部图标".equals(mode)) {
+            return GemmaUiUnderstandingPrompt.refDescriptionPromptTopIcons();
+        }
+        return GemmaUiUnderstandingPrompt.defaultPrompt();
+    }
+
+    private String selectedSpinnerValue(Spinner spinner, String fallback) {
+        if (spinner == null || spinner.getSelectedItem() == null) {
+            return fallback;
+        }
+        return spinner.getSelectedItem().toString();
     }
 
     private TextView label(String text) {
@@ -257,6 +382,40 @@ public final class SmallModelDebugActivity extends Activity {
         TextView view = label(text);
         view.setTextSize(18);
         return view;
+    }
+
+    private Spinner spinner(String[] values) {
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                values
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view,
+                                       int position, long id) {
+                updateExperimentConfig();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        return spinner;
+    }
+
+    private LinearLayout formRow(String label, Spinner spinner) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView labelView = label(label);
+        row.addView(labelView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(spinner, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        return row;
     }
 
     private TextView outputText() {

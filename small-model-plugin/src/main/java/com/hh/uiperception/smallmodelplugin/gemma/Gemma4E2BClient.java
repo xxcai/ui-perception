@@ -170,7 +170,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
                 ? GemmaUiUnderstandingPrompt.defaultPrompt()
                 : request.prompt();
         List<Content> contents = new ArrayList<>();
-        contents.add(new Content.ImageBytes(toPngBytes(request.image())));
+        contents.add(new Content.ImageBytes(toImageBytes(request)));
         contents.add(new Content.Text(prompt));
         Contents input = Contents.Companion.of(contents);
         StringBuilder rawBuilder = new StringBuilder();
@@ -274,10 +274,96 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
         return null;
     }
 
-    private byte[] toPngBytes(Bitmap bitmap) {
+    private byte[] toImageBytes(SmallModelRequest request) {
+        Bitmap bitmap = request.image();
+        Bitmap croppedBitmap = maybeCropBitmap(bitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_CROP));
+        Bitmap encodedBitmap = maybeScaleBitmap(croppedBitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_MAX_EDGE));
+        String encoding = request.options().get(SmallModelRequest.OPTION_IMAGE_ENCODING);
+        Bitmap.CompressFormat format = Bitmap.CompressFormat.PNG;
+        int quality = 100;
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_90.equals(encoding)) {
+            format = Bitmap.CompressFormat.JPEG;
+            quality = 90;
+        } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_80.equals(encoding)) {
+            format = Bitmap.CompressFormat.JPEG;
+            quality = 80;
+        }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-        return outputStream.toByteArray();
+        encodedBitmap.compress(format, quality, outputStream);
+        byte[] bytes = outputStream.toByteArray();
+        Log.i(TAG, "prepared image bytes. source=" + bitmap.getWidth() + "x" + bitmap.getHeight()
+                + ", crop=" + (croppedBitmap == bitmap ? "full" : croppedBitmap.getWidth() + "x" + croppedBitmap.getHeight())
+                + ", encoded=" + encodedBitmap.getWidth() + "x" + encodedBitmap.getHeight()
+                + ", encoding=" + (format == Bitmap.CompressFormat.PNG ? "png" : "jpeg")
+                + ", quality=" + quality
+                + ", sizeBytes=" + bytes.length);
+        if (encodedBitmap != bitmap) {
+            encodedBitmap.recycle();
+        }
+        if (croppedBitmap != bitmap && croppedBitmap != encodedBitmap) {
+            croppedBitmap.recycle();
+        }
+        return bytes;
+    }
+
+    private Bitmap maybeCropBitmap(Bitmap bitmap, String cropMode) {
+        if (cropMode == null
+                || cropMode.trim().isEmpty()
+                || SmallModelRequest.OPTION_IMAGE_CROP_FULL.equals(cropMode)) {
+            return bitmap;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int x = 0;
+        int y = 0;
+        int cropWidth = width;
+        int cropHeight = height;
+        if (SmallModelRequest.OPTION_IMAGE_CROP_TOP_40.equals(cropMode)) {
+            cropHeight = Math.max(1, Math.round(height * 0.4f));
+        } else if (SmallModelRequest.OPTION_IMAGE_CROP_MIDDLE_40.equals(cropMode)) {
+            cropHeight = Math.max(1, Math.round(height * 0.4f));
+            y = Math.max(0, (height - cropHeight) / 2);
+        } else if (SmallModelRequest.OPTION_IMAGE_CROP_BOTTOM_40.equals(cropMode)) {
+            cropHeight = Math.max(1, Math.round(height * 0.4f));
+            y = Math.max(0, height - cropHeight);
+        } else if (SmallModelRequest.OPTION_IMAGE_CROP_CENTER_60.equals(cropMode)) {
+            cropWidth = Math.max(1, Math.round(width * 0.6f));
+            cropHeight = Math.max(1, Math.round(height * 0.6f));
+            x = Math.max(0, (width - cropWidth) / 2);
+            y = Math.max(0, (height - cropHeight) / 2);
+        } else {
+            return bitmap;
+        }
+        return Bitmap.createBitmap(bitmap, x, y, cropWidth, cropHeight);
+    }
+
+    private Bitmap maybeScaleBitmap(Bitmap bitmap, String maxEdgeValue) {
+        int maxEdge = parsePositiveInt(maxEdgeValue, 0);
+        if (maxEdge <= 0) {
+            return bitmap;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int longerEdge = Math.max(width, height);
+        if (longerEdge <= maxEdge) {
+            return bitmap;
+        }
+        float scale = maxEdge / (float) longerEdge;
+        int targetWidth = Math.max(1, Math.round(width * scale));
+        int targetHeight = Math.max(1, Math.round(height * scale));
+        return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
+    }
+
+    private int parsePositiveInt(String value, int fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed > 0 ? parsed : fallback;
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     private <T> void dispatchSuccess(SmallModelCallback<T> callback, T value) {

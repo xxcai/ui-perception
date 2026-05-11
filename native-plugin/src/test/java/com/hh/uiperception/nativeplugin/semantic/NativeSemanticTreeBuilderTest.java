@@ -129,4 +129,36 @@ public final class NativeSemanticTreeBuilderTest {
         assertEquals(NativeSemanticRole.BUTTON, semantic.children().get(0).role());
         assertEquals("attribute:clickable", semantic.children().get(0).roleDecision().source());
     }
+
+    @Test
+    public void marksUnnamedImageButtonAsNeedingVisualDescription() {
+        NativeViewNode root = NativeViewNode.builder()
+                .className("android.widget.ImageButton")
+                .clickable(true)
+                .bounds(NativeBounds.parse("[900,120][1000,220]"))
+                .build();
+
+        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+
+        assertNotNull(semantic);
+        assertEquals(NativeSemanticRole.BUTTON, semantic.role());
+        assertTrue(semantic.states().contains("needs_visual_desc"));
+    }
+
+    @Test
+    public void doesNotMarkNamedImageButtonAsNeedingVisualDescription() {
+        NativeViewNode root = NativeViewNode.builder()
+                .className("android.widget.ImageButton")
+                .contentDescription("搜索")
+                .clickable(true)
+                .bounds(NativeBounds.parse("[900,120][1000,220]"))
+                .build();
+
+        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+
+        assertNotNull(semantic);
+        assertEquals(NativeSemanticRole.BUTTON, semantic.role());
+        assertEquals("搜索", semantic.name());
+        assertTrue(!semantic.states().contains("needs_visual_desc"));
+    }
 }

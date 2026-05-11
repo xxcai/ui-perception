@@ -11,6 +11,18 @@ import java.util.Map;
  */
 public final class SmallModelRequest {
 
+    public static final String OPTION_IMAGE_MAX_EDGE = "image_max_edge";
+    public static final String OPTION_IMAGE_ENCODING = "image_encoding";
+    public static final String OPTION_IMAGE_CROP = "image_crop";
+    public static final String OPTION_IMAGE_ENCODING_PNG = "png";
+    public static final String OPTION_IMAGE_ENCODING_JPEG_90 = "jpeg90";
+    public static final String OPTION_IMAGE_ENCODING_JPEG_80 = "jpeg80";
+    public static final String OPTION_IMAGE_CROP_FULL = "full";
+    public static final String OPTION_IMAGE_CROP_TOP_40 = "top_40";
+    public static final String OPTION_IMAGE_CROP_MIDDLE_40 = "middle_40";
+    public static final String OPTION_IMAGE_CROP_BOTTOM_40 = "bottom_40";
+    public static final String OPTION_IMAGE_CROP_CENTER_60 = "center_60";
+
     private final Bitmap image;
     private final String prompt;
     private final String baselineId;

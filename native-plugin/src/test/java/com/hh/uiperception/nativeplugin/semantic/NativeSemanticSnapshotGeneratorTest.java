@@ -48,4 +48,17 @@ public final class NativeSemanticSnapshotGeneratorTest {
 
         assertEquals("- text \"邮件\" [bounds=1,2,3,4]", snapshot);
     }
+
+    @Test
+    public void marksUnnamedImageButtonForVisualDescription() {
+        String xml = ""
+                + "<node class=\"android.widget.FrameLayout\" bounds=\"[0,0][1080,2400]\">"
+                + "<node class=\"android.widget.ImageButton\" clickable=\"true\" bounds=\"[900,120][1000,220]\" />"
+                + "</node>";
+
+        String snapshot = NativeSemanticSnapshotGenerator.generate(xml);
+
+        assertEquals(""
+                + "- button [needs_visual_desc] [ref=n1] [bounds=900,120,1000,220]", snapshot);
+    }
 }

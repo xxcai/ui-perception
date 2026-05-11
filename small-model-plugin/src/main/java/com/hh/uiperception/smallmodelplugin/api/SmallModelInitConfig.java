@@ -38,11 +38,18 @@ public final class SmallModelInitConfig {
     }
 
     public static SmallModelInitConfig defaultFor(Context context) {
-        File baseDir = context == null ? null : context.getFilesDir();
-        String path = baseDir == null
+        File externalBaseDir = context == null ? null : context.getExternalFilesDir(null);
+        File internalBaseDir = context == null ? null : context.getFilesDir();
+        return builder()
+                .setModelPath(resolveDefaultModelPath(externalBaseDir, internalBaseDir))
+                .build();
+    }
+
+    static String resolveDefaultModelPath(File preferredBaseDir, File fallbackBaseDir) {
+        File baseDir = preferredBaseDir != null ? preferredBaseDir : fallbackBaseDir;
+        return baseDir == null
                 ? DEFAULT_MODEL_RELATIVE_PATH
                 : new File(baseDir, DEFAULT_MODEL_RELATIVE_PATH).getAbsolutePath();
-        return builder().setModelPath(path).build();
     }
 
     public String modelPath() {
