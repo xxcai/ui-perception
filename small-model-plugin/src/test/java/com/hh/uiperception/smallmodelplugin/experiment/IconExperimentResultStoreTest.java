@@ -32,6 +32,8 @@ public final class IconExperimentResultStoreTest {
                 .setModelLoadMs(300L)
                 .setInferenceMs(1200L)
                 .setTotalMs(1218L)
+                .setBatchSize(5)
+                .setBatchCount(1)
                 .setPrompt("prompt")
                 .setTargets(Arrays.asList(target))
                 .setRawOutput("icon_phone:电话图标")
@@ -48,6 +50,8 @@ public final class IconExperimentResultStoreTest {
         assertEquals("welink_message_001", parsed.testsetId());
         assertEquals(IconInputMode.FULL_IMAGE_WITH_BOUNDS, parsed.inputMode());
         assertEquals(1200L, parsed.inferenceMs());
+        assertEquals(5, parsed.batchSize());
+        assertEquals(1, parsed.batchCount());
         assertEquals("电话图标", parsed.parsedOutput().get(0).desc());
     }
 }

@@ -20,7 +20,7 @@ public final class IconMontageLayoutCalculatorTest {
         assertEquals(3, layout.columns());
         assertEquals(15, layout.mappings().size());
 
-        IconTargetMapping phone = findMapping(layout, "icon_phone");
+        IconTargetMapping phone = findMapping(layout, "t002");
         assertEquals(922, phone.originalBounds().left());
         assertEquals(161, phone.originalBounds().top());
         assertTrue(phone.inputBounds().width() > 0);

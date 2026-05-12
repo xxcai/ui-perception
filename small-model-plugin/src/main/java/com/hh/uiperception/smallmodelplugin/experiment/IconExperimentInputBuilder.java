@@ -29,12 +29,22 @@ public final class IconExperimentInputBuilder {
         IconExperimentInput input;
         if (mode == IconInputMode.CROPPED_MONTAGE) {
             input = IconMontageBuilder.build(sourceBitmap, testSet);
+        } else if (mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS) {
+            Bitmap annotatedBitmap = IconBoundsAnnotator.annotate(sourceBitmap, testSet);
+            List<IconTargetMapping> mappings = fullImageMappings(testSet);
+            input = new IconExperimentInput(
+                    mode,
+                    annotatedBitmap,
+                    IconExperimentPromptBuilder.markedBoundsPrompt(testSet),
+                    mappings,
+                    -1L
+            );
         } else {
             List<IconTargetMapping> mappings = fullImageMappings(testSet);
             input = new IconExperimentInput(
                     mode,
                     sourceBitmap,
-                    IconExperimentPromptBuilder.build(testSet, mode, mappings),
+                    promptForFullImageMode(sourceBitmap, testSet, mode, mappings),
                     mappings,
                     -1L
             );
@@ -47,6 +57,23 @@ public final class IconExperimentInputBuilder {
                 input.mappings(),
                 latencyMs
         );
+    }
+
+    private static String promptForFullImageMode(
+            Bitmap sourceBitmap,
+            IconExperimentTestSet testSet,
+            IconInputMode mode,
+            List<IconTargetMapping> mappings
+    ) {
+        if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
+                || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
+            return IconExperimentPromptBuilder.fullImageWithBoundsPrompt(
+                    testSet,
+                    sourceBitmap.getWidth(),
+                    sourceBitmap.getHeight()
+            );
+        }
+        return IconExperimentPromptBuilder.build(testSet, mode, mappings);
     }
 
     private static List<IconTargetMapping> fullImageMappings(IconExperimentTestSet testSet) {

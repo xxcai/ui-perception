@@ -1,18 +1,17 @@
 package com.hh.uiperception.smallmodelplugin.ui;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -23,420 +22,610 @@ import android.widget.TextView;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelCallback;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelError;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelInitConfig;
-import com.hh.uiperception.smallmodelplugin.api.SmallModelRequest;
-import com.hh.uiperception.smallmodelplugin.api.SmallModelResult;
-import com.hh.uiperception.smallmodelplugin.gemma.Gemma4E2BClient;
-import com.hh.uiperception.smallmodelplugin.gemma.GemmaUiUnderstandingPrompt;
+import com.hh.uiperception.smallmodelplugin.experiment.IconBounds;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentJson;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentPromptBuilder;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentResultStore;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentRunResult;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentRunner;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentTestSet;
+import com.hh.uiperception.smallmodelplugin.experiment.IconInputMode;
+import com.hh.uiperception.smallmodelplugin.experiment.IconMatchResult;
+import com.hh.uiperception.smallmodelplugin.experiment.IconMontageLayoutCalculator;
+import com.hh.uiperception.smallmodelplugin.experiment.IconResultMatcher;
+import com.hh.uiperception.smallmodelplugin.experiment.IconTarget;
+import com.hh.uiperception.smallmodelplugin.experiment.IconTargetMapping;
+import android.util.Log;
 
+import com.hh.uiperception.smallmodelplugin.gemma.Gemma4E2BClient;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * Gemma 小模型调试页。
+ * Gemma 小模型测评页（上下+左右混合布局）。
  */
 public final class SmallModelDebugActivity extends Activity {
 
-    private static final int REQUEST_PICK_IMAGE = 1001;
+    private static final String TAG = "SmallModelDebug";
+    private static final String BUILTIN_FIXTURE_DIR =
+            "icon-experiment/welink_message_001";
+    private static final int EXPERIMENT_MAX_TOKENS = 2048;
+    private static final int EXPERIMENT_TOP_K = 1;
+    private static final double EXPERIMENT_TOP_P = 0.1d;
+    private static final double EXPERIMENT_TEMPERATURE = 0.0d;
 
     private final Gemma4E2BClient client = new Gemma4E2BClient();
+    private final ExecutorService experimentExecutor = Executors.newSingleThreadExecutor();
 
     private TextView statusView;
-    private TextView timingView;
-    private TextView experimentView;
-    private TextView modelPathView;
-    private EditText promptInput;
-    private ImageView imagePreview;
-    private TextView rawOutputView;
-    private TextView yamlOutputView;
-    private Switch backendSwitch;
-    private Spinner promptModeSpinner;
+    private Switch gpuSwitch;
+    private Spinner inputModeSpinner;
+    private Spinner maxEdgeSpinner;
     private Button initButton;
-    private Button analyzeButton;
+    private Button runButton;
+    private ImageView imagePreview;
+    private TextView resultTable;
+    private TextView timingView;
+    private TextView promptPreview;
+    private TextView rawOutputView;
+    private TextView historyView;
 
-    private Bitmap selectedBitmap;
+    private Bitmap fixtureBitmap;
+    private IconExperimentTestSet fixtureTestSet;
     private long lastLoadLatencyMs = -1L;
-    private long lastInferenceLatencyMs = -1L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle("Gemma 小模型调试");
+        setTitle("Gemma 测评");
         setContentView(createContentView());
-        updateModelPath();
+        loadBuiltinFixture();
     }
 
     @Override
     protected void onDestroy() {
+        experimentExecutor.shutdownNow();
         client.close();
         super.onDestroy();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_PICK_IMAGE && resultCode == RESULT_OK && data != null) {
-            Uri uri = data.getData();
-            if (uri != null) {
-                loadImage(uri);
-            }
-        }
-    }
+    // ---- Layout ----
 
     private ScrollView createContentView() {
         ScrollView scrollView = new ScrollView(this);
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(20), dp(20), dp(24));
-        scrollView.addView(content, new ScrollView.LayoutParams(
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(12), dp(12), dp(12), dp(12));
+        scrollView.addView(root, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
 
-        TextView title = new TextView(this);
-        title.setText("Gemma-4-E2B-it 调试");
-        title.setTextSize(24);
-        title.setGravity(Gravity.START);
-        content.addView(title);
+        // Top bar
+        root.addView(createTopBar(), matchWrap());
 
-        statusView = label("状态：未初始化");
-        content.addView(statusView, matchWrap());
+        // Control bar
+        root.addView(createControlBar(), matchWrap());
 
-        timingView = label("计时：加载 - / 识别 -");
-        content.addView(timingView, matchWrap());
+        // Content area: left (45%) + right (55%)
+        LinearLayout contentRow = new LinearLayout(this);
+        contentRow.setOrientation(LinearLayout.HORIZONTAL);
+        contentRow.setWeightSum(1f);
+        contentRow.addView(createLeftPanel(), new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.45f));
+        contentRow.addView(createRightPanel(), new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.55f));
+        root.addView(contentRow, matchWrap());
 
-        experimentView = label("");
-        content.addView(experimentView, matchWrap());
-        updateExperimentConfig();
+        return scrollView;
+    }
 
-        modelPathView = label("");
-        content.addView(modelPathView, matchWrap());
+    private LinearLayout createTopBar() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
 
-        backendSwitch = new Switch(this);
-        backendSwitch.setText("使用 GPU 后端");
-        backendSwitch.setChecked(true);
-        backendSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> updateExperimentConfig());
-        content.addView(backendSwitch, matchWrap());
+        statusView = new TextView(this);
+        statusView.setTextSize(13);
+        statusView.setText("状态：未初始化");
+        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        bar.addView(statusView, statusParams);
+
+        gpuSwitch = new Switch(this);
+        gpuSwitch.setText("GPU");
+        gpuSwitch.setChecked(true);
+        bar.addView(gpuSwitch, wrapWrap());
 
         initButton = new Button(this);
         initButton.setText("加载模型");
         initButton.setOnClickListener(v -> initializeModel());
-        content.addView(initButton, matchWrap());
+        bar.addView(initButton, wrapWrap());
 
-        Button pickImageButton = new Button(this);
-        pickImageButton.setText("选择图片");
-        pickImageButton.setOnClickListener(v -> pickImage());
-        content.addView(pickImageButton, matchWrap());
+        return bar;
+    }
 
-        imagePreview = new ImageView(this);
-        imagePreview.setAdjustViewBounds(true);
-        imagePreview.setMinimumHeight(dp(160));
-        content.addView(imagePreview, matchWrap());
+    private LinearLayout createControlBar() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(0, dp(8), 0, dp(8));
 
-        promptInput = new EditText(this);
-        promptInput.setMinLines(6);
-        promptInput.setGravity(Gravity.TOP | Gravity.START);
-        promptInput.setText(GemmaUiUnderstandingPrompt.defaultPrompt());
-        content.addView(promptInput, matchWrap());
+        TextView modeLabel = new TextView(this);
+        modeLabel.setText("模式");
+        modeLabel.setTextSize(13);
+        bar.addView(modeLabel, wrapWrap());
 
-        promptModeSpinner = spinner(new String[]{
-                "完整",
-                "精简",
-                "极简",
-                "Ref说明 n1+n2",
-                "Ref说明 n1",
-                "Ref说明 n2",
-                "Ref说明 顶部图标"
+        inputModeSpinner = spinner(new String[]{
+                IconInputMode.FULL_IMAGE.name(),
+                IconInputMode.FULL_IMAGE_WITH_BOUNDS.name(),
+                IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS.name(),
+                IconInputMode.CROPPED_MONTAGE.name()
         });
-        promptModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        inputModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, android.view.View view,
                                        int position, long id) {
-                promptInput.setText(promptForMode(promptMode()));
-                updateExperimentConfig();
+                updateImagePreview();
+                updatePromptPreview();
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-        content.addView(formRow("Prompt 模式", promptModeSpinner), matchWrap());
+        bar.addView(inputModeSpinner, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        analyzeButton = new Button(this);
-        analyzeButton.setText("运行识图");
-        analyzeButton.setOnClickListener(v -> analyzeImage());
-        content.addView(analyzeButton, matchWrap());
+        TextView edgeLabel = new TextView(this);
+        edgeLabel.setText("长边");
+        edgeLabel.setTextSize(13);
+        bar.addView(edgeLabel, wrapWrap());
 
-        TextView rawTitle = sectionTitle("Raw Output");
-        content.addView(rawTitle, matchWrap());
-        rawOutputView = outputText();
-        content.addView(rawOutputView, matchWrap());
+        maxEdgeSpinner = spinner(new String[]{"原图", "1024", "768", "512"});
+        bar.addView(maxEdgeSpinner, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView yamlTitle = sectionTitle("Normalized YAML");
-        content.addView(yamlTitle, matchWrap());
-        yamlOutputView = outputText();
-        content.addView(yamlOutputView, matchWrap());
+        runButton = new Button(this);
+        runButton.setText("运行");
+        runButton.setOnClickListener(v -> runExperiment());
+        bar.addView(runButton, wrapWrap());
 
-        return scrollView;
+        return bar;
     }
 
-    private void updateModelPath() {
-        SmallModelInitConfig config = SmallModelInitConfig.defaultFor(this);
-        modelPathView.setText("模型路径：\n" + config.modelPath());
+    private LinearLayout createLeftPanel() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(0, 0, dp(6), 0);
+
+        imagePreview = new ImageView(this);
+        imagePreview.setAdjustViewBounds(true);
+        imagePreview.setMinimumHeight(dp(180));
+        imagePreview.setMaxHeight(dp(280));
+        panel.addView(imagePreview, matchWrap());
+
+        resultTable = outputText();
+        resultTable.setText("运行后显示结果");
+        resultTable.setMinHeight(dp(120));
+        panel.addView(resultTable, matchWrap());
+
+        timingView = new TextView(this);
+        timingView.setTextSize(12);
+        timingView.setText("计时：-");
+        panel.addView(timingView, matchWrap());
+
+        return panel;
+    }
+
+    private LinearLayout createRightPanel() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(6), 0, 0, 0);
+
+        TextView promptLabel = sectionLabel("Prompt");
+        panel.addView(promptLabel, matchWrap());
+
+        promptPreview = outputText();
+        promptPreview.setMaxHeight(dp(140));
+        promptPreview.setText("加载用例后显示");
+        panel.addView(promptPreview, matchWrap());
+
+        TextView rawLabel = sectionLabel("Raw Output");
+        panel.addView(rawLabel, matchWrap());
+
+        rawOutputView = outputText();
+        rawOutputView.setMaxHeight(dp(140));
+        rawOutputView.setText("");
+        panel.addView(rawOutputView, matchWrap());
+
+        TextView historyLabel = sectionLabel("历史对比");
+        panel.addView(historyLabel, matchWrap());
+
+        historyView = outputText();
+        historyView.setMaxHeight(dp(100));
+        historyView.setText("暂无历史数据");
+        panel.addView(historyView, matchWrap());
+
+        return panel;
+    }
+
+    // ---- Actions ----
+
+    private void loadBuiltinFixture() {
+        try (InputStream imageStream = getAssets().open(BUILTIN_FIXTURE_DIR + "/screenshot.jpg");
+             InputStream targetsStream = getAssets().open(BUILTIN_FIXTURE_DIR + "/targets.json")) {
+            fixtureBitmap = BitmapFactory.decodeStream(imageStream);
+            fixtureTestSet = IconExperimentJson.parseTestSet(readUtf8(targetsStream));
+            updateImagePreview();
+            updatePromptPreview();
+            refreshHistory();
+            statusView.setText("状态：已加载 WeLink fixture，"
+                    + fixtureTestSet.targets().size() + " 个目标");
+        } catch (Exception e) {
+            statusView.setText("状态：fixture 加载失败 - " + e.getMessage());
+        }
     }
 
     private void initializeModel() {
-        boolean preferGpu = backendSwitch.isChecked();
+        boolean preferGpu = gpuSwitch.isChecked();
         SmallModelInitConfig baseConfig = SmallModelInitConfig.defaultFor(this);
         SmallModelInitConfig config = SmallModelInitConfig.builder()
                 .setModelPath(baseConfig.modelPath())
-                .setMaxTokens(baseConfig.maxTokens())
-                .setTopK(baseConfig.topK())
-                .setTopP(baseConfig.topP())
-                .setTemperature(baseConfig.temperature())
+                .setMaxTokens(EXPERIMENT_MAX_TOKENS)
+                .setTopK(EXPERIMENT_TOP_K)
+                .setTopP(EXPERIMENT_TOP_P)
+                .setTemperature(EXPERIMENT_TEMPERATURE)
                 .setPreferGpu(preferGpu)
                 .build();
         client.close();
-        rawOutputView.setText("");
-        yamlOutputView.setText("");
         lastLoadLatencyMs = -1L;
-        lastInferenceLatencyMs = -1L;
-        updateTiming();
-        updateExperimentConfig();
+        setBusy(true, "状态：模型加载中 (" + (preferGpu ? "GPU" : "CPU") + ")");
         long startedAtMs = System.currentTimeMillis();
-        setBusy(true, "状态：模型加载中，后端：" + backendName(preferGpu));
         client.initialize(this, config, new SmallModelCallback<Void>() {
             @Override
             public void onSuccess(Void value) {
                 long latencyMs = System.currentTimeMillis() - startedAtMs;
                 runOnUiThread(() -> {
                     lastLoadLatencyMs = latencyMs;
-                    updateTiming();
-                    setBusy(false, "状态：模型已加载，后端：" + backendName(preferGpu)
-                            + "，加载耗时 " + latencyMs + " ms");
+                    setBusy(false, "状态：已加载 " + (preferGpu ? "GPU" : "CPU")
+                            + " " + latencyMs + "ms");
                 });
             }
 
             @Override
             public void onError(SmallModelError error) {
-                long latencyMs = System.currentTimeMillis() - startedAtMs;
-                runOnUiThread(() -> {
-                    lastLoadLatencyMs = latencyMs;
-                    updateTiming();
-                    setBusy(false, "状态：加载失败，耗时 " + latencyMs + " ms\n" + error);
-                    rawOutputView.setText(error.toString());
-                });
+                runOnUiThread(() -> setBusy(false,
+                        "状态：加载失败 - " + (error == null ? "" : error.message())));
             }
         });
     }
 
-    private void pickImage() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
-        startActivityForResult(intent, REQUEST_PICK_IMAGE);
-    }
-
-    private void loadImage(Uri uri) {
-        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
-            selectedBitmap = BitmapFactory.decodeStream(inputStream);
-            imagePreview.setImageBitmap(selectedBitmap);
-            statusView.setText("状态：已选择图片");
-        } catch (Exception e) {
-            statusView.setText("状态：图片读取失败\n" + e.getMessage());
-        }
-    }
-
-    private void analyzeImage() {
+    private void runExperiment() {
+        Log.i(TAG, "runExperiment clicked. initialized=" + client.isInitialized()
+                + ", fixtureBitmap=" + (fixtureBitmap != null)
+                + ", fixtureTestSet=" + (fixtureTestSet != null));
         if (!client.isInitialized()) {
             initializeModel();
-            statusView.setText("状态：请等待模型加载完成后再次运行识图");
+            statusView.setText("状态：请等待模型加载后再运行");
             return;
         }
-        if (selectedBitmap == null) {
-            statusView.setText("状态：请先选择图片");
+        if (fixtureBitmap == null || fixtureTestSet == null) {
+            statusView.setText("状态：fixture 未加载");
             return;
         }
 
-        setBusy(true, "状态：推理中");
+        setBusy(true, "状态：实验运行中");
+        resultTable.setText("运行中...");
         rawOutputView.setText("");
-        yamlOutputView.setText("");
-        lastInferenceLatencyMs = -1L;
-        updateTiming();
-        updateExperimentConfig();
-        long startedAtMs = System.currentTimeMillis();
-        SmallModelRequest request = SmallModelRequest.builder()
-                .setImage(selectedBitmap)
-                .setPrompt(promptInput.getText().toString())
-                .putOption(SmallModelRequest.OPTION_IMAGE_CROP, SmallModelRequest.OPTION_IMAGE_CROP_FULL)
-                .putOption(SmallModelRequest.OPTION_IMAGE_MAX_EDGE, "")
-                .putOption(SmallModelRequest.OPTION_IMAGE_ENCODING, SmallModelRequest.OPTION_IMAGE_ENCODING_PNG)
-                .putOption("prompt_mode", promptMode())
-                .putOption("android_id", Settings.Secure.getString(
-                        getContentResolver(),
-                        Settings.Secure.ANDROID_ID
-                ))
-                .build();
-        client.analyze(request, new SmallModelCallback<SmallModelResult>() {
-            @Override
-            public void onSuccess(SmallModelResult value) {
-                runOnUiThread(() -> {
-                    long wallLatencyMs = System.currentTimeMillis() - startedAtMs;
-                    lastInferenceLatencyMs = value.latencyMs();
-                    updateTiming();
-                    setBusy(false, "状态：推理完成，识别耗时 " + value.latencyMs()
-                            + " ms，端到端耗时 " + wallLatencyMs + " ms");
-                    rawOutputView.setText(value.rawText());
-                    yamlOutputView.setText(value.normalizedYaml());
-                });
-            }
+        IconInputMode mode = selectedInputMode();
+        int maxEdge = selectedMaxEdge();
+        Bitmap screenshot = fixtureBitmap;
+        IconExperimentTestSet testSet = fixtureTestSet;
+        Log.i(TAG, "calling IconExperimentRunner.run. mode=" + mode
+                + ", maxEdge=" + maxEdge
+                + ", bitmapSize=" + screenshot.getWidth() + "x" + screenshot.getHeight()
+                + ", targetCount=" + testSet.targets().size());
 
-            @Override
-            public void onError(SmallModelError error) {
-                long latencyMs = System.currentTimeMillis() - startedAtMs;
-                runOnUiThread(() -> {
-                    lastInferenceLatencyMs = latencyMs;
-                    updateTiming();
-                    setBusy(false, "状态：推理失败，耗时 " + latencyMs + " ms\n" + error);
-                    rawOutputView.setText(error.toString());
-                });
-            }
+        experimentExecutor.execute(() -> {
+            dumpDebugTargetCrops(screenshot, testSet);
+            IconExperimentRunner.run(
+                    screenshot,
+                    testSet,
+                    mode,
+                    lastLoadLatencyMs,
+                    client,
+                    result -> runOnUiThread(() -> handleResult(result)),
+                    maxEdge
+            );
         });
+    }
+
+    private void handleResult(IconExperimentRunResult result) {
+        Log.i(TAG, "handleResult called. result=" + (result != null)
+                + ", error=" + (result != null && result.error() != null
+                        ? result.error().code() + ":" + result.error().message() : "null"));
+        if (result == null) {
+            setBusy(false, "状态：结果为空");
+            return;
+        }
+
+        // Auto-match
+        List<IconTarget> targets = result.targets().isEmpty()
+                ? fixtureTestSet.targets()
+                : result.targets();
+        List<IconMatchResult> matches = IconResultMatcher.match(
+                result.parsedOutput(), targets);
+        resultTable.setText(IconResultMatcher.formatResultTable(matches));
+
+        // Timing
+        timingView.setText("计时：图片 " + formatMs(result.imagePrepareMs())
+                + "  推理 " + formatMs(result.inferenceMs())
+                + "  总计 " + formatMs(result.totalMs()));
+
+        // Raw output
+        rawOutputView.setText(result.rawOutput().isEmpty()
+                ? (result.error() == null ? "" : result.error().code())
+                : result.rawOutput());
+
+        // Save
+        String saveInfo = "";
+        try {
+            java.io.File saved = IconExperimentResultStore.save(this, result);
+            saveInfo = "\n保存: " + saved.getName();
+        } catch (Exception e) {
+            saveInfo = "\n保存失败: " + e.getMessage();
+        }
+
+        // Status
+        String status = result.error() == null
+                ? "状态：完成" + saveInfo
+                : "状态：失败 - " + result.error().code() + saveInfo;
+        setBusy(false, status);
+
+        refreshHistory();
+    }
+
+    private void dumpDebugTargetCrops(Bitmap screenshot, IconExperimentTestSet testSet) {
+        if (screenshot == null || testSet == null) {
+            return;
+        }
+        File baseDir = getExternalFilesDir(null);
+        if (baseDir == null) {
+            baseDir = getFilesDir();
+        }
+        File outputDir = new File(baseDir, "small-model-experiments/debug-crops/"
+                + System.currentTimeMillis() + "_" + testSet.testsetId());
+        if (!outputDir.exists() && !outputDir.mkdirs()) {
+            Log.w(TAG, "failed to create debug crop dir: " + outputDir.getAbsolutePath());
+            return;
+        }
+        Log.i(TAG, "dump debug crops. dir=" + outputDir.getAbsolutePath()
+                + ", bitmap=" + screenshot.getWidth() + "x" + screenshot.getHeight()
+                + ", targetCount=" + testSet.targets().size());
+
+        Bitmap annotated = createBoundsPreview(screenshot, testSet);
+        saveBitmap(new File(outputDir, "annotated.png"), annotated);
+        annotated.recycle();
+
+        for (IconTarget target : testSet.targets()) {
+            IconBounds bounds = target.bounds();
+            if (bounds == null || !bounds.isValid()) {
+                Log.w(TAG, "skip invalid target bounds. id=" + target.id());
+                continue;
+            }
+            int left = clamp(bounds.left(), 0, screenshot.getWidth() - 1);
+            int top = clamp(bounds.top(), 0, screenshot.getHeight() - 1);
+            int right = clamp(bounds.right(), left + 1, screenshot.getWidth());
+            int bottom = clamp(bounds.bottom(), top + 1, screenshot.getHeight());
+            Bitmap crop = Bitmap.createBitmap(screenshot, left, top, right - left, bottom - top);
+            File file = new File(outputDir, target.id() + "_"
+                    + left + "_" + top + "_" + right + "_" + bottom + ".png");
+            saveBitmap(file, crop);
+            crop.recycle();
+            Log.i(TAG, "debug crop saved. id=" + target.id()
+                    + ", raw=" + bounds.left() + "," + bounds.top() + ","
+                    + bounds.right() + "," + bounds.bottom()
+                    + ", clamped=" + left + "," + top + "," + right + "," + bottom
+                    + ", crop=" + (right - left) + "x" + (bottom - top)
+                    + ", file=" + file.getAbsolutePath());
+        }
+    }
+
+    private void saveBitmap(File file, Bitmap bitmap) {
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+        } catch (Exception e) {
+            Log.e(TAG, "save debug bitmap failed. file=" + file.getAbsolutePath(), e);
+        }
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private void refreshHistory() {
+        try {
+            List<IconExperimentRunResult> history =
+                    IconExperimentResultStore.listResults(this);
+            historyView.setText(
+                    IconExperimentResultStore.formatHistorySummary(history, 10));
+        } catch (Exception e) {
+            historyView.setText("历史读取失败");
+        }
+    }
+
+    // ---- UI helpers ----
+
+    private void updateImagePreview() {
+        if (imagePreview == null || fixtureBitmap == null) {
+            return;
+        }
+        IconInputMode mode = selectedInputMode();
+        if ((mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
+                || mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS
+                || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED)
+                && fixtureTestSet != null) {
+            imagePreview.setImageBitmap(createBoundsPreview(fixtureBitmap, fixtureTestSet));
+        } else if (mode == IconInputMode.CROPPED_MONTAGE && fixtureTestSet != null) {
+            imagePreview.setImageBitmap(fixtureBitmap);
+        } else {
+            imagePreview.setImageBitmap(fixtureBitmap);
+        }
+    }
+
+    private void updatePromptPreview() {
+        if (promptPreview == null || fixtureTestSet == null) {
+            return;
+        }
+        IconInputMode mode = selectedInputMode();
+        String prompt;
+        if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
+                || mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS
+                || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
+            if (mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS) {
+                prompt = IconExperimentPromptBuilder.markedBoundsPrompt(fixtureTestSet);
+            } else {
+                prompt = IconExperimentPromptBuilder.fullImageWithBoundsPrompt(
+                        fixtureTestSet,
+                        fixtureBitmap == null ? 0 : fixtureBitmap.getWidth(),
+                        fixtureBitmap == null ? 0 : fixtureBitmap.getHeight()
+                );
+            }
+        } else if (mode == IconInputMode.CROPPED_MONTAGE) {
+            prompt = IconExperimentPromptBuilder.montagePrompt(
+                    IconMontageLayoutCalculator.calculate(fixtureTestSet.targets()).mappings()
+            );
+        } else {
+            prompt = IconExperimentPromptBuilder.fullImagePrompt(fixtureTestSet);
+        }
+        promptPreview.setText(prompt);
+    }
+
+    private Bitmap createBoundsPreview(Bitmap source, IconExperimentTestSet testSet) {
+        Bitmap preview = Bitmap.createBitmap(
+                source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(preview);
+        canvas.drawBitmap(source, 0f, 0f, null);
+        float strokeWidth = Math.max(3f, source.getWidth() / 320f);
+        float labelTextSize = Math.max(18f, source.getWidth() / 58f);
+        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setStrokeWidth(strokeWidth);
+        strokePaint.setColor(Color.rgb(0, 120, 255));
+        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bgPaint.setStyle(Paint.Style.FILL);
+        bgPaint.setColor(0xCC0078FF);
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(labelTextSize);
+        for (IconTarget target : testSet.targets()) {
+            IconBounds bounds = target.bounds();
+            if (bounds == null || !bounds.isValid()) {
+                continue;
+            }
+            canvas.drawRect(bounds.left(), bounds.top(),
+                    bounds.right(), bounds.bottom(), strokePaint);
+            float padding = Math.max(4f, canvas.getWidth() / 310f);
+            Paint.FontMetrics metrics = textPaint.getFontMetrics();
+            float tw = textPaint.measureText(target.id());
+            float th = metrics.descent - metrics.ascent;
+            float left = bounds.left();
+            float top = Math.max(0f, bounds.top() - th - padding * 2f);
+            float right = Math.min(canvas.getWidth(), left + tw + padding * 2f);
+            float bottom = top + th + padding * 2f;
+            canvas.drawRect(left, top, right, bottom, bgPaint);
+            canvas.drawText(target.id(), left + padding, bottom - padding - metrics.descent,
+                    textPaint);
+        }
+        return preview;
     }
 
     private void setBusy(boolean busy, String status) {
         statusView.setText(status);
         initButton.setEnabled(!busy);
-        analyzeButton.setEnabled(!busy);
-        backendSwitch.setEnabled(!busy);
-        promptModeSpinner.setEnabled(!busy);
+        runButton.setEnabled(!busy);
+        gpuSwitch.setEnabled(!busy);
+        inputModeSpinner.setEnabled(!busy);
+        maxEdgeSpinner.setEnabled(!busy);
     }
 
-    private String backendName(boolean preferGpu) {
-        return preferGpu ? "GPU" : "CPU";
+    private IconInputMode selectedInputMode() {
+        String value = (String) inputModeSpinner.getSelectedItem();
+        try {
+            return IconInputMode.valueOf(value);
+        } catch (Exception ignored) {
+            return IconInputMode.FULL_IMAGE;
+        }
     }
 
-    private void updateTiming() {
-        if (timingView == null) {
-            return;
+    private int selectedMaxEdge() {
+        String value = (String) maxEdgeSpinner.getSelectedItem();
+        if ("原图".equals(value)) {
+            return 0;
         }
-        timingView.setText("计时：加载 " + formatLatency(lastLoadLatencyMs)
-                + " / 识别 " + formatLatency(lastInferenceLatencyMs));
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
-    private String formatLatency(long latencyMs) {
-        return latencyMs >= 0L ? latencyMs + " ms" : "-";
-    }
-
-    private void updateExperimentConfig() {
-        if (experimentView == null) {
-            return;
-        }
-        experimentView.setText("配置：Backend=" + backendName(backendSwitch == null || backendSwitch.isChecked())
-                + " / MaxTokens=" + SmallModelInitConfig.DEFAULT_MAX_TOKENS
-                + " / 图片长边=原图"
-                + " / 图片编码=PNG"
-                + " / Prompt=" + selectedSpinnerValue(promptModeSpinner, "完整"));
-    }
-
-    private String promptMode() {
-        return selectedSpinnerValue(promptModeSpinner, "完整");
-    }
-
-    private String promptForMode(String mode) {
-        if ("精简".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.compactPrompt();
-        }
-        if ("极简".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.minimalPrompt();
-        }
-        if ("Ref说明 n1+n2".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.refDescriptionPromptAll();
-        }
-        if ("Ref说明 n1".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.refDescriptionPromptN1();
-        }
-        if ("Ref说明 n2".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.refDescriptionPromptN2();
-        }
-        if ("Ref说明 顶部图标".equals(mode)) {
-            return GemmaUiUnderstandingPrompt.refDescriptionPromptTopIcons();
-        }
-        return GemmaUiUnderstandingPrompt.defaultPrompt();
-    }
-
-    private String selectedSpinnerValue(Spinner spinner, String fallback) {
-        if (spinner == null || spinner.getSelectedItem() == null) {
-            return fallback;
-        }
-        return spinner.getSelectedItem().toString();
-    }
-
-    private TextView label(String text) {
-        TextView view = new TextView(this);
-        view.setText(text);
-        view.setTextSize(14);
-        view.setPadding(0, dp(10), 0, dp(8));
-        return view;
-    }
-
-    private TextView sectionTitle(String text) {
-        TextView view = label(text);
-        view.setTextSize(18);
-        return view;
+    private String formatMs(long ms) {
+        return ms >= 0 ? ms + "ms" : "-";
     }
 
     private Spinner spinner(String[] values) {
         Spinner spinner = new Spinner(this);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                values
-        );
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, values);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, android.view.View view,
-                                       int position, long id) {
-                updateExperimentConfig();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
         return spinner;
     }
 
-    private LinearLayout formRow(String label, Spinner spinner) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-
-        TextView labelView = label(label);
-        row.addView(labelView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        row.addView(spinner, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        return row;
+    private TextView sectionLabel(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(13);
+        view.setTextColor(0xFF666666);
+        view.setPadding(0, dp(6), 0, dp(2));
+        return view;
     }
 
     private TextView outputText() {
         TextView view = new TextView(this);
-        view.setTextSize(13);
+        view.setTextSize(12);
         view.setTextIsSelectable(true);
-        view.setPadding(dp(10), dp(10), dp(10), dp(10));
+        view.setPadding(dp(8), dp(8), dp(8), dp(8));
         view.setBackgroundColor(0xFFF1F3F4);
         return view;
     }
 
     private LinearLayout.LayoutParams matchWrap() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+        return new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(0, dp(6), 0, dp(6));
-        return params;
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    private LinearLayout.LayoutParams wrapWrap() {
+        return new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private String readUtf8(InputStream inputStream) throws Exception {
+        byte[] bytes = inputStream.readAllBytes();
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

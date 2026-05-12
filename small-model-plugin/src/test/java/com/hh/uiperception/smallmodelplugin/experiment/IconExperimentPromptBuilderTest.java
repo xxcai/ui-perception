@@ -15,10 +15,12 @@ public final class IconExperimentPromptBuilderTest {
 
         String prompt = IconExperimentPromptBuilder.fullImagePrompt(testSet);
 
-        assertTrue(prompt.contains("icon_phone"));
-        assertTrue(prompt.contains("icon_add"));
+        assertTrue(prompt.contains("t002"));
+        assertTrue(prompt.contains("t003"));
+        assertTrue(prompt.contains("Write every description in Simplified Chinese"));
         assertTrue(prompt.contains("<id>:<short Chinese description>"));
         assertFalse(prompt.contains("922,161,1034,273"));
+        assertFalse(prompt.contains("电话图标"));
     }
 
     @Test
@@ -29,9 +31,43 @@ public final class IconExperimentPromptBuilderTest {
 
         String prompt = IconExperimentPromptBuilder.fullImageWithBoundsPrompt(testSet);
 
-        assertTrue(prompt.contains("icon_phone=922,161,1034,273"));
-        assertTrue(prompt.contains("icon_add=1062,161,1174,273"));
-        assertTrue(prompt.contains("Inspect only pixels inside the region bounds"));
+        assertTrue(prompt.contains("t002=922,161,1034,273"));
+        assertTrue(prompt.contains("t003=1062,161,1174,273"));
+        assertTrue(prompt.contains("Coordinates are pixel coordinates in the original screenshot"));
+        assertTrue(prompt.contains("Valid x range is 0 to 1216. Valid y range is 0 to 2490."));
+        assertTrue(prompt.contains("The origin (0,0) is the top-left corner"));
+        assertTrue(prompt.contains("x increases from left to right. y increases from top to bottom"));
+        assertTrue(prompt.contains("Process the target regions one by one in the exact order listed below"));
+        assertTrue(prompt.contains("Write every description in Simplified Chinese"));
         assertTrue(prompt.contains("<id>:<short Chinese description>"));
+        assertFalse(prompt.contains("电话图标"));
+    }
+
+    @Test
+    public void buildsFullImageWithExplicitImageSizePrompt() throws Exception {
+        IconExperimentTestSet testSet = IconExperimentJson.parseTestSet(
+                IconExperimentFixtureTest.readResource("icon-experiment/welink_message_001/targets.json")
+        );
+
+        String prompt = IconExperimentPromptBuilder.fullImageWithBoundsPrompt(testSet, 1216, 2640);
+
+        assertTrue(prompt.contains("The screenshot size is 1216 pixels wide and 2640 pixels high."));
+        assertTrue(prompt.contains("Valid x range is 0 to 1216. Valid y range is 0 to 2640."));
+    }
+
+    @Test
+    public void buildsMarkedBoundsPromptWithoutCoordinates() throws Exception {
+        IconExperimentTestSet testSet = IconExperimentJson.parseTestSet(
+                IconExperimentFixtureTest.readResource("icon-experiment/welink_message_001/targets.json")
+        );
+
+        String prompt = IconExperimentPromptBuilder.markedBoundsPrompt(testSet);
+
+        assertTrue(prompt.contains("visible blue rectangles and id labels"));
+        assertTrue(prompt.contains("Use the visible rectangle and label in the image"));
+        assertTrue(prompt.contains("Write every description in Simplified Chinese"));
+        assertTrue(prompt.contains("t012"));
+        assertTrue(prompt.contains("Return exactly 15 lines"));
+        assertFalse(prompt.contains("322,2406,406,2490"));
     }
 }

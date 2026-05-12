@@ -27,6 +27,8 @@ public final class IconExperimentJson {
     private static final String KEY_MODEL_LOAD_MS = "model_load_ms";
     private static final String KEY_INFERENCE_MS = "inference_ms";
     private static final String KEY_TOTAL_MS = "total_ms";
+    private static final String KEY_BATCH_SIZE = "batch_size";
+    private static final String KEY_BATCH_COUNT = "batch_count";
     private static final String KEY_PROMPT = "prompt";
     private static final String KEY_RAW_OUTPUT = "raw_output";
     private static final String KEY_PARSED_OUTPUT = "parsed_output";
@@ -79,6 +81,8 @@ public final class IconExperimentJson {
         json.put(KEY_MODEL_LOAD_MS, result.modelLoadMs());
         json.put(KEY_INFERENCE_MS, result.inferenceMs());
         json.put(KEY_TOTAL_MS, result.totalMs());
+        json.put(KEY_BATCH_SIZE, result.batchSize());
+        json.put(KEY_BATCH_COUNT, result.batchCount());
         json.put(KEY_PROMPT, result.prompt());
         json.put(KEY_TARGETS, targetsToJson(result.targets()));
         json.put(KEY_RAW_OUTPUT, result.rawOutput());
@@ -101,6 +105,8 @@ public final class IconExperimentJson {
                 .setModelLoadMs(json.optLong(KEY_MODEL_LOAD_MS, -1L))
                 .setInferenceMs(json.optLong(KEY_INFERENCE_MS, -1L))
                 .setTotalMs(json.optLong(KEY_TOTAL_MS, -1L))
+                .setBatchSize(json.optInt(KEY_BATCH_SIZE, 0))
+                .setBatchCount(json.optInt(KEY_BATCH_COUNT, 1))
                 .setPrompt(json.optString(KEY_PROMPT, ""))
                 .setTargets(parseTargets(json.optJSONArray(KEY_TARGETS)))
                 .setRawOutput(json.optString(KEY_RAW_OUTPUT, ""))

@@ -19,9 +19,9 @@ public final class IconExperimentFixtureTest {
         assertEquals("welink_message_001", testSet.testsetId());
         assertEquals("screenshot.jpg", testSet.image());
         assertEquals(15, testSet.targets().size());
-        assertTargetBounds(testSet, "icon_phone", 922, 161, 1034, 273);
-        assertTargetBounds(testSet, "icon_add", 1062, 161, 1174, 273);
-        assertTargetBounds(testSet, "icon_tab_mail", 322, 2406, 406, 2490);
+        assertTargetBounds(testSet, "t002", 922, 161, 1034, 273);
+        assertTargetBounds(testSet, "t003", 1062, 161, 1174, 273);
+        assertTargetBounds(testSet, "t012", 322, 2406, 406, 2490);
         assertNotNull(resourceStream("icon-experiment/welink_message_001/screenshot.jpg"));
         assertNotNull(resourceStream("icon-experiment/welink_message_001/window.xml"));
     }

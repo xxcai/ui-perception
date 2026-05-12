@@ -56,6 +56,8 @@ public final class IconExperimentJsonTest {
                 .setModelLoadMs(0L)
                 .setInferenceMs(3120L)
                 .setTotalMs(3140L)
+                .setBatchSize(3)
+                .setBatchCount(2)
                 .setPrompt("prompt")
                 .setTargets(Arrays.asList(target))
                 .setRawOutput("icon_001:电话图标")
@@ -73,6 +75,8 @@ public final class IconExperimentJsonTest {
         assertEquals(1, parsed.targetCount());
         assertEquals(8L, parsed.imagePrepareMs());
         assertEquals(3120L, parsed.inferenceMs());
+        assertEquals(3, parsed.batchSize());
+        assertEquals(2, parsed.batchCount());
         assertEquals("icon_001:电话图标", parsed.rawOutput());
         assertEquals("电话图标", parsed.parsedOutput().get(0).desc());
         assertNull(parsed.manualScores().get(0).score());

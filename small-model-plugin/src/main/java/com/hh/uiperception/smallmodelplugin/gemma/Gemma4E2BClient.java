@@ -13,7 +13,6 @@ import com.google.ai.edge.litertlm.ConversationConfig;
 import com.google.ai.edge.litertlm.Engine;
 import com.google.ai.edge.litertlm.EngineConfig;
 import com.google.ai.edge.litertlm.Message;
-import com.google.ai.edge.litertlm.MessageCallback;
 import com.google.ai.edge.litertlm.SamplerConfig;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelCallback;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelError;
@@ -43,7 +42,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     private final AtomicBoolean inferenceRunning = new AtomicBoolean(false);
 
     private Engine engine;
-    private Conversation conversation;
+    private ConversationConfig conversationConfig;
     private SmallModelInitConfig initConfig;
 
     @Override
@@ -67,7 +66,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
             }
 
             synchronized (lock) {
-                if (engine != null && conversation != null) {
+                if (engine != null && conversationConfig != null) {
                     Log.i(TAG, "initialize skipped: already initialized");
                     dispatchSuccess(callback, null);
                     return;
@@ -99,7 +98,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
                 Engine newEngine = new Engine(engineConfig);
                 Log.i(TAG, "engine created. calling initialize()");
                 newEngine.initialize();
-                Log.i(TAG, "engine initialized. creating conversation");
+                Log.i(TAG, "engine initialized");
                 ConversationConfig conversationConfig = new ConversationConfig(
                         null,
                         Collections.emptyList(),
@@ -112,12 +111,10 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
                         ),
                         false
                 );
-                Conversation newConversation = newEngine.createConversation(conversationConfig);
-                Log.i(TAG, "conversation created");
 
                 synchronized (lock) {
                     engine = newEngine;
-                    conversation = newConversation;
+                    this.conversationConfig = conversationConfig;
                     initConfig = resolvedConfig;
                 }
                 Log.i(TAG, "initialize succeeded");
@@ -136,23 +133,12 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
 
     @Override
     public void analyze(SmallModelRequest request, SmallModelCallback<SmallModelResult> callback) {
+        Log.i(TAG, "analyze called. thread=" + Thread.currentThread().getName()
+                + ", inferenceRunning=" + inferenceRunning.get());
         if (!inferenceRunning.compareAndSet(false, true)) {
             dispatchError(callback, new SmallModelError(
                     SmallModelError.CODE_INFERENCE_IN_PROGRESS,
                     "已有小模型推理正在执行"
-            ));
-            return;
-        }
-
-        Conversation activeConversation;
-        synchronized (lock) {
-            activeConversation = conversation;
-        }
-        if (activeConversation == null) {
-            inferenceRunning.set(false);
-            dispatchError(callback, new SmallModelError(
-                    SmallModelError.CODE_NOT_INITIALIZED,
-                    "小模型尚未初始化"
             ));
             return;
         }
@@ -165,46 +151,59 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
             return;
         }
 
-        long startedAtMs = System.currentTimeMillis();
-        String prompt = request.prompt().trim().isEmpty()
-                ? GemmaUiUnderstandingPrompt.defaultPrompt()
-                : request.prompt();
-        List<Content> contents = new ArrayList<>();
-        contents.add(new Content.ImageBytes(toImageBytes(request)));
-        contents.add(new Content.Text(prompt));
-        Contents input = Contents.Companion.of(contents);
-        StringBuilder rawBuilder = new StringBuilder();
+        executor.execute(() -> analyzeOnExecutor(request, callback));
+    }
 
+    private void analyzeOnExecutor(SmallModelRequest request,
+                                   SmallModelCallback<SmallModelResult> callback) {
+        Log.i(TAG, "analyze started on executor. thread=" + Thread.currentThread().getName());
+        Conversation activeConversation = null;
         try {
-            activeConversation.sendMessageAsync(input, new MessageCallback() {
-                @Override
-                public void onMessage(Message message) {
-                    rawBuilder.append(message.toString());
-                }
-
-                @Override
-                public void onDone() {
-                    inferenceRunning.set(false);
-                    String rawText = rawBuilder.toString();
-                    dispatchSuccess(callback, new SmallModelResult(
-                            rawText,
-                            GemmaUiUnderstandingPrompt.rawTextToYamlCandidate(rawText),
-                            System.currentTimeMillis() - startedAtMs
-                    ));
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
+            synchronized (lock) {
+                if (engine == null || conversationConfig == null) {
                     inferenceRunning.set(false);
                     dispatchError(callback, new SmallModelError(
-                            SmallModelError.CODE_INFERENCE_FAILED,
-                            throwable.getMessage(),
-                            throwable
+                            SmallModelError.CODE_NOT_INITIALIZED,
+                            "小模型尚未初始化"
                     ));
+                    return;
                 }
-            }, Collections.emptyMap());
+                activeConversation = engine.createConversation(conversationConfig);
+            }
+            Log.i(TAG, "created new conversation for inference. thread="
+                    + Thread.currentThread().getName());
+
+            long startedAtMs = System.currentTimeMillis();
+            String prompt = request.prompt().trim().isEmpty()
+                    ? GemmaUiUnderstandingPrompt.defaultPrompt()
+                    : request.prompt();
+            Log.i(TAG, "encoding image...");
+            byte[] imageBytes = toImageBytes(request);
+            Log.i(TAG, "image encoded. promptLength=" + prompt.length()
+                    + ", imageBytes=" + imageBytes.length);
+            List<Content> contents = new ArrayList<>();
+            contents.add(new Content.ImageBytes(imageBytes));
+            contents.add(new Content.Text(prompt));
+            Contents input = Contents.Companion.of(contents);
+            Conversation conversationForCallback = activeConversation;
+
+            Log.i(TAG, "calling sendMessage. thread=" + Thread.currentThread().getName());
+            Message message = conversationForCallback.sendMessage(input, Collections.emptyMap());
+            inferenceRunning.set(false);
+            closeQuietly(conversationForCallback);
+            String rawText = message == null ? "" : message.toString();
+            Log.i(TAG, "inference done. outputLength=" + rawText.length()
+                    + ", latencyMs=" + (System.currentTimeMillis() - startedAtMs)
+                    + ", thread=" + Thread.currentThread().getName());
+            dispatchSuccess(callback, new SmallModelResult(
+                    rawText,
+                    GemmaUiUnderstandingPrompt.rawTextToYamlCandidate(rawText),
+                    System.currentTimeMillis() - startedAtMs
+            ));
         } catch (Throwable throwable) {
             inferenceRunning.set(false);
+            closeQuietly(activeConversation);
+            Log.e(TAG, "sendMessage threw", throwable);
             dispatchError(callback, new SmallModelError(
                     SmallModelError.CODE_INFERENCE_FAILED,
                     throwable.getMessage(),
@@ -216,7 +215,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     @Override
     public boolean isInitialized() {
         synchronized (lock) {
-            return engine != null && conversation != null;
+            return engine != null && conversationConfig != null;
         }
     }
 
@@ -229,13 +228,6 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     @Override
     public void close() {
         synchronized (lock) {
-            if (conversation != null) {
-                try {
-                    conversation.close();
-                } catch (Throwable ignored) {
-                }
-                conversation = null;
-            }
             if (engine != null) {
                 try {
                     engine.close();
@@ -243,6 +235,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
                 }
                 engine = null;
             }
+            conversationConfig = null;
             initConfig = null;
             inferenceRunning.set(false);
         }
@@ -369,6 +362,15 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     private <T> void dispatchSuccess(SmallModelCallback<T> callback, T value) {
         if (callback != null) {
             callback.onSuccess(value);
+        }
+    }
+
+    private static void closeQuietly(Conversation conversation) {
+        if (conversation != null) {
+            try {
+                conversation.close();
+            } catch (Throwable ignored) {
+            }
         }
     }
 

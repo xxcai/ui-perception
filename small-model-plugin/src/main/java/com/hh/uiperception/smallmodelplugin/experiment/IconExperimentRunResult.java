@@ -19,6 +19,8 @@ public final class IconExperimentRunResult {
     private final long modelLoadMs;
     private final long inferenceMs;
     private final long totalMs;
+    private final int batchSize;
+    private final int batchCount;
     private final String prompt;
     private final List<IconTarget> targets;
     private final String rawOutput;
@@ -37,6 +39,8 @@ public final class IconExperimentRunResult {
         this.modelLoadMs = builder.modelLoadMs;
         this.inferenceMs = builder.inferenceMs;
         this.totalMs = builder.totalMs;
+        this.batchSize = builder.batchSize;
+        this.batchCount = builder.batchCount;
         this.prompt = builder.prompt == null ? "" : builder.prompt;
         this.targets = immutableCopy(builder.targets);
         this.rawOutput = builder.rawOutput == null ? "" : builder.rawOutput;
@@ -89,6 +93,14 @@ public final class IconExperimentRunResult {
         return totalMs;
     }
 
+    public int batchSize() {
+        return batchSize;
+    }
+
+    public int batchCount() {
+        return batchCount;
+    }
+
     public String prompt() {
         return prompt;
     }
@@ -134,6 +146,8 @@ public final class IconExperimentRunResult {
         private long modelLoadMs = -1L;
         private long inferenceMs = -1L;
         private long totalMs = -1L;
+        private int batchSize = 0;
+        private int batchCount = 1;
         private String prompt = "";
         private List<IconTarget> targets = Collections.emptyList();
         private String rawOutput = "";
@@ -191,6 +205,16 @@ public final class IconExperimentRunResult {
 
         public Builder setTotalMs(long totalMs) {
             this.totalMs = totalMs;
+            return this;
+        }
+
+        public Builder setBatchSize(int batchSize) {
+            this.batchSize = Math.max(0, batchSize);
+            return this;
+        }
+
+        public Builder setBatchCount(int batchCount) {
+            this.batchCount = Math.max(1, batchCount);
             return this;
         }
 
