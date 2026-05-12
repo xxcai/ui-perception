@@ -7,11 +7,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -23,6 +25,8 @@ import com.hh.uiperception.smallmodelplugin.api.SmallModelCallback;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelError;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelInitConfig;
 import com.hh.uiperception.smallmodelplugin.experiment.IconBounds;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentInput;
+import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentInputBuilder;
 import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentJson;
 import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentPromptBuilder;
 import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentResultStore;
@@ -67,6 +71,8 @@ public final class SmallModelDebugActivity extends Activity {
     private Switch gpuSwitch;
     private Spinner inputModeSpinner;
     private Spinner maxEdgeSpinner;
+    private Spinner targetPresetSpinner;
+    private EditText targetInput;
     private Button initButton;
     private Button runButton;
     private ImageView imagePreview;
@@ -77,6 +83,7 @@ public final class SmallModelDebugActivity extends Activity {
     private TextView historyView;
 
     private Bitmap fixtureBitmap;
+    private Bitmap generatedPreviewBitmap;
     private IconExperimentTestSet fixtureTestSet;
     private long lastLoadLatencyMs = -1L;
 
@@ -90,6 +97,7 @@ public final class SmallModelDebugActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        recycleGeneratedPreviewBitmap();
         experimentExecutor.shutdownNow();
         client.close();
         super.onDestroy();
@@ -153,14 +161,16 @@ public final class SmallModelDebugActivity extends Activity {
 
     private LinearLayout createControlBar() {
         LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setOrientation(LinearLayout.VERTICAL);
         bar.setPadding(0, dp(8), 0, dp(8));
 
+        LinearLayout firstRow = new LinearLayout(this);
+        firstRow.setOrientation(LinearLayout.HORIZONTAL);
+        firstRow.setGravity(Gravity.CENTER_VERTICAL);
         TextView modeLabel = new TextView(this);
         modeLabel.setText("模式");
         modeLabel.setTextSize(13);
-        bar.addView(modeLabel, wrapWrap());
+        firstRow.addView(modeLabel, wrapWrap());
 
         inputModeSpinner = spinner(new String[]{
                 IconInputMode.FULL_IMAGE.name(),
@@ -180,22 +190,62 @@ public final class SmallModelDebugActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-        bar.addView(inputModeSpinner, new LinearLayout.LayoutParams(
+        firstRow.addView(inputModeSpinner, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView edgeLabel = new TextView(this);
         edgeLabel.setText("长边");
         edgeLabel.setTextSize(13);
-        bar.addView(edgeLabel, wrapWrap());
+        firstRow.addView(edgeLabel, wrapWrap());
 
         maxEdgeSpinner = spinner(new String[]{"原图", "1024", "768", "512"});
-        bar.addView(maxEdgeSpinner, new LinearLayout.LayoutParams(
+        firstRow.addView(maxEdgeSpinner, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        bar.addView(firstRow, matchWrap());
+
+        LinearLayout secondRow = new LinearLayout(this);
+        secondRow.setOrientation(LinearLayout.HORIZONTAL);
+        secondRow.setGravity(Gravity.CENTER_VERTICAL);
+        secondRow.setPadding(0, dp(6), 0, 0);
+
+        targetPresetSpinner = spinner(new String[]{
+                "全部",
+                "顶部3个",
+                "t004-t006",
+                "底部4个",
+                "自定义"
+        });
+        targetPresetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view,
+                                       int position, long id) {
+                applyTargetPreset(position);
+                updateImagePreview();
+                updatePromptPreview();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        secondRow.addView(targetPresetSpinner, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        targetInput = new EditText(this);
+        targetInput.setHint("t001,t003,t010");
+        targetInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        targetInput.setSingleLine(true);
+        targetInput.setEnabled(false);
+        secondRow.addView(targetInput, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.4f));
 
         runButton = new Button(this);
         runButton.setText("运行");
         runButton.setOnClickListener(v -> runExperiment());
-        bar.addView(runButton, wrapWrap());
+        secondRow.addView(runButton, wrapWrap());
+        bar.addView(secondRow, matchWrap());
+
+        applyTargetPreset(0);
 
         return bar;
     }
@@ -327,14 +377,19 @@ public final class SmallModelDebugActivity extends Activity {
         IconInputMode mode = selectedInputMode();
         int maxEdge = selectedMaxEdge();
         Bitmap screenshot = fixtureBitmap;
-        IconExperimentTestSet testSet = fixtureTestSet;
+        IconExperimentTestSet testSet = selectedTestSet();
+        if (testSet == null || testSet.targets().isEmpty()) {
+            setBusy(false, "状态：未选中任何 target");
+            resultTable.setText("");
+            return;
+        }
         Log.i(TAG, "calling IconExperimentRunner.run. mode=" + mode
                 + ", maxEdge=" + maxEdge
                 + ", bitmapSize=" + screenshot.getWidth() + "x" + screenshot.getHeight()
                 + ", targetCount=" + testSet.targets().size());
 
         experimentExecutor.execute(() -> {
-            dumpDebugTargetCrops(screenshot, testSet);
+            dumpDebugArtifacts(screenshot, testSet, mode);
             IconExperimentRunner.run(
                     screenshot,
                     testSet,
@@ -366,8 +421,16 @@ public final class SmallModelDebugActivity extends Activity {
 
         // Timing
         timingView.setText("计时：图片 " + formatMs(result.imagePrepareMs())
+                + "  编码 " + formatMs(result.imageEncodeMs())
+                + "  模型 " + formatMs(result.modelCallMs())
                 + "  推理 " + formatMs(result.inferenceMs())
-                + "  总计 " + formatMs(result.totalMs()));
+                + "  总计 " + formatMs(result.totalMs())
+                + "\n输入："
+                + formatSize(result.inputImageWidth(), result.inputImageHeight())
+                + " -> "
+                + formatSize(result.encodedImageWidth(), result.encodedImageHeight())
+                + "  "
+                + formatBytes(result.encodedImageBytes()));
 
         // Raw output
         rawOutputView.setText(result.rawOutput().isEmpty()
@@ -392,7 +455,8 @@ public final class SmallModelDebugActivity extends Activity {
         refreshHistory();
     }
 
-    private void dumpDebugTargetCrops(Bitmap screenshot, IconExperimentTestSet testSet) {
+    private void dumpDebugArtifacts(Bitmap screenshot, IconExperimentTestSet testSet,
+                                    IconInputMode mode) {
         if (screenshot == null || testSet == null) {
             return;
         }
@@ -406,9 +470,12 @@ public final class SmallModelDebugActivity extends Activity {
             Log.w(TAG, "failed to create debug crop dir: " + outputDir.getAbsolutePath());
             return;
         }
-        Log.i(TAG, "dump debug crops. dir=" + outputDir.getAbsolutePath()
+        Log.i(TAG, "dump debug artifacts. dir=" + outputDir.getAbsolutePath()
                 + ", bitmap=" + screenshot.getWidth() + "x" + screenshot.getHeight()
-                + ", targetCount=" + testSet.targets().size());
+                + ", targetCount=" + testSet.targets().size()
+                + ", mode=" + mode);
+
+        dumpPreparedInput(screenshot, testSet, mode, outputDir);
 
         Bitmap annotated = createBoundsPreview(screenshot, testSet);
         saveBitmap(new File(outputDir, "annotated.png"), annotated);
@@ -438,6 +505,23 @@ public final class SmallModelDebugActivity extends Activity {
         }
     }
 
+    private void dumpPreparedInput(Bitmap screenshot, IconExperimentTestSet testSet,
+                                   IconInputMode mode, File outputDir) {
+        try {
+            IconExperimentInput input = IconExperimentInputBuilder.build(screenshot, testSet, mode);
+            saveBitmap(new File(outputDir, "prepared_input.png"), input.image());
+            writeText(new File(outputDir, "prepared_prompt.txt"), input.prompt());
+            Log.i(TAG, "prepared input saved. mode=" + mode
+                    + ", inputBitmap=" + input.image().getWidth() + "x" + input.image().getHeight()
+                    + ", promptLength=" + input.prompt().length());
+            if (input.image() != screenshot) {
+                input.image().recycle();
+            }
+        } catch (Throwable throwable) {
+            Log.e(TAG, "dump prepared input failed", throwable);
+        }
+    }
+
     private void saveBitmap(File file, Bitmap bitmap) {
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
@@ -446,8 +530,23 @@ public final class SmallModelDebugActivity extends Activity {
         }
     }
 
+    private void writeText(File file, String text) {
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+            outputStream.write((text == null ? "" : text).getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            Log.e(TAG, "save debug text failed. file=" + file.getAbsolutePath(), e);
+        }
+    }
+
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private void recycleGeneratedPreviewBitmap() {
+        if (generatedPreviewBitmap != null && !generatedPreviewBitmap.isRecycled()) {
+            generatedPreviewBitmap.recycle();
+        }
+        generatedPreviewBitmap = null;
     }
 
     private void refreshHistory() {
@@ -467,15 +566,25 @@ public final class SmallModelDebugActivity extends Activity {
         if (imagePreview == null || fixtureBitmap == null) {
             return;
         }
-        IconInputMode mode = selectedInputMode();
-        if ((mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
-                || mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS
-                || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED)
-                && fixtureTestSet != null) {
-            imagePreview.setImageBitmap(createBoundsPreview(fixtureBitmap, fixtureTestSet));
-        } else if (mode == IconInputMode.CROPPED_MONTAGE && fixtureTestSet != null) {
+        recycleGeneratedPreviewBitmap();
+        if (fixtureTestSet == null) {
             imagePreview.setImageBitmap(fixtureBitmap);
-        } else {
+            return;
+        }
+        try {
+            IconExperimentInput input = IconExperimentInputBuilder.build(
+                    fixtureBitmap,
+                    selectedTestSetOrFallback(),
+                    selectedInputMode()
+            );
+            if (input.image() == fixtureBitmap) {
+                imagePreview.setImageBitmap(fixtureBitmap);
+            } else {
+                generatedPreviewBitmap = input.image();
+                imagePreview.setImageBitmap(generatedPreviewBitmap);
+            }
+        } catch (Throwable throwable) {
+            Log.e(TAG, "updateImagePreview failed", throwable);
             imagePreview.setImageBitmap(fixtureBitmap);
         }
     }
@@ -484,67 +593,33 @@ public final class SmallModelDebugActivity extends Activity {
         if (promptPreview == null || fixtureTestSet == null) {
             return;
         }
-        IconInputMode mode = selectedInputMode();
-        String prompt;
-        if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
-                || mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS
-                || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
-            if (mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS) {
-                prompt = IconExperimentPromptBuilder.markedBoundsPrompt(fixtureTestSet);
-            } else {
-                prompt = IconExperimentPromptBuilder.fullImageWithBoundsPrompt(
-                        fixtureTestSet,
-                        fixtureBitmap == null ? 0 : fixtureBitmap.getWidth(),
-                        fixtureBitmap == null ? 0 : fixtureBitmap.getHeight()
-                );
-            }
-        } else if (mode == IconInputMode.CROPPED_MONTAGE) {
-            prompt = IconExperimentPromptBuilder.montagePrompt(
-                    IconMontageLayoutCalculator.calculate(fixtureTestSet.targets()).mappings()
+        try {
+            IconExperimentInput input = IconExperimentInputBuilder.build(
+                    fixtureBitmap,
+                    selectedTestSetOrFallback(),
+                    selectedInputMode()
             );
-        } else {
-            prompt = IconExperimentPromptBuilder.fullImagePrompt(fixtureTestSet);
+            promptPreview.setText(input.prompt());
+        } catch (Throwable throwable) {
+            Log.e(TAG, "updatePromptPreview failed", throwable);
+            promptPreview.setText("");
         }
-        promptPreview.setText(prompt);
     }
 
     private Bitmap createBoundsPreview(Bitmap source, IconExperimentTestSet testSet) {
-        Bitmap preview = Bitmap.createBitmap(
-                source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(preview);
-        canvas.drawBitmap(source, 0f, 0f, null);
-        float strokeWidth = Math.max(3f, source.getWidth() / 320f);
-        float labelTextSize = Math.max(18f, source.getWidth() / 58f);
-        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(strokeWidth);
-        strokePaint.setColor(Color.rgb(0, 120, 255));
-        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        bgPaint.setStyle(Paint.Style.FILL);
-        bgPaint.setColor(0xCC0078FF);
-        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(labelTextSize);
-        for (IconTarget target : testSet.targets()) {
-            IconBounds bounds = target.bounds();
-            if (bounds == null || !bounds.isValid()) {
-                continue;
-            }
-            canvas.drawRect(bounds.left(), bounds.top(),
-                    bounds.right(), bounds.bottom(), strokePaint);
-            float padding = Math.max(4f, canvas.getWidth() / 310f);
-            Paint.FontMetrics metrics = textPaint.getFontMetrics();
-            float tw = textPaint.measureText(target.id());
-            float th = metrics.descent - metrics.ascent;
-            float left = bounds.left();
-            float top = Math.max(0f, bounds.top() - th - padding * 2f);
-            float right = Math.min(canvas.getWidth(), left + tw + padding * 2f);
-            float bottom = top + th + padding * 2f;
-            canvas.drawRect(left, top, right, bottom, bgPaint);
-            canvas.drawText(target.id(), left + padding, bottom - padding - metrics.descent,
-                    textPaint);
+        try {
+            return com.hh.uiperception.smallmodelplugin.experiment.IconBoundsAnnotator.annotate(
+                    source,
+                    IconExperimentInputBuilder.buildMappings(testSet)
+            );
+        } catch (Throwable throwable) {
+            Log.e(TAG, "createBoundsPreview failed", throwable);
+            Bitmap preview = Bitmap.createBitmap(
+                    source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(preview);
+            canvas.drawBitmap(source, 0f, 0f, null);
+            return preview;
         }
-        return preview;
     }
 
     private void setBusy(boolean busy, String status) {
@@ -554,6 +629,12 @@ public final class SmallModelDebugActivity extends Activity {
         gpuSwitch.setEnabled(!busy);
         inputModeSpinner.setEnabled(!busy);
         maxEdgeSpinner.setEnabled(!busy);
+        targetPresetSpinner.setEnabled(!busy);
+        if (targetInput != null) {
+            boolean customPreset = targetPresetSpinner != null
+                    && targetPresetSpinner.getSelectedItemPosition() == 4;
+            targetInput.setEnabled(!busy && customPreset);
+        }
     }
 
     private IconInputMode selectedInputMode() {
@@ -579,6 +660,101 @@ public final class SmallModelDebugActivity extends Activity {
 
     private String formatMs(long ms) {
         return ms >= 0 ? ms + "ms" : "-";
+    }
+
+    private String formatSize(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return "-";
+        }
+        return width + "x" + height;
+    }
+
+    private String formatBytes(int bytes) {
+        if (bytes <= 0) {
+            return "-";
+        }
+        return bytes + "B";
+    }
+
+    private void applyTargetPreset(int position) {
+        if (targetInput == null) {
+            return;
+        }
+        switch (position) {
+            case 1:
+                targetInput.setEnabled(false);
+                targetInput.setText("t001,t002,t003");
+                break;
+            case 2:
+                targetInput.setEnabled(false);
+                targetInput.setText("t004,t005,t006");
+                break;
+            case 3:
+                targetInput.setEnabled(false);
+                targetInput.setText("t012,t013,t014,t015");
+                break;
+            case 4:
+                targetInput.setEnabled(true);
+                if ("t001,t002,t003".contentEquals(targetInput.getText())
+                        || "t004,t005,t006".contentEquals(targetInput.getText())
+                        || "t012,t013,t014,t015".contentEquals(targetInput.getText())) {
+                    targetInput.setText("");
+                }
+                targetInput.requestFocus();
+                break;
+            case 0:
+            default:
+                targetInput.setEnabled(false);
+                targetInput.setText("");
+                break;
+        }
+    }
+
+    private IconExperimentTestSet selectedTestSetOrFallback() {
+        IconExperimentTestSet selected = selectedTestSet();
+        if (selected == null || selected.targets().isEmpty()) {
+            return fixtureTestSet;
+        }
+        return selected;
+    }
+
+    private IconExperimentTestSet selectedTestSet() {
+        if (fixtureTestSet == null) {
+            return null;
+        }
+        String text = targetInput == null ? "" : String.valueOf(targetInput.getText()).trim();
+        if (text.isEmpty()) {
+            return fixtureTestSet;
+        }
+        String[] parts = text.split(",");
+        List<IconTarget> selectedTargets = new java.util.ArrayList<>();
+        for (String part : parts) {
+            String id = part == null ? "" : part.trim();
+            if (id.isEmpty()) {
+                continue;
+            }
+            IconTarget target = findTargetById(fixtureTestSet, id);
+            if (target != null) {
+                selectedTargets.add(target);
+            }
+        }
+        return new IconExperimentTestSet(
+                fixtureTestSet.testsetId(),
+                fixtureTestSet.image(),
+                selectedTargets
+        );
+    }
+
+    private IconTarget findTargetById(IconExperimentTestSet testSet, String id) {
+        if (testSet == null || id == null) {
+            return null;
+        }
+        for (IconTarget target : testSet.targets()) {
+            if (id.equalsIgnoreCase(target.id())) {
+                return target;
+            }
+        }
+        return null;
     }
 
     private Spinner spinner(String[] values) {

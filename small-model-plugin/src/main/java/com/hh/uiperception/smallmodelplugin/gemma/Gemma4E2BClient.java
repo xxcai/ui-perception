@@ -178,7 +178,10 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
                     ? GemmaUiUnderstandingPrompt.defaultPrompt()
                     : request.prompt();
             Log.i(TAG, "encoding image...");
-            byte[] imageBytes = toImageBytes(request);
+            long encodeStartedAtMs = System.currentTimeMillis();
+            PreparedImage preparedImage = prepareImage(request);
+            long imageEncodeMs = System.currentTimeMillis() - encodeStartedAtMs;
+            byte[] imageBytes = preparedImage.bytes;
             Log.i(TAG, "image encoded. promptLength=" + prompt.length()
                     + ", imageBytes=" + imageBytes.length);
             List<Content> contents = new ArrayList<>();
@@ -188,7 +191,9 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
             Conversation conversationForCallback = activeConversation;
 
             Log.i(TAG, "calling sendMessage. thread=" + Thread.currentThread().getName());
+            long modelCallStartedAtMs = System.currentTimeMillis();
             Message message = conversationForCallback.sendMessage(input, Collections.emptyMap());
+            long modelCallMs = System.currentTimeMillis() - modelCallStartedAtMs;
             inferenceRunning.set(false);
             closeQuietly(conversationForCallback);
             String rawText = message == null ? "" : message.toString();
@@ -198,7 +203,14 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
             dispatchSuccess(callback, new SmallModelResult(
                     rawText,
                     GemmaUiUnderstandingPrompt.rawTextToYamlCandidate(rawText),
-                    System.currentTimeMillis() - startedAtMs
+                    System.currentTimeMillis() - startedAtMs,
+                    preparedImage.inputWidth,
+                    preparedImage.inputHeight,
+                    preparedImage.encodedWidth,
+                    preparedImage.encodedHeight,
+                    preparedImage.bytes.length,
+                    imageEncodeMs,
+                    modelCallMs
             ));
         } catch (Throwable throwable) {
             inferenceRunning.set(false);
@@ -267,7 +279,7 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
         return null;
     }
 
-    private byte[] toImageBytes(SmallModelRequest request) {
+    private PreparedImage prepareImage(SmallModelRequest request) {
         Bitmap bitmap = request.image();
         Bitmap croppedBitmap = maybeCropBitmap(bitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_CROP));
         Bitmap encodedBitmap = maybeScaleBitmap(croppedBitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_MAX_EDGE));
@@ -296,7 +308,13 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
         if (croppedBitmap != bitmap && croppedBitmap != encodedBitmap) {
             croppedBitmap.recycle();
         }
-        return bytes;
+        return new PreparedImage(
+                bitmap.getWidth(),
+                bitmap.getHeight(),
+                encodedBitmap.getWidth(),
+                encodedBitmap.getHeight(),
+                bytes
+        );
     }
 
     private Bitmap maybeCropBitmap(Bitmap bitmap, String cropMode) {
@@ -377,6 +395,24 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     private void dispatchError(SmallModelCallback<?> callback, SmallModelError error) {
         if (callback != null) {
             callback.onError(error);
+        }
+    }
+
+    private static final class PreparedImage {
+        private final int inputWidth;
+        private final int inputHeight;
+        private final int encodedWidth;
+        private final int encodedHeight;
+        private final byte[] bytes;
+
+        private PreparedImage(int inputWidth, int inputHeight,
+                              int encodedWidth, int encodedHeight,
+                              byte[] bytes) {
+            this.inputWidth = inputWidth;
+            this.inputHeight = inputHeight;
+            this.encodedWidth = encodedWidth;
+            this.encodedHeight = encodedHeight;
+            this.bytes = bytes;
         }
     }
 }

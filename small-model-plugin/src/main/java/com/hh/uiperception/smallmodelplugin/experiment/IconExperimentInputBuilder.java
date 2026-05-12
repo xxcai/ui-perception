@@ -26,25 +26,24 @@ public final class IconExperimentInputBuilder {
         if (mode == IconInputMode.CROPPED_MULTI_IMAGE) {
             throw new UnsupportedOperationException("CROPPED_MULTI_IMAGE is not supported yet");
         }
+        List<IconTargetMapping> mappings = buildMappings(testSet);
         IconExperimentInput input;
         if (mode == IconInputMode.CROPPED_MONTAGE) {
             input = IconMontageBuilder.build(sourceBitmap, testSet);
         } else if (mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS) {
-            Bitmap annotatedBitmap = IconBoundsAnnotator.annotate(sourceBitmap, testSet);
-            List<IconTargetMapping> mappings = fullImageMappings(testSet);
+            Bitmap annotatedBitmap = IconBoundsAnnotator.annotate(sourceBitmap, mappings);
             input = new IconExperimentInput(
                     mode,
                     annotatedBitmap,
-                    IconExperimentPromptBuilder.markedBoundsPrompt(testSet),
+                    IconExperimentPromptBuilder.markedBoundsPrompt(mappings),
                     mappings,
                     -1L
             );
         } else {
-            List<IconTargetMapping> mappings = fullImageMappings(testSet);
             input = new IconExperimentInput(
                     mode,
                     sourceBitmap,
-                    promptForFullImageMode(sourceBitmap, testSet, mode, mappings),
+                    promptForFullImageMode(sourceBitmap, mode, mappings),
                     mappings,
                     -1L
             );
@@ -61,32 +60,33 @@ public final class IconExperimentInputBuilder {
 
     private static String promptForFullImageMode(
             Bitmap sourceBitmap,
-            IconExperimentTestSet testSet,
             IconInputMode mode,
             List<IconTargetMapping> mappings
     ) {
         if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
                 || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
             return IconExperimentPromptBuilder.fullImageWithBoundsPrompt(
-                    testSet,
+                    mappings,
                     sourceBitmap.getWidth(),
                     sourceBitmap.getHeight()
             );
         }
-        return IconExperimentPromptBuilder.build(testSet, mode, mappings);
+        return IconExperimentPromptBuilder.build(mode, mappings);
     }
 
-    private static List<IconTargetMapping> fullImageMappings(IconExperimentTestSet testSet) {
+    public static List<IconTargetMapping> buildMappings(IconExperimentTestSet testSet) {
         List<IconTargetMapping> mappings = new ArrayList<>();
         if (testSet == null) {
             return mappings;
         }
-        for (IconTarget target : testSet.targets()) {
+        List<IconTarget> targets = testSet.targets();
+        for (int i = 0; i < targets.size(); i++) {
+            IconTarget target = targets.get(i);
             mappings.add(new IconTargetMapping(
                     target.id(),
                     target.bounds(),
                     target.bounds(),
-                    target.id()
+                    String.valueOf(i + 1)
             ));
         }
         return mappings;

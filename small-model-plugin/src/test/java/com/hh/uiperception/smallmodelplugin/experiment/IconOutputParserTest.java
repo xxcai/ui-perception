@@ -44,4 +44,21 @@ public final class IconOutputParserTest {
         assertEquals("icon_001", parsed.get(0).id());
         assertEquals("电话图标", parsed.get(0).desc());
     }
+
+    @Test
+    public void remapsNumericLabelsBackToTargetIds() {
+        List<ParsedIconDescription> parsed = IconOutputParser.parse(""
+                        + "1:电话\n"
+                        + "2:加号\n",
+                java.util.Arrays.asList(
+                        new IconTargetMapping("t001", null, null, "1"),
+                        new IconTargetMapping("t002", null, null, "2")
+                ));
+
+        assertEquals(2, parsed.size());
+        assertEquals("t001", parsed.get(0).id());
+        assertEquals("电话", parsed.get(0).desc());
+        assertEquals("t002", parsed.get(1).id());
+        assertEquals("加号", parsed.get(1).desc());
+    }
 }

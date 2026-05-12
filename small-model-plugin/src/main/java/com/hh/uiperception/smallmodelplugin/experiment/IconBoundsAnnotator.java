@@ -13,7 +13,7 @@ public final class IconBoundsAnnotator {
     private IconBoundsAnnotator() {
     }
 
-    public static Bitmap annotate(Bitmap source, IconExperimentTestSet testSet) {
+    public static Bitmap annotate(Bitmap source, java.util.List<IconTargetMapping> mappings) {
         if (source == null) {
             throw new IllegalArgumentException("source must not be null");
         }
@@ -21,7 +21,7 @@ public final class IconBoundsAnnotator {
                 source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(annotated);
         canvas.drawBitmap(source, 0f, 0f, null);
-        if (testSet == null) {
+        if (mappings == null) {
             return annotated;
         }
 
@@ -38,8 +38,8 @@ public final class IconBoundsAnnotator {
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(labelTextSize);
 
-        for (IconTarget target : testSet.targets()) {
-            IconBounds bounds = target.bounds();
+        for (IconTargetMapping mapping : mappings) {
+            IconBounds bounds = mapping.originalBounds();
             if (bounds == null || !bounds.isValid()) {
                 continue;
             }
@@ -54,14 +54,14 @@ public final class IconBoundsAnnotator {
 
             float padding = Math.max(5f, source.getWidth() / 260f);
             Paint.FontMetrics metrics = textPaint.getFontMetrics();
-            float labelWidth = textPaint.measureText(target.id());
+            float labelWidth = textPaint.measureText(mapping.label());
             float labelHeight = metrics.descent - metrics.ascent;
             float labelLeft = left;
             float labelTop = Math.max(0f, top - labelHeight - padding * 2f);
             float labelRight = Math.min(source.getWidth(), labelLeft + labelWidth + padding * 2f);
             float labelBottom = labelTop + labelHeight + padding * 2f;
             canvas.drawRect(labelLeft, labelTop, labelRight, labelBottom, bgPaint);
-            canvas.drawText(target.id(), labelLeft + padding,
+            canvas.drawText(mapping.label(), labelLeft + padding,
                     labelBottom - padding - metrics.descent, textPaint);
         }
         return annotated;

@@ -11,6 +11,9 @@ import android.graphics.Rect;
  */
 public final class IconMontageBuilder {
 
+    private static final int MIN_CROP_PADDING_PX = 12;
+    private static final float CROP_PADDING_RATIO = 0.2f;
+
     private IconMontageBuilder() {
     }
 
@@ -69,7 +72,7 @@ public final class IconMontageBuilder {
         );
         canvas.drawText(mapping.label(), cellLeft + 12f, cellTop + 26f, textPaint);
 
-        IconBounds sourceBounds = clampBounds(mapping.originalBounds(), sourceBitmap);
+        IconBounds sourceBounds = expandAndClampBounds(mapping.originalBounds(), sourceBitmap);
         if (sourceBounds == null) {
             return;
         }
@@ -88,14 +91,18 @@ public final class IconMontageBuilder {
         canvas.drawBitmap(sourceBitmap, source, destination, null);
     }
 
-    private static IconBounds clampBounds(IconBounds bounds, Bitmap bitmap) {
+    private static IconBounds expandAndClampBounds(IconBounds bounds, Bitmap bitmap) {
         if (bounds == null || bitmap == null || !bounds.isValid()) {
             return null;
         }
-        int left = Math.max(0, Math.min(bounds.left(), bitmap.getWidth() - 1));
-        int top = Math.max(0, Math.min(bounds.top(), bitmap.getHeight() - 1));
-        int right = Math.max(left + 1, Math.min(bounds.right(), bitmap.getWidth()));
-        int bottom = Math.max(top + 1, Math.min(bounds.bottom(), bitmap.getHeight()));
+        int padding = Math.max(
+                MIN_CROP_PADDING_PX,
+                Math.round(Math.max(bounds.width(), bounds.height()) * CROP_PADDING_RATIO)
+        );
+        int left = Math.max(0, Math.min(bounds.left() - padding, bitmap.getWidth() - 1));
+        int top = Math.max(0, Math.min(bounds.top() - padding, bitmap.getHeight() - 1));
+        int right = Math.max(left + 1, Math.min(bounds.right() + padding, bitmap.getWidth()));
+        int bottom = Math.max(top + 1, Math.min(bounds.bottom() + padding, bitmap.getHeight()));
         return new IconBounds(left, top, right, bottom);
     }
 }

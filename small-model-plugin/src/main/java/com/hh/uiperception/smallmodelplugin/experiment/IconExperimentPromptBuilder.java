@@ -10,28 +10,27 @@ public final class IconExperimentPromptBuilder {
     private IconExperimentPromptBuilder() {
     }
 
-    public static String build(IconExperimentTestSet testSet, IconInputMode inputMode,
-                               List<IconTargetMapping> mappings) {
+    public static String build(IconInputMode inputMode, List<IconTargetMapping> mappings) {
         IconInputMode mode = inputMode == null ? IconInputMode.FULL_IMAGE : inputMode;
         if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS
                 || mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS
                 || mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
             if (mode == IconInputMode.FULL_IMAGE_WITH_MARKED_BOUNDS) {
-                return markedBoundsPrompt(testSet);
+                return markedBoundsPrompt(mappings);
             }
-            return fullImageWithBoundsPrompt(testSet);
+            return fullImageWithBoundsPrompt(mappings);
         }
         if (mode == IconInputMode.CROPPED_MONTAGE) {
             return montagePrompt(mappings);
         }
-        return fullImagePrompt(testSet);
+        return fullImagePrompt(mappings);
     }
 
-    public static String fullImagePrompt(IconExperimentTestSet testSet) {
+    public static String fullImagePrompt(List<IconTargetMapping> mappings) {
         StringBuilder targets = new StringBuilder();
         int targetCount = 0;
-        for (IconTarget target : safeTargets(testSet)) {
-            targets.append(target.id()).append("\n");
+        for (IconTargetMapping mapping : safeMappings(mappings)) {
+            targets.append(mapping.label()).append("\n");
             targetCount++;
         }
         return "You are given a full mobile app screenshot.\n\n"
@@ -41,8 +40,10 @@ public final class IconExperimentPromptBuilder {
                 + targets
                 + "\nOutput exactly one line per target id.\n"
                 + "Write every description in Simplified Chinese. Do not use English except the id and unknown.\n"
+                + "Use a very short label of 1 to 4 Chinese characters only.\n"
+                + "Do not write sentences, explanations, modifiers, or punctuation after the label.\n"
                 + "Use this exact format:\n"
-                + "<id>:<short Chinese description>\n\n"
+                + "<id>:<short Chinese label>\n\n"
                 + "If you cannot confidently match a target id to a visible icon, output:\n"
                 + "<id>:unknown\n\n"
                 + "Return exactly "
@@ -51,12 +52,12 @@ public final class IconExperimentPromptBuilder {
                 + "No extra text.";
     }
 
-    public static String fullImageWithBoundsPrompt(IconExperimentTestSet testSet) {
-        return fullImageWithBoundsPrompt(testSet, 0, 0);
+    public static String fullImageWithBoundsPrompt(List<IconTargetMapping> mappings) {
+        return fullImageWithBoundsPrompt(mappings, 0, 0);
     }
 
     public static String fullImageWithBoundsPrompt(
-            IconExperimentTestSet testSet,
+            List<IconTargetMapping> mappings,
             int imageWidth,
             int imageHeight
     ) {
@@ -64,13 +65,13 @@ public final class IconExperimentPromptBuilder {
         int maxRight = 0;
         int maxBottom = 0;
         int targetCount = 0;
-        for (IconTarget target : safeTargets(testSet)) {
-            IconBounds bounds = target.bounds();
+        for (IconTargetMapping mapping : safeMappings(mappings)) {
+            IconBounds bounds = mapping.originalBounds();
             if (bounds != null && bounds.isValid()) {
                 maxRight = Math.max(maxRight, bounds.right());
                 maxBottom = Math.max(maxBottom, bounds.bottom());
                 targetCount++;
-                targetRegions.append(target.id())
+                targetRegions.append(mapping.label())
                         .append("=")
                         .append(bounds.left()).append(",")
                         .append(bounds.top()).append(",")
@@ -106,8 +107,10 @@ public final class IconExperimentPromptBuilder {
                 + "If a rectangle does not clearly contain an icon or visual symbol, output unknown.\n\n"
                 + "Output exactly one line per target region.\n"
                 + "Write every description in Simplified Chinese. Do not use English except the id and unknown.\n"
+                + "Use a very short label of 1 to 4 Chinese characters only.\n"
+                + "Do not write sentences, explanations, modifiers, or punctuation after the label.\n"
                 + "Use this exact format:\n"
-                + "<id>:<short Chinese description>\n\n"
+                + "<id>:<short Chinese label>\n\n"
                 + "Return exactly "
                 + targetCount
                 + " lines and stop immediately after the last line.\n"
@@ -132,8 +135,10 @@ public final class IconExperimentPromptBuilder {
                 + targetLabels
                 + "\nOutput exactly one line per label.\n"
                 + "Write every description in Simplified Chinese. Do not use English except the id and unknown.\n"
+                + "Use a very short label of 1 to 4 Chinese characters only.\n"
+                + "Do not write sentences, explanations, modifiers, or punctuation after the label.\n"
                 + "Use this exact format:\n"
-                + "<id>:<short Chinese description>\n\n"
+                + "<id>:<short Chinese label>\n\n"
                 + "If a crop is unclear, output:\n"
                 + "<id>:unknown\n\n"
                 + "Return exactly "
@@ -142,11 +147,11 @@ public final class IconExperimentPromptBuilder {
                 + "No extra text.";
     }
 
-    public static String markedBoundsPrompt(IconExperimentTestSet testSet) {
+    public static String markedBoundsPrompt(List<IconTargetMapping> mappings) {
         StringBuilder targetLabels = new StringBuilder();
         int targetCount = 0;
-        for (IconTarget target : safeTargets(testSet)) {
-            targetLabels.append(target.id()).append("\n");
+        for (IconTargetMapping mapping : safeMappings(mappings)) {
+            targetLabels.append(mapping.label()).append("\n");
             targetCount++;
         }
         return "You are given a mobile app screenshot with visible blue rectangles and id labels.\n\n"
@@ -159,15 +164,17 @@ public final class IconExperimentPromptBuilder {
                 + targetLabels
                 + "\nOutput exactly one line per target id.\n"
                 + "Write every description in Simplified Chinese. Do not use English except the id and unknown.\n"
+                + "Use a very short label of 1 to 4 Chinese characters only.\n"
+                + "Do not write sentences, explanations, modifiers, or punctuation after the label.\n"
                 + "Use this exact format:\n"
-                + "<id>:<short Chinese description>\n\n"
+                + "<id>:<short Chinese label>\n\n"
                 + "Return exactly "
                 + targetCount
                 + " lines and stop immediately after the last line.\n"
                 + "No extra text.";
     }
 
-    private static List<IconTarget> safeTargets(IconExperimentTestSet testSet) {
-        return testSet == null ? java.util.Collections.emptyList() : testSet.targets();
+    private static List<IconTargetMapping> safeMappings(List<IconTargetMapping> mappings) {
+        return mappings == null ? java.util.Collections.emptyList() : mappings;
     }
 }

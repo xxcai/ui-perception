@@ -110,6 +110,13 @@ public final class IconExperimentRunner {
                         .setInputMode(mode)
                         .setTargetCount(targetCount(testSet))
                         .setImagePrepareMs(input.imagePrepareMs())
+                        .setInputImageWidth(value == null ? 0 : value.inputWidth())
+                        .setInputImageHeight(value == null ? 0 : value.inputHeight())
+                        .setEncodedImageWidth(value == null ? 0 : value.encodedWidth())
+                        .setEncodedImageHeight(value == null ? 0 : value.encodedHeight())
+                        .setEncodedImageBytes(value == null ? 0 : value.imageBytes())
+                        .setImageEncodeMs(value == null ? -1L : value.imageEncodeMs())
+                        .setModelCallMs(value == null ? -1L : value.modelCallMs())
                         .setModelLoadMs(modelLoadMs)
                         .setInferenceMs(inferenceMs)
                         .setTotalMs(System.currentTimeMillis() - startedAtMs)
@@ -118,7 +125,7 @@ public final class IconExperimentRunner {
                         .setPrompt(input.prompt())
                         .setTargets(testSet == null ? null : testSet.targets())
                         .setRawOutput(rawOutput)
-                        .setParsedOutput(IconOutputParser.parse(rawOutput))
+                        .setParsedOutput(IconOutputParser.parse(rawOutput, input.mappings()))
                         .setManualScores(defaultManualScores(testSet))
                         .build());
             }
@@ -179,8 +186,9 @@ public final class IconExperimentRunner {
         int batchCount = targets.isEmpty()
                 ? 0
                 : (int) Math.ceil(targets.size() / (double) safeBatchSize);
+        List<IconTargetMapping> mappings = IconExperimentInputBuilder.buildMappings(testSet);
         BatchState state = new BatchState(
-                screenshot, testSet, targets, safeBatchSize, batchCount,
+                screenshot, testSet, targets, mappings, safeBatchSize, batchCount,
                 modelLoadMs, client, callback,
                 createdAtMs, startedAtMs, runId, imageMaxEdge
         );
@@ -200,6 +208,13 @@ public final class IconExperimentRunner {
                     .setInputMode(IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED)
                     .setTargetCount(targetCount(state.testSet))
                     .setImagePrepareMs(state.imagePrepareMs)
+                    .setInputImageWidth(state.inputImageWidth)
+                    .setInputImageHeight(state.inputImageHeight)
+                    .setEncodedImageWidth(state.encodedImageWidth)
+                    .setEncodedImageHeight(state.encodedImageHeight)
+                    .setEncodedImageBytes(state.encodedImageBytes)
+                    .setImageEncodeMs(state.imageEncodeMs)
+                    .setModelCallMs(state.modelCallMs)
                     .setModelLoadMs(state.modelLoadMs)
                     .setInferenceMs(state.inferenceMs)
                     .setTotalMs(System.currentTimeMillis() - state.startedAtMs)
@@ -208,7 +223,7 @@ public final class IconExperimentRunner {
                     .setPrompt(state.prompts.toString().trim())
                     .setTargets(state.testSet == null ? null : state.testSet.targets())
                     .setRawOutput(state.rawOutput.toString().trim())
-                    .setParsedOutput(IconOutputParser.parse(state.rawOutput.toString()))
+                    .setParsedOutput(IconOutputParser.parse(state.rawOutput.toString(), state.mappings))
                     .setManualScores(defaultManualScores(state.testSet))
                     .build());
             return;
@@ -216,6 +231,9 @@ public final class IconExperimentRunner {
 
         int batchStart = state.nextIndex;
         int batchEnd = Math.min(state.targets.size(), batchStart + state.batchSize);
+        List<IconTargetMapping> batchMappings = new ArrayList<>(
+                state.mappings.subList(batchStart, batchEnd)
+        );
         List<IconTarget> batchTargets = new ArrayList<>(
                 state.targets.subList(batchStart, batchEnd)
         );
@@ -226,7 +244,7 @@ public final class IconExperimentRunner {
         );
         long prepareStartedAtMs = System.currentTimeMillis();
         String prompt = IconExperimentPromptBuilder.fullImageWithBoundsPrompt(
-                batchTestSet,
+                batchMappings,
                 state.screenshot.getWidth(),
                 state.screenshot.getHeight()
         );
@@ -262,6 +280,15 @@ public final class IconExperimentRunner {
                 long latencyMs = value == null ? -1L : value.latencyMs();
                 if (latencyMs >= 0L) {
                     state.inferenceMs += latencyMs;
+                }
+                if (state.inputImageWidth <= 0 && value != null) {
+                    state.inputImageWidth = value.inputWidth();
+                    state.inputImageHeight = value.inputHeight();
+                    state.encodedImageWidth = value.encodedWidth();
+                    state.encodedImageHeight = value.encodedHeight();
+                    state.encodedImageBytes = value.imageBytes();
+                    state.imageEncodeMs = value.imageEncodeMs();
+                    state.modelCallMs = value.modelCallMs();
                 }
                 if (state.rawOutput.length() > 0) {
                     state.rawOutput.append("\n");
@@ -356,6 +383,7 @@ public final class IconExperimentRunner {
         private final Bitmap screenshot;
         private final IconExperimentTestSet testSet;
         private final List<IconTarget> targets;
+        private final List<IconTargetMapping> mappings;
         private final int batchSize;
         private final int batchCount;
         private final long modelLoadMs;
@@ -370,11 +398,19 @@ public final class IconExperimentRunner {
         private int nextIndex;
         private long imagePrepareMs;
         private long inferenceMs;
+        private int inputImageWidth;
+        private int inputImageHeight;
+        private int encodedImageWidth;
+        private int encodedImageHeight;
+        private int encodedImageBytes;
+        private long imageEncodeMs;
+        private long modelCallMs;
 
         private BatchState(
                 Bitmap screenshot,
                 IconExperimentTestSet testSet,
                 List<IconTarget> targets,
+                List<IconTargetMapping> mappings,
                 int batchSize,
                 int batchCount,
                 long modelLoadMs,
@@ -388,6 +424,7 @@ public final class IconExperimentRunner {
             this.screenshot = screenshot;
             this.testSet = testSet;
             this.targets = targets == null ? new ArrayList<>() : targets;
+            this.mappings = mappings == null ? new ArrayList<>() : mappings;
             this.batchSize = batchSize;
             this.batchCount = batchCount;
             this.modelLoadMs = modelLoadMs;

@@ -16,6 +16,13 @@ public final class IconExperimentRunResult {
     private final IconInputMode inputMode;
     private final int targetCount;
     private final long imagePrepareMs;
+    private final int inputImageWidth;
+    private final int inputImageHeight;
+    private final int encodedImageWidth;
+    private final int encodedImageHeight;
+    private final int encodedImageBytes;
+    private final long imageEncodeMs;
+    private final long modelCallMs;
     private final long modelLoadMs;
     private final long inferenceMs;
     private final long totalMs;
@@ -36,6 +43,13 @@ public final class IconExperimentRunResult {
         this.inputMode = builder.inputMode;
         this.targetCount = builder.targetCount;
         this.imagePrepareMs = builder.imagePrepareMs;
+        this.inputImageWidth = builder.inputImageWidth;
+        this.inputImageHeight = builder.inputImageHeight;
+        this.encodedImageWidth = builder.encodedImageWidth;
+        this.encodedImageHeight = builder.encodedImageHeight;
+        this.encodedImageBytes = builder.encodedImageBytes;
+        this.imageEncodeMs = builder.imageEncodeMs;
+        this.modelCallMs = builder.modelCallMs;
         this.modelLoadMs = builder.modelLoadMs;
         this.inferenceMs = builder.inferenceMs;
         this.totalMs = builder.totalMs;
@@ -79,6 +93,34 @@ public final class IconExperimentRunResult {
 
     public long imagePrepareMs() {
         return imagePrepareMs;
+    }
+
+    public int inputImageWidth() {
+        return inputImageWidth;
+    }
+
+    public int inputImageHeight() {
+        return inputImageHeight;
+    }
+
+    public int encodedImageWidth() {
+        return encodedImageWidth;
+    }
+
+    public int encodedImageHeight() {
+        return encodedImageHeight;
+    }
+
+    public int encodedImageBytes() {
+        return encodedImageBytes;
+    }
+
+    public long imageEncodeMs() {
+        return imageEncodeMs;
+    }
+
+    public long modelCallMs() {
+        return modelCallMs;
     }
 
     public long modelLoadMs() {
@@ -143,6 +185,13 @@ public final class IconExperimentRunResult {
         private IconInputMode inputMode = IconInputMode.FULL_IMAGE;
         private int targetCount;
         private long imagePrepareMs = -1L;
+        private int inputImageWidth;
+        private int inputImageHeight;
+        private int encodedImageWidth;
+        private int encodedImageHeight;
+        private int encodedImageBytes;
+        private long imageEncodeMs = -1L;
+        private long modelCallMs = -1L;
         private long modelLoadMs = -1L;
         private long inferenceMs = -1L;
         private long totalMs = -1L;
@@ -190,6 +239,41 @@ public final class IconExperimentRunResult {
 
         public Builder setImagePrepareMs(long imagePrepareMs) {
             this.imagePrepareMs = imagePrepareMs;
+            return this;
+        }
+
+        public Builder setInputImageWidth(int inputImageWidth) {
+            this.inputImageWidth = Math.max(0, inputImageWidth);
+            return this;
+        }
+
+        public Builder setInputImageHeight(int inputImageHeight) {
+            this.inputImageHeight = Math.max(0, inputImageHeight);
+            return this;
+        }
+
+        public Builder setEncodedImageWidth(int encodedImageWidth) {
+            this.encodedImageWidth = Math.max(0, encodedImageWidth);
+            return this;
+        }
+
+        public Builder setEncodedImageHeight(int encodedImageHeight) {
+            this.encodedImageHeight = Math.max(0, encodedImageHeight);
+            return this;
+        }
+
+        public Builder setEncodedImageBytes(int encodedImageBytes) {
+            this.encodedImageBytes = Math.max(0, encodedImageBytes);
+            return this;
+        }
+
+        public Builder setImageEncodeMs(long imageEncodeMs) {
+            this.imageEncodeMs = imageEncodeMs;
+            return this;
+        }
+
+        public Builder setModelCallMs(long modelCallMs) {
+            this.modelCallMs = modelCallMs;
             return this;
         }
 
