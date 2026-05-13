@@ -12,15 +12,20 @@ public final class NativeSemanticTreeBuilder {
         if (root == null) {
             return null;
         }
-        return buildNode(root, null);
+        return buildNode(root, null, false, false);
     }
 
-    private static NativeSemanticNode buildNode(NativeViewNode viewNode, NativeSemanticRole parentRole) {
+    private static NativeSemanticNode buildNode(
+            NativeViewNode viewNode,
+            NativeSemanticRole parentRole,
+            boolean parentHasItemClickListener,
+            boolean parentHasItemTouchListener
+    ) {
         NativeRoleDecision roleDecision = NativeRoleResolver.resolve(viewNode);
         NativeSemanticRole role = roleDecision.role();
-        if (shouldTreatAsCollectionItem(parentRole, role)) {
+        if (shouldTreatAsCollectionItem(parentRole, roleDecision)) {
             role = NativeSemanticRole.LIST_ITEM;
-            roleDecision = new NativeRoleDecision(role, "structure:collection-item", 0.75);
+            roleDecision = new NativeRoleDecision(role, collectionItemSource(roleDecision), 0.75);
         }
         String name = NativeRoleResolver.resolveName(viewNode, role);
 
@@ -33,10 +38,13 @@ public final class NativeSemanticTreeBuilder {
                 .bounds(viewNode.bounds())
                 .roleDecision(roleDecision);
         appendStates(builder, viewNode);
+        appendClickableState(builder, role, viewNode,
+                parentHasItemClickListener, parentHasItemTouchListener);
         appendVisualDescriptionState(builder, viewNode, role, name);
 
         for (NativeViewNode child : viewNode.children()) {
-            NativeSemanticNode semanticChild = buildNode(child, role);
+            NativeSemanticNode semanticChild = buildNode(child, role,
+                    viewNode.hasItemClickListener(), viewNode.hasItemTouchListener());
             if (semanticChild != null) {
                 builder.addChild(semanticChild);
             }
@@ -46,13 +54,30 @@ public final class NativeSemanticTreeBuilder {
         return shouldFoldGeneric(node) ? node.children().get(0) : node;
     }
 
-    private static boolean shouldTreatAsCollectionItem(NativeSemanticRole parentRole, NativeSemanticRole role) {
+    private static boolean shouldTreatAsCollectionItem(
+            NativeSemanticRole parentRole,
+            NativeRoleDecision roleDecision
+    ) {
         if (parentRole != NativeSemanticRole.LIST && parentRole != NativeSemanticRole.GRID) {
             return false;
         }
+        NativeSemanticRole role = roleDecision.role();
         return role == NativeSemanticRole.GENERIC
                 || role == NativeSemanticRole.CARD
-                || role == NativeSemanticRole.SECTION;
+                || role == NativeSemanticRole.SECTION
+                || isClickableGenericRole(roleDecision);
+    }
+
+    private static boolean isClickableGenericRole(NativeRoleDecision roleDecision) {
+        return roleDecision.role() == NativeSemanticRole.BUTTON
+                && "attribute:clickable".equals(roleDecision.source());
+    }
+
+    private static String collectionItemSource(NativeRoleDecision roleDecision) {
+        if (isClickableGenericRole(roleDecision)) {
+            return "structure:collection-item-clickable";
+        }
+        return "structure:collection-item";
     }
 
     private static void appendStates(NativeSemanticNode.Builder builder, NativeViewNode viewNode) {
@@ -74,6 +99,38 @@ public final class NativeSemanticTreeBuilder {
         if (viewNode.password()) {
             builder.addState("password");
         }
+    }
+
+    private static void appendClickableState(
+            NativeSemanticNode.Builder builder,
+            NativeSemanticRole role,
+            NativeViewNode viewNode,
+            boolean parentHasItemClickListener,
+            boolean parentHasItemTouchListener
+    ) {
+        String clickableState = resolveClickableState(role, viewNode,
+                parentHasItemClickListener, parentHasItemTouchListener);
+        if (clickableState != null) {
+            builder.addState(clickableState);
+        }
+    }
+
+    private static String resolveClickableState(
+            NativeSemanticRole role,
+            NativeViewNode viewNode,
+            boolean parentHasItemClickListener,
+            boolean parentHasItemTouchListener
+    ) {
+        if (role != NativeSemanticRole.LIST_ITEM) {
+            return null;
+        }
+        if (viewNode.clickable() || viewNode.hasOnClickListener()) {
+            return NativeSemanticStates.CLICKABLE;
+        }
+        if (parentHasItemClickListener || parentHasItemTouchListener) {
+            return NativeSemanticStates.CLICKABLE_INFERRED;
+        }
+        return NativeSemanticStates.CLICKABLE_GUESSED;
     }
 
     private static void appendVisualDescriptionState(
