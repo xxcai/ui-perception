@@ -61,4 +61,48 @@ public final class NativeSemanticSnapshotGeneratorTest {
         assertEquals(""
                 + "- button [needs_visual_desc] [ref=n1] [bounds=900,120,1000,220]", snapshot);
     }
+
+    @Test
+    public void listViewItemClickListenerProducesClickableInferredListItems() {
+        String xml = ""
+                + "<node class=\"android.widget.ListView\""
+                + " has-item-click-listener=\"true\""
+                + " scrollable=\"true\""
+                + " bounds=\"[0,100][1080,900]\">"
+                + "<node class=\"android.widget.LinearLayout\" bounds=\"[0,100][1080,260]\">"
+                + "<node class=\"android.widget.TextView\" text=\"华为 Wi-Fi\" bounds=\"[42,120][400,180]\" />"
+                + "<node class=\"android.widget.Button\" text=\"详情\" clickable=\"true\" bounds=\"[900,160][1040,240]\" />"
+                + "</node>"
+                + "</node>";
+
+        String snapshot = NativeSemanticSnapshotGenerator.generate(xml);
+
+        assertEquals(""
+                + "- list [scrollable] [ref=n1] [bounds=0,100,1080,900]:\n"
+                + "  - listitem [clickable-inferred] [ref=n2] [bounds=0,100,1080,260]:\n"
+                + "    - text \"华为 Wi-Fi\"\n"
+                + "    - button \"详情\" [ref=n3] [bounds=900,160,1040,240]", snapshot);
+    }
+
+    @Test
+    public void recyclerViewItemTouchListenerProducesClickableInferredListItems() {
+        String xml = ""
+                + "<node class=\"androidx.recyclerview.widget.RecyclerView\""
+                + " has-item-touch-listener=\"true\""
+                + " scrollable=\"true\""
+                + " bounds=\"[0,160][1080,1900]\">"
+                + "<node class=\"android.widget.LinearLayout\" bounds=\"[0,160][1080,320]\">"
+                + "<node class=\"android.widget.TextView\" text=\"张三\" bounds=\"[42,180][180,230]\" />"
+                + "<node class=\"android.widget.TextView\" text=\"会议纪要\" bounds=\"[42,230][420,290]\" />"
+                + "</node>"
+                + "</node>";
+
+        String snapshot = NativeSemanticSnapshotGenerator.generate(xml);
+
+        assertEquals(""
+                + "- list [scrollable] [ref=n1] [bounds=0,160,1080,1900]:\n"
+                + "  - listitem [clickable-inferred] [ref=n2] [bounds=0,160,1080,320]:\n"
+                + "    - text \"张三\"\n"
+                + "    - text \"会议纪要\"", snapshot);
+    }
 }
