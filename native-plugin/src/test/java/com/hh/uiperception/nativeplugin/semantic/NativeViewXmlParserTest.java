@@ -61,6 +61,43 @@ public final class NativeViewXmlParserTest {
     }
 
     @Test
+    public void parsesClickListenerSignals() {
+        String xml = ""
+                + "<hierarchy activity=\"DemoActivity\">"
+                + "<node class=\"android.widget.ListView\""
+                + " has-onclick-listener=\"false\""
+                + " has-item-click-listener=\"true\""
+                + " bounds=\"[0,0][1080,900]\">"
+                + "<node class=\"android.widget.LinearLayout\""
+                + " clickable=\"false\""
+                + " has-onclick-listener=\"true\""
+                + " bounds=\"[0,0][1080,120]\" />"
+                + "<node class=\"androidx.recyclerview.widget.RecyclerView\""
+                + " has-item-touch-listener=\"true\""
+                + " bounds=\"[0,120][1080,900]\" />"
+                + "</node>"
+                + "</hierarchy>";
+
+        NativeViewNode root = NativeViewXmlParser.parse(xml);
+
+        assertNotNull(root);
+        assertFalse(root.hasOnClickListener());
+        assertTrue(root.hasItemClickListener());
+        assertFalse(root.hasItemTouchListener());
+
+        NativeViewNode item = root.children().get(0);
+        assertFalse(item.clickable());
+        assertTrue(item.hasOnClickListener());
+        assertFalse(item.hasItemClickListener());
+        assertFalse(item.hasItemTouchListener());
+
+        NativeViewNode recyclerView = root.children().get(1);
+        assertFalse(recyclerView.hasOnClickListener());
+        assertFalse(recyclerView.hasItemClickListener());
+        assertTrue(recyclerView.hasItemTouchListener());
+    }
+
+    @Test
     public void returnsNullForBlankXml() {
         assertNull(NativeViewXmlParser.parse(" "));
     }
