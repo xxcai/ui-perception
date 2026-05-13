@@ -206,31 +206,34 @@ y = (312 + 407) / 2
 
 这些方式可以让运行时 item 可点，但 item root 在 raw XML 里不一定出现 `clickable=true`。
 
-因此 transform 对集合控件做了收窄处理：
+因此 transform 对集合控件做了分层处理：
 
 - 父节点是 `list/grid` 时，直接结构子节点如果是 `generic/card/section`，标记为 `listitem`。
-- `listitem` 可以分配 ref。
-- 如果 `listitem` 内部已经存在明确可执行子节点，则外层 `listitem` 不重复分配 ref。
+- `listitem` 会补充可点击状态：
+  - `clickable`：item 自身可点击（`clickable=true` 或 `has-onclick-listener=true`）。
+  - `clickable-inferred`：由容器信号推断可点击（`has-item-click-listener=true` 或 `has-item-touch-listener=true`）。
+- `listitem` 的 ref 分配按状态区分：
+  - `clickable` / `clickable-inferred`：即使内部已有明确可执行子节点，父级 `listitem` 仍分配 ref。
+  - 仅结构推断的低置信度场景（内部实现态）会保持保守去重，优先保留子节点 ref。
 
 示例：
 
 ```yaml
 - list [ref=n7] [bounds=0,427,1080,2190]:
-  - listitem [ref=n8] [bounds=0,427,1080,677]:
+  - listitem [clickable-inferred] [ref=n8] [bounds=0,427,1080,677]:
     - text "平台通知"
     - text "测试计划同步"
 ```
 
-对于搜索行这类内部已有明确按钮的集合子项，输出保持为：
+对于搜索行这类内部已有明确按钮的集合子项，父子都会保留 ref：
 
 ```yaml
-- listitem:
-  - button "搜索" [ref=n4]
-  - button [ref=n5]:
+- listitem [clickable-inferred] [ref=n4]:
+  - button "搜索" [ref=n5]
+  - button [ref=n6]:
     - text "客服"
 ```
-
-这样避免父子重复 ref。
+这样可以同时保留“整行点击”与“行内按钮点击”两种动作语义。
 
 ### 7. 输出格式
 
@@ -262,7 +265,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 - semantic snapshot 约为 raw XML 的 18%。
 - 数据量平均降低约 82%。
 - 降低数据量的同时保留了核心文本、role、状态、ref 和 bounds。
-- 集合控件 item 在 `clickable=false` 的场景下也可以通过 `listitem [ref=...]` 保留动作定位能力。
+- 集合控件 item 在 `clickable=false` 的场景下也可以通过 `listitem [clickable-inferred] [ref=...]` 保留动作定位能力。
 
 ## 数据变化示例
 

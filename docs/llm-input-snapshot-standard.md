@@ -36,7 +36,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 ```yaml
 - text "消息"
 - button "搜索" [ref=n1]
-- listitem [ref=n2]:
+- listitem [clickable-inferred] [ref=n2]:
   - text "平台通知"
   - text "测试计划同步"
 ```
@@ -44,13 +44,13 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 基本节点语法：
 
 ```text
-- {role} "{name}" [ref={ref}]
+- {role} "{name}" [state] [ref={ref}]
 ```
 
 支持层级：
 
 ```yaml
-- listitem [ref=n10]:
+- listitem [clickable-inferred] [ref=n10]:
   - text "梁晓舟"
   - text "明天上班"
   - text "04/22"
@@ -62,8 +62,14 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 |---|---:|---|
 | `role` | 是 | 节点语义类型，如 `text`、`button`、`listitem` |
 | `name` | 否 | LLM 可读名称或文本内容 |
+| `state` | 否 | 节点状态信息，如 `scrollable`、`disabled`、`clickable`、`clickable-inferred` |
 | `ref` | 否 | 可操作对象引用，用于后续定位或动作关联 |
 | 层级 | 否 | 表示 UI 结构从属关系 |
+
+关于列表项可点击状态：
+
+- `clickable`：节点自身具备明确点击信号。
+- `clickable-inferred`：由列表容器信号推断可点击（例如 `ListView` item click listener 或 `RecyclerView` item touch listener）。
 
 当前评测主要使用 `role`、`name` 和 annotation 中的 `minCount` 做统一检查。
 
