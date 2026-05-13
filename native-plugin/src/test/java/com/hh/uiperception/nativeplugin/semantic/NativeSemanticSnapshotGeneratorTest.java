@@ -29,7 +29,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
                 + "  - text \"邮件\"\n"
                 + "  - button \"提交\" [ref=n1] [bounds=800,100,1000,180]\n"
                 + "  - list [scrollable] [ref=n2] [bounds=0,160,1080,1900]:\n"
-                + "    - listitem [clickable-guessed]:\n"
+                + "    - listitem [clickable-inferred]:\n"
                 + "      - text \"吴示例\"\n"
                 + "      - button \"拨打\" [ref=n3] [bounds=920,180,1040,260]", snapshot);
     }

@@ -93,4 +93,13 @@ public final class NativeSnapshotRendererTest {
 
         assertEquals("- button \"说\\\"你好\\\"\"", NativeSnapshotRenderer.render(node));
     }
+
+    @Test
+    public void rendersClickableGuessedAsClickableInferred() {
+        NativeSemanticNode node = NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                .addState(NativeSemanticStates.CLICKABLE_GUESSED)
+                .build();
+
+        assertEquals("- listitem [clickable-inferred]", NativeSnapshotRenderer.render(node));
+    }
 }
