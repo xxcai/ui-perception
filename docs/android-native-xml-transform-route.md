@@ -61,6 +61,8 @@
 +------------------+
 ```
 
+说明：本路线文档覆盖到 `YAML Snapshot` 产物；`Action Executor` 属于下游消费链路，用于说明 `ref + bounds` 如何被执行侧使用，不属于 transform 模块内部实现。
+
 ### 1. 原始 XML 解析
 
 输入是 Android dump/capture 得到的 view tree XML。
@@ -99,6 +101,8 @@
 - `ImageView` -> `image`
 - `TextView` -> `text`
 - 其他布局容器 -> `generic`
+
+补充：属性覆盖只在可交互 generic 类角色上生效（`text/image/generic` 等）。这类节点如果带 `clickable/long-clickable`，会被提升为 `button`（`attribute:clickable`）。
 
 同时保留 `roleDecision.source`，例如：
 
@@ -212,9 +216,10 @@ y = (312 + 407) / 2
 - `listitem` 会补充可点击状态：
   - `clickable`：item 自身可点击（`clickable=true` 或 `has-onclick-listener=true`）。
   - `clickable-inferred`：由容器信号推断可点击（`has-item-click-listener=true` 或 `has-item-touch-listener=true`）。
+  - `clickable-guessed`：仅内部中间态，渲染输出时统一映射为 `clickable-inferred`，不对外暴露独立状态名。
 - `listitem` 的 ref 分配按状态区分：
   - `clickable` / `clickable-inferred`：即使内部已有明确可执行子节点，父级 `listitem` 仍分配 ref。
-  - 仅结构推断的低置信度场景（内部实现态）会保持保守去重，优先保留子节点 ref。
+  - `clickable-guessed`（内部态）：仅在不存在可执行后代节点时分配 ref；若已存在可执行后代则保持保守去重，优先保留子节点 ref。
 
 示例：
 
