@@ -15,6 +15,9 @@ public final class IconExperimentRunResult {
     private final String image;
     private final IconInputMode inputMode;
     private final int targetCount;
+    private final int imageMaxEdge;
+    private final String imageEncoding;
+    private final String bitmapConfig;
     private final long imagePrepareMs;
     private final int inputImageWidth;
     private final int inputImageHeight;
@@ -42,6 +45,9 @@ public final class IconExperimentRunResult {
         this.image = normalize(builder.image);
         this.inputMode = builder.inputMode;
         this.targetCount = builder.targetCount;
+        this.imageMaxEdge = builder.imageMaxEdge;
+        this.imageEncoding = normalize(builder.imageEncoding);
+        this.bitmapConfig = normalize(builder.bitmapConfig);
         this.imagePrepareMs = builder.imagePrepareMs;
         this.inputImageWidth = builder.inputImageWidth;
         this.inputImageHeight = builder.inputImageHeight;
@@ -89,6 +95,18 @@ public final class IconExperimentRunResult {
 
     public int targetCount() {
         return targetCount;
+    }
+
+    public int imageMaxEdge() {
+        return imageMaxEdge;
+    }
+
+    public String imageEncoding() {
+        return imageEncoding;
+    }
+
+    public String bitmapConfig() {
+        return bitmapConfig;
     }
 
     public long imagePrepareMs() {
@@ -184,6 +202,9 @@ public final class IconExperimentRunResult {
         private String image = "";
         private IconInputMode inputMode = IconInputMode.FULL_IMAGE;
         private int targetCount;
+        private int imageMaxEdge;
+        private String imageEncoding = "";
+        private String bitmapConfig = "";
         private long imagePrepareMs = -1L;
         private int inputImageWidth;
         private int inputImageHeight;
@@ -234,6 +255,21 @@ public final class IconExperimentRunResult {
 
         public Builder setTargetCount(int targetCount) {
             this.targetCount = targetCount;
+            return this;
+        }
+
+        public Builder setImageMaxEdge(int imageMaxEdge) {
+            this.imageMaxEdge = Math.max(0, imageMaxEdge);
+            return this;
+        }
+
+        public Builder setImageEncoding(String imageEncoding) {
+            this.imageEncoding = imageEncoding;
+            return this;
+        }
+
+        public Builder setBitmapConfig(String bitmapConfig) {
+            this.bitmapConfig = bitmapConfig;
             return this;
         }
 

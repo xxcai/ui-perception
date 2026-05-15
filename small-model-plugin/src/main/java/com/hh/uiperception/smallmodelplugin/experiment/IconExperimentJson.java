@@ -23,7 +23,17 @@ public final class IconExperimentJson {
     private static final String KEY_CREATED_AT_MS = "created_at_ms";
     private static final String KEY_INPUT_MODE = "input_mode";
     private static final String KEY_TARGET_COUNT = "target_count";
+    private static final String KEY_IMAGE_MAX_EDGE = "image_max_edge";
+    private static final String KEY_IMAGE_ENCODING = "image_encoding";
+    private static final String KEY_BITMAP_CONFIG = "bitmap_config";
+    private static final String KEY_INPUT_IMAGE_WIDTH = "input_image_width";
+    private static final String KEY_INPUT_IMAGE_HEIGHT = "input_image_height";
+    private static final String KEY_ENCODED_IMAGE_WIDTH = "encoded_image_width";
+    private static final String KEY_ENCODED_IMAGE_HEIGHT = "encoded_image_height";
+    private static final String KEY_ENCODED_IMAGE_BYTES = "encoded_image_bytes";
     private static final String KEY_IMAGE_PREPARE_MS = "image_prepare_ms";
+    private static final String KEY_IMAGE_ENCODE_MS = "image_encode_ms";
+    private static final String KEY_MODEL_CALL_MS = "model_call_ms";
     private static final String KEY_MODEL_LOAD_MS = "model_load_ms";
     private static final String KEY_INFERENCE_MS = "inference_ms";
     private static final String KEY_TOTAL_MS = "total_ms";
@@ -77,7 +87,17 @@ public final class IconExperimentJson {
         json.put(KEY_IMAGE, result.image());
         json.put(KEY_INPUT_MODE, result.inputMode().name());
         json.put(KEY_TARGET_COUNT, result.targetCount());
+        json.put(KEY_IMAGE_MAX_EDGE, result.imageMaxEdge());
+        json.put(KEY_IMAGE_ENCODING, result.imageEncoding());
+        json.put(KEY_BITMAP_CONFIG, result.bitmapConfig());
+        json.put(KEY_INPUT_IMAGE_WIDTH, result.inputImageWidth());
+        json.put(KEY_INPUT_IMAGE_HEIGHT, result.inputImageHeight());
+        json.put(KEY_ENCODED_IMAGE_WIDTH, result.encodedImageWidth());
+        json.put(KEY_ENCODED_IMAGE_HEIGHT, result.encodedImageHeight());
+        json.put(KEY_ENCODED_IMAGE_BYTES, result.encodedImageBytes());
         json.put(KEY_IMAGE_PREPARE_MS, result.imagePrepareMs());
+        json.put(KEY_IMAGE_ENCODE_MS, result.imageEncodeMs());
+        json.put(KEY_MODEL_CALL_MS, result.modelCallMs());
         json.put(KEY_MODEL_LOAD_MS, result.modelLoadMs());
         json.put(KEY_INFERENCE_MS, result.inferenceMs());
         json.put(KEY_TOTAL_MS, result.totalMs());
@@ -101,7 +121,17 @@ public final class IconExperimentJson {
                 .setImage(json.optString(KEY_IMAGE, ""))
                 .setInputMode(parseInputMode(json.optString(KEY_INPUT_MODE, "")))
                 .setTargetCount(json.optInt(KEY_TARGET_COUNT, 0))
+                .setImageMaxEdge(json.optInt(KEY_IMAGE_MAX_EDGE, 0))
+                .setImageEncoding(json.optString(KEY_IMAGE_ENCODING, ""))
+                .setBitmapConfig(json.optString(KEY_BITMAP_CONFIG, ""))
+                .setInputImageWidth(json.optInt(KEY_INPUT_IMAGE_WIDTH, 0))
+                .setInputImageHeight(json.optInt(KEY_INPUT_IMAGE_HEIGHT, 0))
+                .setEncodedImageWidth(json.optInt(KEY_ENCODED_IMAGE_WIDTH, 0))
+                .setEncodedImageHeight(json.optInt(KEY_ENCODED_IMAGE_HEIGHT, 0))
+                .setEncodedImageBytes(json.optInt(KEY_ENCODED_IMAGE_BYTES, 0))
                 .setImagePrepareMs(json.optLong(KEY_IMAGE_PREPARE_MS, -1L))
+                .setImageEncodeMs(json.optLong(KEY_IMAGE_ENCODE_MS, -1L))
+                .setModelCallMs(json.optLong(KEY_MODEL_CALL_MS, -1L))
                 .setModelLoadMs(json.optLong(KEY_MODEL_LOAD_MS, -1L))
                 .setInferenceMs(json.optLong(KEY_INFERENCE_MS, -1L))
                 .setTotalMs(json.optLong(KEY_TOTAL_MS, -1L))

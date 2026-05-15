@@ -29,7 +29,9 @@ public final class IconExperimentRunner {
             long modelLoadMs,
             SmallModelVisionClient client,
             IconExperimentRunCallback callback,
-            int imageMaxEdge
+            int imageMaxEdge,
+            String imageEncoding,
+            String bitmapConfig
     ) {
         long createdAtMs = System.currentTimeMillis();
         long startedAtMs = createdAtMs;
@@ -40,12 +42,16 @@ public final class IconExperimentRunner {
                 + ", screenshot=" + (screenshot != null ? screenshot.getWidth() + "x" + screenshot.getHeight() : "null")
                 + ", targetCount=" + (testSet == null ? 0 : testSet.targets().size())
                 + ", client=" + client + ", clientInitialized=" + (client != null && client.isInitialized())
-                + ", imageMaxEdge=" + imageMaxEdge);
+                + ", imageMaxEdge=" + imageMaxEdge
+                + ", imageEncoding=" + normalizeImageEncoding(imageEncoding)
+                + ", bitmapConfig=" + normalizeBitmapConfig(bitmapConfig));
 
         if (mode == IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED) {
             runBatchedFullImageWithBounds(
                     screenshot, testSet, 3, modelLoadMs, client, callback,
-                    createdAtMs, startedAtMs, runId, imageMaxEdge
+                    createdAtMs, startedAtMs, runId, imageMaxEdge,
+                    normalizeImageEncoding(imageEncoding),
+                    normalizeBitmapConfig(bitmapConfig)
             );
             return;
         }
@@ -89,6 +95,12 @@ public final class IconExperimentRunner {
                     SmallModelRequest.OPTION_IMAGE_MAX_EDGE,
                     String.valueOf(imageMaxEdge));
         }
+        requestBuilder.putOption(
+                SmallModelRequest.OPTION_IMAGE_ENCODING,
+                normalizeImageEncoding(imageEncoding));
+        requestBuilder.putOption(
+                SmallModelRequest.OPTION_BITMAP_CONFIG,
+                normalizeBitmapConfig(bitmapConfig));
         SmallModelRequest request = requestBuilder.build();
         Log.i(TAG, "calling client.analyze. promptLength=" + input.prompt().length()
                 + ", image=" + (input.image() != null ? input.image().getWidth() + "x" + input.image().getHeight() : "null"));
@@ -109,6 +121,9 @@ public final class IconExperimentRunner {
                         .setImage(testSet == null ? "" : testSet.image())
                         .setInputMode(mode)
                         .setTargetCount(targetCount(testSet))
+                        .setImageMaxEdge(imageMaxEdge)
+                        .setImageEncoding(normalizeImageEncoding(imageEncoding))
+                        .setBitmapConfig(normalizeBitmapConfig(bitmapConfig))
                         .setImagePrepareMs(input.imagePrepareMs())
                         .setInputImageWidth(value == null ? 0 : value.inputWidth())
                         .setInputImageHeight(value == null ? 0 : value.inputHeight())
@@ -159,7 +174,9 @@ public final class IconExperimentRunner {
             long createdAtMs,
             long startedAtMs,
             String runId,
-            int imageMaxEdge
+            int imageMaxEdge,
+            String imageEncoding,
+            String bitmapConfig
     ) {
         if (screenshot == null) {
             dispatch(callback, failureResult(
@@ -190,7 +207,9 @@ public final class IconExperimentRunner {
         BatchState state = new BatchState(
                 screenshot, testSet, targets, mappings, safeBatchSize, batchCount,
                 modelLoadMs, client, callback,
-                createdAtMs, startedAtMs, runId, imageMaxEdge
+                createdAtMs, startedAtMs, runId, imageMaxEdge,
+                normalizeImageEncoding(imageEncoding),
+                normalizeBitmapConfig(bitmapConfig)
         );
         runNextBatch(state);
     }
@@ -207,6 +226,9 @@ public final class IconExperimentRunner {
                     .setImage(state.testSet == null ? "" : state.testSet.image())
                     .setInputMode(IconInputMode.FULL_IMAGE_WITH_BOUNDS_BATCHED)
                     .setTargetCount(targetCount(state.testSet))
+                    .setImageMaxEdge(state.imageMaxEdge)
+                    .setImageEncoding(state.imageEncoding)
+                    .setBitmapConfig(state.bitmapConfig)
                     .setImagePrepareMs(state.imagePrepareMs)
                     .setInputImageWidth(state.inputImageWidth)
                     .setInputImageHeight(state.inputImageHeight)
@@ -271,6 +293,12 @@ public final class IconExperimentRunner {
                     SmallModelRequest.OPTION_IMAGE_MAX_EDGE,
                     String.valueOf(state.imageMaxEdge));
         }
+        requestBuilder.putOption(
+                SmallModelRequest.OPTION_IMAGE_ENCODING,
+                state.imageEncoding);
+        requestBuilder.putOption(
+                SmallModelRequest.OPTION_BITMAP_CONFIG,
+                state.bitmapConfig);
         SmallModelRequest request = requestBuilder.build();
 
         state.client.analyze(request, new SmallModelCallback<SmallModelResult>() {
@@ -320,6 +348,20 @@ public final class IconExperimentRunner {
             return batchSize;
         }
         return 3;
+    }
+
+    private static String normalizeImageEncoding(String imageEncoding) {
+        if (imageEncoding == null || imageEncoding.trim().isEmpty()) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_PNG;
+        }
+        return imageEncoding.trim();
+    }
+
+    private static String normalizeBitmapConfig(String bitmapConfig) {
+        if (SmallModelRequest.OPTION_BITMAP_CONFIG_RGB_565.equals(bitmapConfig)) {
+            return SmallModelRequest.OPTION_BITMAP_CONFIG_RGB_565;
+        }
+        return SmallModelRequest.OPTION_BITMAP_CONFIG_ARGB_8888;
     }
 
     private static IconExperimentRunResult failureResult(
@@ -393,6 +435,8 @@ public final class IconExperimentRunner {
         private final long startedAtMs;
         private final String runId;
         private final int imageMaxEdge;
+        private final String imageEncoding;
+        private final String bitmapConfig;
         private final StringBuilder prompts = new StringBuilder();
         private final StringBuilder rawOutput = new StringBuilder();
         private int nextIndex;
@@ -419,7 +463,9 @@ public final class IconExperimentRunner {
                 long createdAtMs,
                 long startedAtMs,
                 String runId,
-                int imageMaxEdge
+                int imageMaxEdge,
+                String imageEncoding,
+                String bitmapConfig
         ) {
             this.screenshot = screenshot;
             this.testSet = testSet;
@@ -434,6 +480,8 @@ public final class IconExperimentRunner {
             this.startedAtMs = startedAtMs;
             this.runId = runId;
             this.imageMaxEdge = imageMaxEdge;
+            this.imageEncoding = normalizeImageEncoding(imageEncoding);
+            this.bitmapConfig = normalizeBitmapConfig(bitmapConfig);
         }
     }
 }

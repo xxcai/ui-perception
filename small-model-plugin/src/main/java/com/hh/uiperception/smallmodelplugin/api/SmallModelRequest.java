@@ -13,10 +13,17 @@ public final class SmallModelRequest {
 
     public static final String OPTION_IMAGE_MAX_EDGE = "image_max_edge";
     public static final String OPTION_IMAGE_ENCODING = "image_encoding";
+    public static final String OPTION_BITMAP_CONFIG = "bitmap_config";
     public static final String OPTION_IMAGE_CROP = "image_crop";
+    public static final String OPTION_BITMAP_CONFIG_ARGB_8888 = "argb_8888";
+    public static final String OPTION_BITMAP_CONFIG_RGB_565 = "rgb_565";
     public static final String OPTION_IMAGE_ENCODING_PNG = "png";
     public static final String OPTION_IMAGE_ENCODING_JPEG_90 = "jpeg90";
     public static final String OPTION_IMAGE_ENCODING_JPEG_80 = "jpeg80";
+    public static final String OPTION_IMAGE_ENCODING_JPEG_75 = "jpeg75";
+    public static final String OPTION_IMAGE_ENCODING_WEBP_90 = "webp90";
+    public static final String OPTION_IMAGE_ENCODING_WEBP_75 = "webp75";
+    public static final String OPTION_IMAGE_ENCODING_WEBP_LOSSLESS = "webp_lossless";
     public static final String OPTION_IMAGE_CROP_FULL = "full";
     public static final String OPTION_IMAGE_CROP_TOP_40 = "top_40";
     public static final String OPTION_IMAGE_CROP_MIDDLE_40 = "middle_40";

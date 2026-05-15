@@ -2,6 +2,8 @@ package com.hh.uiperception.smallmodelplugin.gemma;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.Build;
 import android.util.Log;
 
@@ -282,7 +284,10 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
     private PreparedImage prepareImage(SmallModelRequest request) {
         Bitmap bitmap = request.image();
         Bitmap croppedBitmap = maybeCropBitmap(bitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_CROP));
-        Bitmap encodedBitmap = maybeScaleBitmap(croppedBitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_MAX_EDGE));
+        Bitmap scaledBitmap = maybeScaleBitmap(croppedBitmap, request.options().get(SmallModelRequest.OPTION_IMAGE_MAX_EDGE));
+        Bitmap encodedBitmap = maybeConvertBitmapConfig(
+                scaledBitmap,
+                request.options().get(SmallModelRequest.OPTION_BITMAP_CONFIG));
         String encoding = request.options().get(SmallModelRequest.OPTION_IMAGE_ENCODING);
         Bitmap.CompressFormat format = Bitmap.CompressFormat.PNG;
         int quality = 100;
@@ -292,29 +297,62 @@ public final class Gemma4E2BClient implements SmallModelVisionClient {
         } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_80.equals(encoding)) {
             format = Bitmap.CompressFormat.JPEG;
             quality = 80;
+        } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_75.equals(encoding)) {
+            format = Bitmap.CompressFormat.JPEG;
+            quality = 75;
+        } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_90.equals(encoding)) {
+            format = Bitmap.CompressFormat.WEBP_LOSSY;
+            quality = 90;
+        } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_75.equals(encoding)) {
+            format = Bitmap.CompressFormat.WEBP_LOSSY;
+            quality = 75;
+        } else if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_LOSSLESS.equals(encoding)) {
+            format = Bitmap.CompressFormat.WEBP_LOSSLESS;
+            quality = 100;
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         encodedBitmap.compress(format, quality, outputStream);
         byte[] bytes = outputStream.toByteArray();
+        int encodedWidth = encodedBitmap.getWidth();
+        int encodedHeight = encodedBitmap.getHeight();
         Log.i(TAG, "prepared image bytes. source=" + bitmap.getWidth() + "x" + bitmap.getHeight()
                 + ", crop=" + (croppedBitmap == bitmap ? "full" : croppedBitmap.getWidth() + "x" + croppedBitmap.getHeight())
-                + ", encoded=" + encodedBitmap.getWidth() + "x" + encodedBitmap.getHeight()
-                + ", encoding=" + (format == Bitmap.CompressFormat.PNG ? "png" : "jpeg")
+                + ", encoded=" + encodedWidth + "x" + encodedHeight
+                + ", encoding=" + (encoding == null || encoding.trim().isEmpty()
+                        ? SmallModelRequest.OPTION_IMAGE_ENCODING_PNG : encoding)
+                + ", bitmapConfig=" + encodedBitmap.getConfig()
                 + ", quality=" + quality
                 + ", sizeBytes=" + bytes.length);
-        if (encodedBitmap != bitmap) {
+        if (encodedBitmap != bitmap && encodedBitmap != croppedBitmap && encodedBitmap != scaledBitmap) {
             encodedBitmap.recycle();
         }
-        if (croppedBitmap != bitmap && croppedBitmap != encodedBitmap) {
+        if (scaledBitmap != bitmap && scaledBitmap != croppedBitmap) {
+            scaledBitmap.recycle();
+        }
+        if (croppedBitmap != bitmap) {
             croppedBitmap.recycle();
         }
         return new PreparedImage(
                 bitmap.getWidth(),
                 bitmap.getHeight(),
-                encodedBitmap.getWidth(),
-                encodedBitmap.getHeight(),
+                encodedWidth,
+                encodedHeight,
                 bytes
         );
+    }
+
+    private Bitmap maybeConvertBitmapConfig(Bitmap bitmap, String bitmapConfig) {
+        if (!SmallModelRequest.OPTION_BITMAP_CONFIG_RGB_565.equals(bitmapConfig)) {
+            return bitmap;
+        }
+        Bitmap converted = Bitmap.createBitmap(
+                bitmap.getWidth(),
+                bitmap.getHeight(),
+                Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(converted);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(bitmap, 0f, 0f, null);
+        return converted;
     }
 
     private Bitmap maybeCropBitmap(Bitmap bitmap, String cropMode) {

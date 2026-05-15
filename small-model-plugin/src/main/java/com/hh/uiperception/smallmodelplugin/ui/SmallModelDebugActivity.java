@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelCallback;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelError;
 import com.hh.uiperception.smallmodelplugin.api.SmallModelInitConfig;
+import com.hh.uiperception.smallmodelplugin.api.SmallModelRequest;
 import com.hh.uiperception.smallmodelplugin.experiment.IconBounds;
 import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentInput;
 import com.hh.uiperception.smallmodelplugin.experiment.IconExperimentInputBuilder;
@@ -71,6 +72,8 @@ public final class SmallModelDebugActivity extends Activity {
     private Switch gpuSwitch;
     private Spinner inputModeSpinner;
     private Spinner maxEdgeSpinner;
+    private Spinner imageEncodingSpinner;
+    private Spinner bitmapConfigSpinner;
     private Spinner targetPresetSpinner;
     private EditText targetInput;
     private Button initButton;
@@ -239,6 +242,31 @@ public final class SmallModelDebugActivity extends Activity {
         secondRow.addView(targetInput, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.4f));
 
+        TextView encodingLabel = new TextView(this);
+        encodingLabel.setText("编码");
+        encodingLabel.setTextSize(13);
+        secondRow.addView(encodingLabel, wrapWrap());
+
+        imageEncodingSpinner = spinner(new String[]{
+                "PNG",
+                "JPEG 90",
+                "JPEG 75",
+                "WebP 90",
+                "WebP 75",
+                "WebP 无损"
+        });
+        secondRow.addView(imageEncodingSpinner, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView bitmapConfigLabel = new TextView(this);
+        bitmapConfigLabel.setText("Bitmap");
+        bitmapConfigLabel.setTextSize(13);
+        secondRow.addView(bitmapConfigLabel, wrapWrap());
+
+        bitmapConfigSpinner = spinner(new String[]{"8888", "565"});
+        secondRow.addView(bitmapConfigSpinner, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.7f));
+
         runButton = new Button(this);
         runButton.setText("运行");
         runButton.setOnClickListener(v -> runExperiment());
@@ -376,6 +404,8 @@ public final class SmallModelDebugActivity extends Activity {
         rawOutputView.setText("");
         IconInputMode mode = selectedInputMode();
         int maxEdge = selectedMaxEdge();
+        String imageEncoding = selectedImageEncoding();
+        String bitmapConfig = selectedBitmapConfig();
         Bitmap screenshot = fixtureBitmap;
         IconExperimentTestSet testSet = selectedTestSet();
         if (testSet == null || testSet.targets().isEmpty()) {
@@ -385,6 +415,8 @@ public final class SmallModelDebugActivity extends Activity {
         }
         Log.i(TAG, "calling IconExperimentRunner.run. mode=" + mode
                 + ", maxEdge=" + maxEdge
+                + ", imageEncoding=" + imageEncoding
+                + ", bitmapConfig=" + bitmapConfig
                 + ", bitmapSize=" + screenshot.getWidth() + "x" + screenshot.getHeight()
                 + ", targetCount=" + testSet.targets().size());
 
@@ -397,7 +429,9 @@ public final class SmallModelDebugActivity extends Activity {
                     lastLoadLatencyMs,
                     client,
                     result -> runOnUiThread(() -> handleResult(result)),
-                    maxEdge
+                    maxEdge,
+                    imageEncoding,
+                    bitmapConfig
             );
         });
     }
@@ -430,7 +464,11 @@ public final class SmallModelDebugActivity extends Activity {
                 + " -> "
                 + formatSize(result.encodedImageWidth(), result.encodedImageHeight())
                 + "  "
-                + formatBytes(result.encodedImageBytes()));
+                + formatBytes(result.encodedImageBytes())
+                + "  "
+                + result.imageEncoding()
+                + "  "
+                + result.bitmapConfig());
 
         // Raw output
         rawOutputView.setText(result.rawOutput().isEmpty()
@@ -440,8 +478,12 @@ public final class SmallModelDebugActivity extends Activity {
         // Save
         String saveInfo = "";
         try {
+            File preparedInput = persistPreparedInputForRun(result, targets);
             java.io.File saved = IconExperimentResultStore.save(this, result);
             saveInfo = "\n保存: " + saved.getName();
+            if (preparedInput != null) {
+                saveInfo += "\n输入图: " + preparedInput.getName();
+            }
         } catch (Exception e) {
             saveInfo = "\n保存失败: " + e.getMessage();
         }
@@ -453,6 +495,61 @@ public final class SmallModelDebugActivity extends Activity {
         setBusy(false, status);
 
         refreshHistory();
+    }
+
+    private File persistPreparedInputForRun(IconExperimentRunResult result,
+                                            List<IconTarget> targets) {
+        if (result == null || fixtureBitmap == null || targets == null || targets.isEmpty()) {
+            return null;
+        }
+        File runsDir = IconExperimentResultStore.runsDir(this);
+        if (!runsDir.exists() && !runsDir.mkdirs()) {
+            Log.w(TAG, "failed to create runs dir for prepared input: "
+                    + runsDir.getAbsolutePath());
+            return null;
+        }
+        IconExperimentTestSet runTestSet = new IconExperimentTestSet(
+                result.testsetId(),
+                result.image(),
+                targets
+        );
+        IconExperimentInput input = IconExperimentInputBuilder.build(
+                fixtureBitmap,
+                runTestSet,
+                result.inputMode()
+        );
+        String prefix = safeFileName(result.runId());
+        File imageFile = new File(runsDir,
+                prefix + "_prepared_input" + extensionForEncoding(result.imageEncoding()));
+        File promptFile = new File(runsDir, prefix + "_prepared_prompt.txt");
+        Bitmap configPreview = maybeConvertForBitmapConfig(input.image(), result.bitmapConfig());
+        Bitmap encodedPreview = maybeScaleForEncoding(configPreview, result.imageMaxEdge());
+        saveBitmap(imageFile, encodedPreview, result.imageEncoding());
+        writeText(promptFile, input.prompt());
+        Log.i(TAG, "prepared input persisted. image=" + imageFile.getAbsolutePath()
+                + ", prompt=" + promptFile.getAbsolutePath()
+                + ", mode=" + result.inputMode()
+                + ", encoding=" + result.imageEncoding()
+                + ", bitmapConfig=" + result.bitmapConfig()
+                + ", maxEdge=" + result.imageMaxEdge());
+        if (encodedPreview != input.image()) {
+            encodedPreview.recycle();
+        }
+        if (configPreview != input.image() && configPreview != encodedPreview) {
+            configPreview.recycle();
+        }
+        if (input.image() != fixtureBitmap) {
+            input.image().recycle();
+        }
+        return imageFile;
+    }
+
+    private static String safeFileName(String value) {
+        String text = value == null ? "" : value.trim();
+        if (text.isEmpty()) {
+            return "icon_experiment_run";
+        }
+        return text.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     private void dumpDebugArtifacts(Bitmap screenshot, IconExperimentTestSet testSet,
@@ -523,11 +620,86 @@ public final class SmallModelDebugActivity extends Activity {
     }
 
     private void saveBitmap(File file, Bitmap bitmap) {
+        saveBitmap(file, bitmap, SmallModelRequest.OPTION_IMAGE_ENCODING_PNG);
+    }
+
+    private void saveBitmap(File file, Bitmap bitmap, String imageEncoding) {
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            bitmap.compress(formatForEncoding(imageEncoding), qualityForEncoding(imageEncoding), outputStream);
         } catch (Exception e) {
             Log.e(TAG, "save debug bitmap failed. file=" + file.getAbsolutePath(), e);
         }
+    }
+
+    private Bitmap maybeScaleForEncoding(Bitmap bitmap, int maxEdge) {
+        if (bitmap == null || maxEdge <= 0) {
+            return bitmap;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int currentMaxEdge = Math.max(width, height);
+        if (currentMaxEdge <= maxEdge) {
+            return bitmap;
+        }
+        float scale = maxEdge / (float) currentMaxEdge;
+        int targetWidth = Math.max(1, Math.round(width * scale));
+        int targetHeight = Math.max(1, Math.round(height * scale));
+        return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
+    }
+
+    private Bitmap maybeConvertForBitmapConfig(Bitmap bitmap, String bitmapConfig) {
+        if (bitmap == null
+                || !SmallModelRequest.OPTION_BITMAP_CONFIG_RGB_565.equals(bitmapConfig)) {
+            return bitmap;
+        }
+        Bitmap converted = Bitmap.createBitmap(
+                bitmap.getWidth(),
+                bitmap.getHeight(),
+                Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(converted);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(bitmap, 0f, 0f, null);
+        return converted;
+    }
+
+    private Bitmap.CompressFormat formatForEncoding(String imageEncoding) {
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_90.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_75.equals(imageEncoding)) {
+            return Bitmap.CompressFormat.JPEG;
+        }
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_90.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_75.equals(imageEncoding)) {
+            return Bitmap.CompressFormat.WEBP_LOSSY;
+        }
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_LOSSLESS.equals(imageEncoding)) {
+            return Bitmap.CompressFormat.WEBP_LOSSLESS;
+        }
+        return Bitmap.CompressFormat.PNG;
+    }
+
+    private int qualityForEncoding(String imageEncoding) {
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_90.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_90.equals(imageEncoding)) {
+            return 90;
+        }
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_75.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_75.equals(imageEncoding)) {
+            return 75;
+        }
+        return 100;
+    }
+
+    private String extensionForEncoding(String imageEncoding) {
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_90.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_75.equals(imageEncoding)) {
+            return ".jpg";
+        }
+        if (SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_90.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_75.equals(imageEncoding)
+                || SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_LOSSLESS.equals(imageEncoding)) {
+            return ".webp";
+        }
+        return ".png";
     }
 
     private void writeText(File file, String text) {
@@ -629,6 +801,8 @@ public final class SmallModelDebugActivity extends Activity {
         gpuSwitch.setEnabled(!busy);
         inputModeSpinner.setEnabled(!busy);
         maxEdgeSpinner.setEnabled(!busy);
+        imageEncodingSpinner.setEnabled(!busy);
+        bitmapConfigSpinner.setEnabled(!busy);
         targetPresetSpinner.setEnabled(!busy);
         if (targetInput != null) {
             boolean customPreset = targetPresetSpinner != null
@@ -656,6 +830,34 @@ public final class SmallModelDebugActivity extends Activity {
         } catch (NumberFormatException ignored) {
             return 0;
         }
+    }
+
+    private String selectedImageEncoding() {
+        String value = (String) imageEncodingSpinner.getSelectedItem();
+        if ("JPEG 90".equals(value)) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_90;
+        }
+        if ("JPEG 75".equals(value)) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_JPEG_75;
+        }
+        if ("WebP 90".equals(value)) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_90;
+        }
+        if ("WebP 75".equals(value)) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_75;
+        }
+        if ("WebP 无损".equals(value)) {
+            return SmallModelRequest.OPTION_IMAGE_ENCODING_WEBP_LOSSLESS;
+        }
+        return SmallModelRequest.OPTION_IMAGE_ENCODING_PNG;
+    }
+
+    private String selectedBitmapConfig() {
+        String value = (String) bitmapConfigSpinner.getSelectedItem();
+        if ("565".equals(value)) {
+            return SmallModelRequest.OPTION_BITMAP_CONFIG_RGB_565;
+        }
+        return SmallModelRequest.OPTION_BITMAP_CONFIG_ARGB_8888;
     }
 
     private String formatMs(long ms) {

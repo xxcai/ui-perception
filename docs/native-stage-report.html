@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UI Perception Native 线路阶段进展</title>
+  <style>
+    :root {
+      --page-bg: #f3f6fb;
+      --panel-bg: #ffffff;
+      --line: #e5eaf2;
+      --text-main: #172033;
+      --text-sub: #4b5870;
+      --brand: #0b8f88;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+      background: var(--page-bg);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 22px;
+      background: var(--panel-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 14px 12px;
+      box-shadow: 0 6px 20px rgba(23, 32, 51, 0.05);
+    }
+
+    .toc h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #5b667a;
+      letter-spacing: 0.02em;
+    }
+
+    .toc a {
+      display: block;
+      text-decoration: none;
+      color: #233049;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 6px 8px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .toc a:hover {
+      background: #eef7f6;
+      color: var(--brand);
+    }
+
+    .toc a.sub {
+      font-size: 13px;
+      color: #4f5f79;
+      padding-left: 18px;
+      line-height: 1.5;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .hero {
+      background: var(--panel-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 28px 32px;
+      box-shadow: 0 8px 28px rgba(23, 32, 51, 0.06);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      line-height: 1.3;
+    }
+
+    .summary {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text-sub);
+    }
+
+    .highlight {
+      color: #087f7a;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-top: 26px;
+      padding: 24px 22px 20px;
+      background: var(--panel-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(23, 32, 51, 0.04);
+      position: relative;
+    }
+
+    .section::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+      background: linear-gradient(90deg, #0b8f88 0%, #7ec8c3 100%);
+    }
+
+    .section h2 {
+      font-size: 20px;
+      margin: 0 0 14px;
+    }
+
+    .block-title {
+      margin: 18px 0 10px;
+      font-size: 15px;
+      color: #172033;
+    }
+
+    .minor-title {
+      margin: 16px 0 8px;
+      font-size: 14px;
+      color: #344054;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .done { background: #e5f7f4; color: #087f7a; }
+    .doing { background: #fff4db; color: #9a6500; }
+    .todo { background: #eef1f6; color: #5b667a; }
+
+    .card p,
+    li {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #4b5870;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .step {
+      background: #f8fafc;
+      border: 1px solid #dfe6ef;
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      font-weight: 700;
+      color: #172033;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+      border: 1px solid #e5eaf2;
+      border-radius: 12px;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5eaf2;
+      text-align: left;
+      vertical-align: top;
+      color: #4b5870;
+      line-height: 1.55;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #172033;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .compact-table th:first-child,
+    .compact-table td:first-child {
+      width: 28%;
+    }
+
+    .schema {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .schema-item {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 14px;
+      border-left: 4px solid #0b8f88;
+      color: #4b5870;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .schema-item strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #172033;
+    }
+
+    .example {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
+      margin-top: 14px;
+      padding: 16px;
+      background: #ffffff;
+      border: 1px solid #e5eaf2;
+      border-radius: 16px;
+    }
+
+    .screenshot {
+      width: 100%;
+      max-height: 520px;
+      object-fit: cover;
+      object-position: top;
+      border: 1px solid #e5eaf2;
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .screenshot.focus-top {
+      height: 260px;
+      max-height: none;
+      object-fit: cover;
+      object-position: top;
+    }
+
+    .code-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .code-card {
+      background: #fbfcfe;
+      border: 1px solid #e5eaf2;
+      border-radius: 14px;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .code-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .mode-card {
+      background: #ffffff;
+      border: 1px solid #e5eaf2;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .mode-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .mode-shot {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      object-position: top;
+      border: 1px solid #e5eaf2;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .mode-shot.contain {
+      object-fit: contain;
+      object-position: center;
+      background: #ffffff;
+    }
+
+    .mode-note {
+      margin: 10px 0 0;
+      color: #4b5870;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .crop-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      height: 180px;
+      align-items: center;
+      border: 1px solid #e5eaf2;
+      border-radius: 12px;
+      padding: 10px;
+      background: #f8fafc;
+    }
+
+    .crop-row img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      border-radius: 10px;
+      background: #ffffff;
+      border: 1px solid #dfe6ef;
+    }
+
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      border-radius: 12px;
+      background: #f8fafc;
+      color: #344054;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .note {
+      margin-top: 12px;
+      padding: 14px 16px;
+      background: #eefaf8;
+      border-left: 4px solid #0b8f88;
+      border-radius: 10px;
+      color: #23524f;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .note-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .note-list li {
+      margin: 4px 0;
+      color: #23524f;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 820px) {
+      .page {
+        grid-template-columns: 1fr;
+        padding: 16px 12px 36px;
+      }
+
+      .toc {
+        position: static;
+      }
+
+      .content {
+        min-width: auto;
+      }
+
+      .cards,
+      .grid-2,
+      .schema,
+      .flow,
+      .example,
+      .code-pair,
+      .mode-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding: 18px 14px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="toc">
+      <h3>目录</h3>
+      <a href="#sec-overview">一、当前进展</a>
+      <a class="sub" href="#sub-native-result">纯 Native 初步运行结果</a>
+      <a href="#sec-transform">二、Native 到 YAML</a>
+      <a class="sub" href="#sub-schema">产物结构</a>
+      <a class="sub" href="#sub-transform-example">转换示例</a>
+      <a href="#sec-enhance">三、增强接入方向</a>
+      <a class="sub" href="#sub-enhance-main">增强接入主线</a>
+      <a class="sub" href="#sub-model-conclusion">小模型可行性结论</a>
+      <a class="sub" href="#sub-enhance-strategy">后续策略与判断规则</a>
+      <a href="#sec-next">四、待补齐与下一步</a>
+    </aside>
+
+    <div class="content">
+    <section class="hero">
+      <h1>UI Perception Native 线路阶段进展</h1>
+      <p class="summary">
+        当前 <span class="highlight">Native 主链路已经闭环</span>，能够从 Native UI 信息生成结构化 YAML。
+        下一阶段重点从“链路打通”转向 <span class="highlight">YAML 规范固化、实验数据补齐、OCR / 小模型增强接入</span>。
+      </p>
+    </section>
+
+    <section class="section" id="sec-overview">
+      <h2>一、当前进展</h2>
+      <div class="cards">
+        <div class="card">
+          <span class="tag done">已跑通</span>
+          <h3>Native</h3>
+          <p>已形成 Native UI 信息到结构化 YAML 的完整链路，并在消息、邮件、通讯录、业务等页面上完成初步运行。</p>
+        </div>
+        <div class="card">
+          <span class="tag doing">分析中</span>
+          <h3>Native + 小模型</h3>
+          <p>正在验证图片输入方式和推理成本，目前已有整图标注输入、裁剪拼图输入两类实验记录。</p>
+        </div>
+        <div class="card">
+          <span class="tag todo">待启动</span>
+          <h3>Native + OCR</h3>
+          <p>尚未开始接入。定位为文本补盲能力，后续将补充 Native 无法稳定获取的视觉文本。</p>
+        </div>
+      </div>
+      <h3 class="block-title" id="sub-native-result">纯 Native 初步运行结果</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>页面</th>
+            <th>产物</th>
+            <th>评测项</th>
+            <th>已覆盖</th>
+            <th>待补齐</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>消息页</td>
+            <td>raw XML + YAML</td>
+            <td>11</td>
+            <td>9</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>邮件页</td>
+            <td>raw XML + YAML</td>
+            <td>10</td>
+            <td>7</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>通讯录页</td>
+            <td>raw XML + YAML</td>
+            <td>10</td>
+            <td>8</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>业务页</td>
+            <td>raw XML + YAML</td>
+            <td>10</td>
+            <td>8</td>
+            <td>2</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        当前纯 Native 线路已经能覆盖页面身份、文本内容、列表结构、底部导航等主干信息，4 类页面均已产出 raw XML 和 YAML。短板主要集中在 Native XML 本身不容易表达的视觉语义，例如无文本图标、下拉入口、自绘文本等，这部分也是后续 OCR 和小模型增强的重点。
+      </div>
+    </section>
+
+    <section class="section" id="sec-transform">
+      <h2>二、Native 到 YAML</h2>
+      <div class="panel">
+        <div class="flow">
+          <div class="step">Native 原始信息</div>
+          <div class="step">节点抽取</div>
+          <div class="step">属性归一化</div>
+          <div class="step">YAML 输出</div>
+        </div>
+        <div class="note">
+          YAML 不是 Native dump 的简单格式转换，而是对 UI 页面的规范化抽象，面向上层系统消费、评测和后续增强。
+        </div>
+      </div>
+      <h3 class="block-title" id="sub-schema">产物结构</h3>
+      <div class="schema">
+        <div class="schema-item">
+          <strong>页面信息</strong>
+          页面 ID、尺寸、来源类型
+        </div>
+        <div class="schema-item">
+          <strong>元素信息</strong>
+          role、text、bounds、状态
+        </div>
+        <div class="schema-item">
+          <strong>关系信息</strong>
+          父子关系、空间关系、容器结构
+        </div>
+        <div class="schema-item">
+          <strong>统一格式</strong>
+          Native / OCR / 小模型都收敛到 role、name、state、ref、bounds 和层级结构
+        </div>
+      </div>
+      <h3 class="block-title" id="sub-transform-example">转换示例</h3>
+      <div class="example">
+        <img class="screenshot" src="assets/native-message-screenshot.png" alt="消息页截图" />
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th>Native 特征</th>
+                <th>YAML role</th>
+                <th>归一化说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TextView</td>
+                <td>text / button</td>
+                <td>有文本内容时归一化为 text；如果具备点击属性，则提升为 button</td>
+              </tr>
+              <tr>
+                <td>ImageView</td>
+                <td>image</td>
+                <td>默认归一化为 image；如果所在节点可点击，则作为 button 的子信息保留</td>
+              </tr>
+              <tr>
+                <td>ScrollView / RecyclerView</td>
+                <td>scroll / list</td>
+                <td>保留 scrollable 状态和 bounds，用于描述可滚动区域或列表结构</td>
+              </tr>
+              <tr>
+                <td>可点击容器</td>
+                <td>button</td>
+                <td>带 clickable 或点击监听的布局节点归一化为 button，并分配 ref</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="code-pair">
+            <div class="code-card">
+              <h3>Native XML 片段</h3>
+              <pre>&lt;node class="android.widget.TextView"
+      text="搜索"
+      bounds="[42,312][870,407]" /&gt;
+&lt;node class="android.widget.LinearLayout"
+      bounds="[870,305][1038,415]"&gt;
+  &lt;node class="android.widget.TextView"
+        text="客服"
+        bounds="[902,336][1038,379]" /&gt;
+&lt;/node&gt;</pre>
+            </div>
+            <div class="code-card">
+              <h3>YAML 输出片段</h3>
+              <pre>- button "搜索" [ref=n4] [bounds=42,312,870,407]
+- button [ref=n5] [bounds=870,305,1038,415]:
+  - image
+  - text "客服"</pre>
+            </div>
+          </div>
+          <div class="note">
+            转换过程会把 Native 节点中的文本、位置和交互属性归一化为 YAML 中的 role、text、bounds、ref 等字段，降低上层系统对原始 Native 结构的直接依赖。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sec-enhance">
+      <h2>三、增强接入方向</h2>
+      <h3 class="block-title" id="sub-enhance-main">增强接入主线</h3>
+      <div class="panel">
+        <div class="flow">
+          <div class="step">基础 YAML</div>
+          <div class="step">OCR 文本补盲</div>
+          <div class="step">小模型语义补充</div>
+          <div class="step">增强版 YAML</div>
+        </div>
+        <div class="note">
+          Native 作为主干产物，OCR 和小模型作为增强层补充统一 YAML 字段：OCR 负责文本补盲，小模型负责无文本图标和区域语义补充，不单独生成另一套结果。
+        </div>
+      </div>
+      <h4 class="minor-title">补齐分工</h4>
+      <table class="compact-table">
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>补齐内容</th>
+            <th>进入 YAML 的方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Native XML</td>
+            <td>提供结构、文本、位置和基础交互属性</td>
+            <td>生成基础 role、name、state、ref、bounds 和层级</td>
+          </tr>
+          <tr>
+            <td>OCR</td>
+            <td>补充图片、自绘区域、Native text 缺失场景中的可见文字</td>
+            <td>以 text / name 形式补入对应元素或区域</td>
+          </tr>
+          <tr>
+            <td>小模型</td>
+            <td>补充无文本图标、区域功能、按钮意图等视觉语义</td>
+            <td>补齐元素 name，必要时补充更合适的 role</td>
+          </tr>
+        </tbody>
+      </table>
+      <h4 class="minor-title">增强示例</h4>
+      <div class="example">
+        <img class="screenshot focus-top" src="assets/native-message-screenshot.png" alt="消息页顶部操作区" />
+        <div>
+          <div class="code-pair">
+            <div class="code-card">
+              <h3>增强前</h3>
+              <pre>- button [ref=n2] [bounds=828,168,933,273]
+- button [ref=n3] [bounds=933,168,1038,273]</pre>
+            </div>
+            <div class="code-card">
+              <h3>增强后</h3>
+              <pre>- button "电话入口" [ref=n2] [bounds=828,168,933,273]
+- button "新增入口" [ref=n3] [bounds=933,168,1038,273]</pre>
+            </div>
+          </div>
+          <div class="note">
+            当 Native 只能给出“这是一个可点击区域”和位置，但缺少图标含义时，增强逻辑开始发挥作用；补充结果不替换 Native 结构，而是补齐同一元素的名称。
+          </div>
+        </div>
+      </div>
+      <h3 class="block-title" id="sub-model-conclusion">小模型可行性结论</h3>
+      <div class="note">
+        <ul class="note-list">
+          <li>当前增强主路径：整图 + 标注框 + PNG + ARGB_8888。</li>
+          <li>低字节候选：JPEG 75 + ARGB_8888（在准确率可接受场景继续验证）。</li>
+          <li>速度关键因子：单次耗时主要受目标数量和输出长度影响。</li>
+          <li>已排除：WebP（链路不支持）、RGB_565（准确率下降明显）。</li>
+        </ul>
+      </div>
+      <h4 class="minor-title">输入方案展示</h4>
+      <div class="mode-grid">
+        <div class="mode-card">
+          <h3>整图 + 标注框</h3>
+          <img class="mode-shot" src="assets/small-model-annotated.png" alt="整图标注框输入示例" />
+          <p class="mode-note">直接在截图上画出目标区域和编号，模型通过可见框选区域识别图标。</p>
+        </div>
+        <div class="mode-card">
+          <h3>整图 + 坐标文本</h3>
+          <img class="mode-shot" src="assets/small-model-bounds-input.png" alt="整图坐标文本输入示例" />
+          <p class="mode-note">图片保持原样，目标通过坐标文本提供，例如 t002 [828,168,933,273]。</p>
+        </div>
+        <div class="mode-card">
+          <h3>裁剪拼图</h3>
+          <img class="mode-shot contain" src="assets/small-model-cropped-montage.png" alt="裁剪拼图输入示例" />
+          <p class="mode-note">先裁剪目标 icon，再拼成一张输入图，降低无关页面区域干扰。</p>
+        </div>
+      </div>
+      <h4 class="minor-title">输入方案对比数据</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>输入方式</th>
+            <th>目标数</th>
+            <th>图片准备</th>
+            <th>模型加载</th>
+            <th>推理耗时</th>
+            <th>正确</th>
+            <th>部分正确</th>
+            <th>错误</th>
+            <th>正确率</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>整图 + 标注框</td>
+            <td>15</td>
+            <td>71ms</td>
+            <td>5080ms</td>
+            <td>8517ms</td>
+            <td>11</td>
+            <td>1</td>
+            <td>3</td>
+            <td>73.3%</td>
+          </tr>
+          <tr>
+            <td>整图 + 坐标文本</td>
+            <td>15</td>
+            <td>0ms</td>
+            <td>5080ms</td>
+            <td>7914ms</td>
+            <td>1</td>
+            <td>0</td>
+            <td>14</td>
+            <td>6.7%</td>
+          </tr>
+          <tr>
+            <td>裁剪拼图</td>
+            <td>15</td>
+            <td>6ms</td>
+            <td>5080ms</td>
+            <td>11052ms</td>
+            <td>10</td>
+            <td>2</td>
+            <td>3</td>
+            <td>66.7%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        输入方式结论：整图 + 标注框最稳定，作为默认方案；裁剪拼图可作为备选；整图 + 坐标文本虽然准备成本低，但定位稳定性不足。
+      </div>
+      <h4 class="minor-title">编码与位深数据与结论</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>方案</th>
+            <th>字节数</th>
+            <th>推理耗时</th>
+            <th>正确率</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PNG + ARGB_8888</td>
+            <td>575KB</td>
+            <td>约 8.4s</td>
+            <td>66.7%</td>
+            <td>准确率基准，默认安全方案</td>
+          </tr>
+          <tr>
+            <td>JPEG 75 + ARGB_8888</td>
+            <td>151KB</td>
+            <td>约 8.1s</td>
+            <td>60.0%</td>
+            <td>字节数优化候选，但准确率弱于 PNG</td>
+          </tr>
+          <tr>
+            <td>JPEG 90 + ARGB_8888</td>
+            <td>222KB</td>
+            <td>约 8.2s</td>
+            <td>53.3%</td>
+            <td>字节数和准确率都不优于 JPEG 75，暂不保留</td>
+          </tr>
+          <tr>
+            <td>PNG + RGB_565</td>
+            <td>317KB</td>
+            <td>约 8.8s</td>
+            <td>40.0%</td>
+            <td>准确率损失明显，不建议继续投入</td>
+          </tr>
+          <tr>
+            <td>JPEG 75 + RGB_565</td>
+            <td>153KB</td>
+            <td>约 8.4s</td>
+            <td>46.7%</td>
+            <td>相比 JPEG 75 + 8888 没有收益，且准确率下降</td>
+          </tr>
+          <tr>
+            <td>WebP</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>当前模型输入链路不支持，直接排除</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        编码与位深结论：主路径保留 PNG + ARGB_8888（准确率基准）和 JPEG 75 + ARGB_8888（低字节候选）；WebP 当前链路不支持，RGB_565 不纳入主路径。
+      </div>
+      <h3 class="block-title" id="sub-enhance-strategy">后续策略与判断规则</h3>
+      <h4 class="minor-title">增强判断规则</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>方向</th>
+            <th>当前判断</th>
+            <th>需要固化的规则</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>可操作元素判定</td>
+            <td>Native 能提供 clickable、focusable、bounds、层级等基础信息，但仍需要统一归一化规则</td>
+            <td>定义 button / input / selectable 的判定条件，避免上层直接依赖原始 Native 节点</td>
+          </tr>
+          <tr>
+            <td>语义补充判定</td>
+            <td>无文本图标、空 name 可点击区域、自绘文本、Native text 与截图不一致，是优先增强场景</td>
+            <td>形成增强触发规则，决定哪些元素需要 OCR 或小模型介入</td>
+          </tr>
+          <tr>
+            <td>OCR / 小模型分工</td>
+            <td>OCR 更适合补可见文字，小模型更适合补图标含义和区域意图</td>
+            <td>定义二者调用边界、触发时机，以及多来源结果的回填和仲裁方式</td>
+          </tr>
+        </tbody>
+      </table>
+      <h4 class="minor-title">已形成的观察结论</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>方向</th>
+            <th>当前观察</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>图片大小</td>
+            <td>原图、1024、768、512 长边对比中，未观察到稳定提速；在手机截图尺寸范围内，图片大小不是主要耗时因素</td>
+            <td>不优先继续压缩图片尺寸，避免因过度压缩损失识别效果</td>
+          </tr>
+          <tr>
+            <td>目标数量 / 输出长度</td>
+            <td>3 个目标约 4.1s，15 个目标约 8.4s，差异明显</td>
+            <td>单次耗时主要受目标数量和输出长度影响</td>
+          </tr>
+          <tr>
+            <td>模型加载</td>
+            <td>加载约 5.1s，且加载后可复用</td>
+            <td>作为一次性成本处理，不作为单次识别优化重点</td>
+          </tr>
+        </tbody>
+      </table>
+      <h4 class="minor-title">后续实验方向</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>方向</th>
+            <th>当前观察</th>
+            <th>后续策略</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>按需 / 分批识别</td>
+            <td>目标数量和输出长度是更明显的耗时因素</td>
+            <td>优先做按需识别、分批识别，控制单次目标数和输出长度</td>
+          </tr>
+          <tr>
+            <td>输出格式约束</td>
+            <td>短中文标签、一行一个目标、固定编号格式更利于解析</td>
+            <td>继续收敛输出格式，降低 YAML 回填成本</td>
+          </tr>
+          <tr>
+            <td>实验可复盘</td>
+            <td>已保存模型实际输入图、Prompt 和运行结果</td>
+            <td>后续用于复查输入合理性，并沉淀典型样例</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" id="sec-next">
+      <h2>四、待补齐与下一步</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>方向</th>
+              <th>当前待补齐</th>
+              <th>下一步动作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>YAML 规范</td>
+              <td>字段边界和版本还需要冻结</td>
+              <td>固化 YAML v0.1 Schema，明确 role、name、state、ref、bounds 等核心字段</td>
+            </tr>
+            <tr>
+              <td>小模型</td>
+              <td>已完成输入方式、图片长边、目标数量等初步对比，样本量仍需扩大</td>
+              <td>继续验证按需识别、分批识别、候选标签约束，并补齐图片尺寸和编码大小等记录字段</td>
+            </tr>
+            <tr>
+              <td>OCR</td>
+              <td>仍缺少可展示的文本补盲样例</td>
+              <td>准备 Native text 缺失场景样例，并接入统一 YAML 字段</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+  </main>
+</body>
+</html>
