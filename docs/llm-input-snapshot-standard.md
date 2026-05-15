@@ -44,7 +44,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 基本节点语法：
 
 ```text
-- {role} "{name}" [state] [ref={ref}]
+- {role} "{name}" [state] [ref={ref}] [bounds={left},{top},{right},{bottom}]
 ```
 
 支持层级：
@@ -64,7 +64,14 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 | `name` | 否 | LLM 可读名称或文本内容 |
 | `state` | 否 | 节点状态信息，如 `scrollable`、`disabled`、`clickable`、`clickable-inferred` |
 | `ref` | 否 | 可操作对象引用，用于后续定位或动作关联 |
+| `bounds` | 否 | 元素在屏幕中的位置，格式为 `left,top,right,bottom`，用于动作定位、增强结果回填和问题复查 |
 | 层级 | 否 | 表示 UI 结构从属关系 |
+
+说明：
+
+- YAML 中 role 后的引号文本统一称为 `name`。
+- `text` 是一种 role，不是独立字段；`- text "消息"` 表示 `role=text`、`name=消息`。
+- `bounds` 不直接表达语义，但对 `ref` 定位、OCR / 小模型结果对齐很重要。能稳定获得位置的插件应尽量保留。
 
 关于列表项可点击状态：
 
@@ -78,9 +85,16 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 ```text
 text
 button
+input
+checkbox
+radio
+switch
+slider
+picker
 list
 listitem
 scroll
+grid
 image
 visual_state
 ```
@@ -108,6 +122,30 @@ ocr-plugin:
 small-model-plugin:
   模型理解结果 -> LLM Input Snapshot
 ```
+
+## 增强回填约定
+
+Native、OCR、小模型可以按“基础结构 + 字段增强”的方式协作：
+
+```text
+Native 基础 YAML -> OCR 文本补盲 -> 小模型语义补充 -> 增强版 YAML
+```
+
+推荐分工：
+
+| 来源 | 主要贡献 | 回填方式 |
+|---|---|---|
+| Native | 结构、位置、基础交互、已有文本 | 生成基础 `role`、`name`、`state`、`ref`、`bounds` 和层级 |
+| OCR | Native 无法稳定获取的可见文字 | 补充或修正对应区域的 `name` / `text` 节点 |
+| 小模型 | 无文本图标、按钮意图、区域功能 | 补充元素 `name`，必要时建议更合适的 `role` |
+
+增强结果应优先回填到已有节点，而不是另起一套平行结构。回填时至少需要保留来源信息在调试产物中，便于复查冲突来源；正式 `LLM Input Snapshot v1` 可以先保持简洁 YAML 表达。
+
+冲突处理原则：
+
+- Native 已明确给出结构和可操作性时，OCR / 小模型不应覆盖 `ref` 和 `bounds`。
+- OCR 更适合补文字，小模型更适合补视觉语义；二者同时命中时，应按场景区分 `name` 的来源。
+- 如果增强结果置信度不足，宁可保留无名可操作元素，也不要强行写入误导性 `name`。
 
 ## 原则
 
