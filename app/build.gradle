@@ -40,5 +40,6 @@ dependencies {
     implementation project(':evaluation')
     implementation project(':native-plugin')
     implementation project(':small-model-plugin')
+    implementation project(':reflection-verifier')
     testImplementation 'junit:junit:4.13.2'
 }

@@ -70,6 +70,8 @@ UI Perception 是一个 Android 端 UI 感知研究项目，目标是对比不�
 
 当前 `:app` 已打通 native 方向的采集、转换、评测和手机端结果展示。Web、OCR、小模型模块已预留，后续只要按统一 LLM 输入契约输出 transformed 产物，即可被评测模块纳入同一套标注和规则下比较。
 
+![Native Transform Pipeline](docs/native-transform-pipeline.png)
+
 ![多 Plugin 测评流程](docs/assets/evaluation-flow.png)
 
 ```text
