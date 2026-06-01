@@ -5,4 +5,7 @@ local.properties
 .idea/
 *.iml
 .planning/
+*.onnx
+**/assets/**/screenshot.jpg
+**/assets/**/screenshot.png
 
