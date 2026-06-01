@@ -3,7 +3,7 @@
     <application>
         <provider
             android:name=".PerceptionSdkInitProvider"
-            android:authorities="com.hh.uiperception.sdk.init"
+            android:authorities="${applicationId}.perception-sdk.init"
             android:exported="false"
             android:initOrder="900" />
     </application>
