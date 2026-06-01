@@ -6,6 +6,8 @@ import android.util.Log;
 import com.hh.uiperception.sdk.internal.CaptureHandler;
 import com.hh.uiperception.sdk.internal.CaptureResponse;
 import com.hh.uiperception.sdk.internal.ForegroundActivityTracker;
+import com.hh.uiperception.sdk.internal.OperationHandler;
+import com.hh.uiperception.sdk.internal.OperationResponse;
 import com.hh.uiperception.sdk.internal.PerceptionHttpServer;
 
 public final class PerceptionSdk {
@@ -48,5 +50,14 @@ public final class PerceptionSdk {
 
     public static boolean isHttpServerRunning() {
         return httpServer != null && httpServer.isRunning();
+    }
+
+    public static OperationResponse click(String ref) {
+        return OperationHandler.fromJson(OperationHandler.handleClick("{\"ref\":\"" + ref + "\"}"));
+    }
+
+    public static OperationResponse swipe(String direction, String ref) {
+        String body = "{\"direction\":\"" + direction + "\"" + (ref != null ? ",\"ref\":\"" + ref + "\"" : "") + "}";
+        return OperationHandler.fromJson(OperationHandler.handleSwipe(body));
     }
 }

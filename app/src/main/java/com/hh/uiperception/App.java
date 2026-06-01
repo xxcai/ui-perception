@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 
-import com.hh.uiperception.sdk.PerceptionSdk;
-
 public class App extends Application {
 
     private static final String TAG = "UIPerception";
@@ -44,7 +42,5 @@ public class App extends Application {
             @Override
             public void onActivityDestroyed(Activity activity) {}
         });
-
-        PerceptionSdk.startHttpServer(9700);
     }
 }

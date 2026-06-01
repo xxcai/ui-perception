@@ -12,6 +12,7 @@ public class PerceptionSdkInitProvider extends ContentProvider {
     public boolean onCreate() {
         Application app = (Application) getContext().getApplicationContext();
         PerceptionSdk.init(app);
+        PerceptionSdk.startHttpServer();
         return false;
     }
 

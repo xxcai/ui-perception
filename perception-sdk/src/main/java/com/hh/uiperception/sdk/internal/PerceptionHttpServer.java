@@ -87,15 +87,21 @@ public final class PerceptionHttpServer {
             String method = parts[0];
             String path = parts[1].split("\\?")[0];
 
-            // Consume remaining headers
-            String line;
-            while ((line = reader.readLine()) != null && !line.isEmpty()) {
-                // drain
+            // Parse headers
+            int contentLength = 0;
+            String headerLine;
+            while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
+                if (headerLine.toLowerCase().startsWith("content-length:")) {
+                    contentLength = Integer.parseInt(headerLine.substring(15).trim());
+                }
             }
 
-            if (!"GET".equals(method)) {
-                sendJson(out, 405, "{\"status\":\"error\",\"error\":\"Method not allowed\"}");
-                return;
+            // Read body if present
+            String body = null;
+            if (contentLength > 0) {
+                char[] bodyChars = new char[contentLength];
+                reader.read(bodyChars, 0, contentLength);
+                body = new String(bodyChars);
             }
 
             String responseJson;
@@ -103,6 +109,12 @@ public final class PerceptionHttpServer {
                 responseJson = "{\"status\":\"success\",\"result\":{\"version\":\"1.0.0\"}}";
             } else if ("/capture".equals(path)) {
                 responseJson = com.hh.uiperception.sdk.PerceptionSdk.capture().toJson();
+            } else if ("/click".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleClick(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/swipe".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleSwipe(body)
+                        : OperationResponse.error("Missing body").toJson();
             } else {
                 responseJson = "{\"status\":\"error\",\"error\":\"Not found: " + path + "\"}";
             }

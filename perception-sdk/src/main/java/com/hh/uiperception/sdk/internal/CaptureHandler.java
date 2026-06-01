@@ -37,7 +37,9 @@ public final class CaptureHandler {
 
                 TransformResult transform = entry.transformResult();
                 if (transform != null && transform.isSuccess()) {
-                    return CaptureResponse.success(capture.activityClassName(), transform.content());
+                    CaptureResponse response = CaptureResponse.success(capture.activityClassName(), transform.content());
+                    RefBoundsCache.update(transform.content());
+                    return response;
                 }
             }
             return CaptureResponse.error("Capture pipeline produced no result");
