@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.hh.uiperception.baseline.BaselineRegistry;
 import com.hh.uiperception.baseline.BaselineRouter;
 import com.hh.uiperception.baseline.BaselineSpec;
+import com.hh.uiperception.smallmodelplugin.ui.SmallModelDebugActivity;
 
 import java.util.List;
 
@@ -60,6 +61,16 @@ public class MainActivity extends Activity {
                     ViewGroup.LayoutParams.WRAP_CONTENT
             ));
         }
+
+        TextView smallModelDebug = actionButton("Gemma 小模型调试", 0xFFE6F4EA);
+        smallModelDebug.setOnClickListener(v ->
+                startActivity(new Intent(this, SmallModelDebugActivity.class)));
+        LinearLayout.LayoutParams debugParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        debugParams.setMargins(0, dp(4), 0, dp(12));
+        content.addView(smallModelDebug, debugParams);
 
         setContentView(scrollView);
     }

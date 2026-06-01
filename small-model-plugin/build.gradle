@@ -21,4 +21,11 @@ android {
 
 dependencies {
     implementation project(':perception-core')
+    implementation 'com.google.ai.edge.litertlm:litertlm-android:0.11.0'
+    implementation 'com.google.android.gms:play-services-tflite-java:16.5.0'
+    implementation 'com.google.android.gms:play-services-tflite-gpu:16.5.0'
+    implementation 'com.google.android.gms:play-services-tflite-support:16.5.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
 }

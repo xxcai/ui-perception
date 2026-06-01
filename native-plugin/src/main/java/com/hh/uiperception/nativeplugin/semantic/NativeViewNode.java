@@ -15,6 +15,9 @@ public final class NativeViewNode {
     private final String resourceId;
     private final NativeBounds bounds;
     private final boolean clickable;
+    private final boolean hasOnClickListener;
+    private final boolean hasItemClickListener;
+    private final boolean hasItemTouchListener;
     private final boolean longClickable;
     private final boolean enabled;
     private final boolean checked;
@@ -32,6 +35,9 @@ public final class NativeViewNode {
         this.resourceId = normalize(builder.resourceId);
         this.bounds = builder.bounds;
         this.clickable = builder.clickable;
+        this.hasOnClickListener = builder.hasOnClickListener;
+        this.hasItemClickListener = builder.hasItemClickListener;
+        this.hasItemTouchListener = builder.hasItemTouchListener;
         this.longClickable = builder.longClickable;
         this.enabled = builder.enabled;
         this.checked = builder.checked;
@@ -69,6 +75,18 @@ public final class NativeViewNode {
 
     public boolean clickable() {
         return clickable;
+    }
+
+    public boolean hasOnClickListener() {
+        return hasOnClickListener;
+    }
+
+    public boolean hasItemClickListener() {
+        return hasItemClickListener;
+    }
+
+    public boolean hasItemTouchListener() {
+        return hasItemTouchListener;
     }
 
     public boolean longClickable() {
@@ -133,6 +151,9 @@ public final class NativeViewNode {
         private String resourceId;
         private NativeBounds bounds;
         private boolean clickable;
+        private boolean hasOnClickListener;
+        private boolean hasItemClickListener;
+        private boolean hasItemTouchListener;
         private boolean longClickable;
         private boolean enabled = true;
         private boolean checked;
@@ -170,6 +191,21 @@ public final class NativeViewNode {
 
         public Builder clickable(boolean clickable) {
             this.clickable = clickable;
+            return this;
+        }
+
+        public Builder hasOnClickListener(boolean hasOnClickListener) {
+            this.hasOnClickListener = hasOnClickListener;
+            return this;
+        }
+
+        public Builder hasItemClickListener(boolean hasItemClickListener) {
+            this.hasItemClickListener = hasItemClickListener;
+            return this;
+        }
+
+        public Builder hasItemTouchListener(boolean hasItemTouchListener) {
+            this.hasItemTouchListener = hasItemTouchListener;
             return this;
         }
 

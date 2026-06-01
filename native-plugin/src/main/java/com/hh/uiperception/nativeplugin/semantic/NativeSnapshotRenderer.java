@@ -49,7 +49,7 @@ public final class NativeSnapshotRenderer {
             key.append(" \"").append(escape(node.name())).append("\"");
         }
         for (String state : node.states()) {
-            key.append(" [").append(state).append("]");
+            key.append(" [").append(renderState(state)).append("]");
         }
         if (node.hasRef()) {
             key.append(" [ref=").append(node.ref()).append("]");
@@ -62,6 +62,13 @@ public final class NativeSnapshotRenderer {
 
     private static boolean shouldRenderBounds(NativeSemanticNode node, NativeSnapshotRenderOptions options) {
         return node.bounds() != null && (node.hasRef() || options.boxes());
+    }
+
+    private static String renderState(String state) {
+        if (NativeSemanticStates.CLICKABLE_GUESSED.equals(state)) {
+            return NativeSemanticStates.CLICKABLE_INFERRED;
+        }
+        return state;
     }
 
     private static void appendLine(StringBuilder builder, int depth, String text) {

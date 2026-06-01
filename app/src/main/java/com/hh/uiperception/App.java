@@ -4,17 +4,14 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 
-/**
- * 应用入口。
- * 通过 ActivityLifecycleCallbacks 管理浮动抓取按钮的可见性。
- */
 public class App extends Application {
+
+    private static final String TAG = "UIPerception";
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // 管理浮动抓取按钮的可见性和点击处理
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}

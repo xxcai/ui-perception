@@ -61,6 +61,8 @@
 +------------------+
 ```
 
+说明：本路线文档覆盖到 `YAML Snapshot` 产物；`Action Executor` 属于下游消费链路，用于说明 `ref + bounds` 如何被执行侧使用，不属于 transform 模块内部实现。
+
 ### 1. 原始 XML 解析
 
 输入是 Android dump/capture 得到的 view tree XML。
@@ -100,6 +102,8 @@
 - `TextView` -> `text`
 - 其他布局容器 -> `generic`
 
+补充：属性覆盖只在可交互 generic 类角色上生效（`text/image/generic` 等）。这类节点如果带 `clickable/long-clickable`，会被提升为 `button`（`attribute:clickable`）。
+
 同时保留 `roleDecision.source`，例如：
 
 - `class:list`
@@ -138,7 +142,25 @@
 
 目标是减少纯布局层级，但仍保留必要的分组结构，避免把多个兄弟语义节点错误合并。
 
-### 5. Ref 分配
+### 5. 可操作元素判定
+
+可操作元素是指可以被上层模型引用、并最终映射到一次用户动作的节点。Native transform 不只依赖单个 `clickable=true`，而是综合 class、属性、容器结构和 bounds 做判断。
+
+优先判定为可操作元素的场景：
+
+- 明确表单或交互控件：`Button`、`EditText`、`CheckBox`、`RadioButton`、`Switch`、`SeekBar`、`Spinner` 等。
+- 节点带 `clickable=true` 或 `long-clickable=true`。
+- 节点由集合容器的 item click / item touch 信号推断可点击。
+- 可点击容器内部包含文本或图标，容器本身才是实际点击区域。
+
+保守处理原则：
+
+- 必须有有效 `bounds`，否则不分配动作 `ref`。
+- 对纯布局节点，不因为其层级位置重要就直接判定为可操作。
+- 当可点击容器和内部子按钮都可能代表动作时，可以同时保留父子 ref，用于表达“整行点击”和“行内按钮点击”两种动作语义。
+- 当只能推断可点击性但缺少语义名称时，保留 `button [ref=...] [bounds=...]`，后续由 OCR / 小模型补充 `name`。
+
+### 6. Ref 分配
 
 `ref` 是当前 snapshot 内的动作定位标识。
 
@@ -196,7 +218,7 @@ y = (312 + 407) / 2
 
 后续执行点击时可以用 `bounds` 中心点注入点击事件，不依赖 Java View 对象引用。
 
-### 6. 集合控件 item 特殊处理
+### 7. 集合控件 item 特殊处理
 
 真机验证发现，常见集合控件存在一种情况：
 
@@ -206,33 +228,68 @@ y = (312 + 407) / 2
 
 这些方式可以让运行时 item 可点，但 item root 在 raw XML 里不一定出现 `clickable=true`。
 
-因此 transform 对集合控件做了收窄处理：
+因此 transform 对集合控件做了分层处理：
 
 - 父节点是 `list/grid` 时，直接结构子节点如果是 `generic/card/section`，标记为 `listitem`。
-- `listitem` 可以分配 ref。
-- 如果 `listitem` 内部已经存在明确可执行子节点，则外层 `listitem` 不重复分配 ref。
+- `listitem` 会补充可点击状态：
+  - `clickable`：item 自身可点击（`clickable=true` 或 `has-onclick-listener=true`）。
+  - `clickable-inferred`：由容器信号推断可点击（`has-item-click-listener=true` 或 `has-item-touch-listener=true`）。
+  - `clickable-guessed`：仅内部中间态，渲染输出时统一映射为 `clickable-inferred`，不对外暴露独立状态名。
+- `listitem` 的 ref 分配按状态区分：
+  - `clickable` / `clickable-inferred`：即使内部已有明确可执行子节点，父级 `listitem` 仍分配 ref。
+  - `clickable-guessed`（内部态）：仅在不存在可执行后代节点时分配 ref；若已存在可执行后代则保持保守去重，优先保留子节点 ref。
 
 示例：
 
 ```yaml
 - list [ref=n7] [bounds=0,427,1080,2190]:
-  - listitem [ref=n8] [bounds=0,427,1080,677]:
+  - listitem [clickable-inferred] [ref=n8] [bounds=0,427,1080,677]:
     - text "平台通知"
     - text "测试计划同步"
 ```
 
-对于搜索行这类内部已有明确按钮的集合子项，输出保持为：
+对于搜索行这类内部已有明确按钮的集合子项，父子都会保留 ref：
 
 ```yaml
-- listitem:
-  - button "搜索" [ref=n4]
-  - button [ref=n5]:
+- listitem [clickable-inferred] [ref=n4]:
+  - button "搜索" [ref=n5]
+  - button [ref=n6]:
     - text "客服"
 ```
+这样可以同时保留“整行点击”与“行内按钮点击”两种动作语义。
 
-这样避免父子重复 ref。
+### 8. 需要增强的元素判定
 
-### 7. 输出格式
+Native XML 能稳定提供结构、位置和部分文本，但对视觉语义覆盖不足。以下元素应进入 OCR / 小模型增强候选：
+
+| 场景 | Native 表现 | 建议增强方式 |
+|---|---|---|
+| 无文本图标按钮 | `button [ref=...] [bounds=...]`，缺少 `name` | 小模型补图标语义，如“电话入口”“新增入口” |
+| 自绘文字或图片内文字 | Native 无 `text`，截图可见文字 | OCR 补可见文字 |
+| Native text 与截图不一致 | 原始 text 缺失、过期或不可读 | OCR 校正文字 |
+| 可点击容器语义弱 | 容器可点，但内部只有 image/generic | 小模型补区域功能或按钮意图 |
+| 下拉、更多、状态类入口 | 图形语义依赖视觉形态 | 小模型补语义，必要时补充更合适的 `role` 建议 |
+
+增强结果回填规则：
+
+- 优先补充已有可操作节点的 `name`，不改变原有 `ref` 和 `bounds`。
+- OCR 主要用于补文字，小模型主要用于补图标含义、按钮意图和区域功能。
+- 如果 OCR / 小模型结果与 Native 冲突，应保留 Native 的结构和动作定位，增强结果作为名称或语义候选进入后续仲裁。
+- 低置信度结果不应强行覆盖已有 `name`。
+
+示例：
+
+```yaml
+# 增强前
+- button [ref=n2] [bounds=828,168,933,273]
+- button [ref=n3] [bounds=933,168,1038,273]
+
+# 增强后
+- button "电话入口" [ref=n2] [bounds=828,168,933,273]
+- button "新增入口" [ref=n3] [bounds=933,168,1038,273]
+```
+
+### 9. 输出格式
 
 transform 输出为 `text/yaml`，文件扩展名为 `.yml`。
 
@@ -262,7 +319,7 @@ captures/{baselineId}/runs/{runId}/native/transformed/native_semantic_snapshot_{
 - semantic snapshot 约为 raw XML 的 18%。
 - 数据量平均降低约 82%。
 - 降低数据量的同时保留了核心文本、role、状态、ref 和 bounds。
-- 集合控件 item 在 `clickable=false` 的场景下也可以通过 `listitem [ref=...]` 保留动作定位能力。
+- 集合控件 item 在 `clickable=false` 的场景下也可以通过 `listitem [clickable-inferred] [ref=...]` 保留动作定位能力。
 
 ## 数据变化示例
 

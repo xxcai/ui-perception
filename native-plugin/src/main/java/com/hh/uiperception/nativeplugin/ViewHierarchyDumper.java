@@ -5,11 +5,15 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.AdapterView;
 import android.widget.Checkable;
 import android.widget.HorizontalScrollView;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
+
+import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * 进程内 View 层级遍历器。
@@ -18,6 +22,12 @@ import android.widget.TextView;
  * 必须在 UI 线程调用。
  */
 public final class ViewHierarchyDumper {
+
+    private static final String RECYCLER_VIEW_CLASS_NAME = "androidx.recyclerview.widget.RecyclerView";
+    private static Field adapterViewItemClickListenerField;
+    private static boolean adapterViewItemClickListenerFieldResolved;
+    private static Field recyclerViewItemTouchListenersField;
+    private static boolean recyclerViewItemTouchListenersFieldResolved;
 
     private ViewHierarchyDumper() {
     }
@@ -65,6 +75,8 @@ public final class ViewHierarchyDumper {
         appendOptional(xml, "desc", extractDesc(view));
         xml.append(" bounds=\"").append(escape(extractBounds(view))).append("\"");
         xml.append(" clickable=\"").append(view.isClickable()).append("\"");
+        xml.append(" has-onclick-listener=\"").append(view.hasOnClickListeners()).append("\"");
+        appendContainerClickSignals(xml, view);
         xml.append(" enabled=\"").append(view.isEnabled()).append("\"");
         xml.append(" focusable=\"").append(view.isFocusable()).append("\"");
         xml.append(" checked=\"").append(extractChecked(view)).append("\"");
@@ -146,6 +158,94 @@ public final class ViewHierarchyDumper {
         return view instanceof ScrollView
                 || view instanceof HorizontalScrollView
                 || view instanceof ListView;
+    }
+
+    private static void appendContainerClickSignals(StringBuilder xml, View view) {
+        if (view instanceof AdapterView) {
+            xml.append(" has-item-click-listener=\"")
+                    .append(hasAdapterViewItemClickListener((AdapterView<?>) view))
+                    .append("\"");
+        }
+        if (isRecyclerView(view)) {
+            xml.append(" has-item-touch-listener=\"")
+                    .append(hasRecyclerViewItemTouchListener(view))
+                    .append("\"");
+        }
+    }
+
+    private static boolean hasAdapterViewItemClickListener(AdapterView<?> view) {
+        Field field = adapterViewItemClickListenerField();
+        if (field == null) {
+            return false;
+        }
+        try {
+            return field.get(view) != null;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static Field adapterViewItemClickListenerField() {
+        if (!adapterViewItemClickListenerFieldResolved) {
+            adapterViewItemClickListenerFieldResolved = true;
+            adapterViewItemClickListenerField = declaredField(AdapterView.class, "mOnItemClickListener");
+        }
+        return adapterViewItemClickListenerField;
+    }
+
+    private static boolean hasRecyclerViewItemTouchListener(View view) {
+        Field field = recyclerViewItemTouchListenersField(view.getClass());
+        if (field == null) {
+            return false;
+        }
+        try {
+            Object value = field.get(view);
+            return value instanceof List && !((List<?>) value).isEmpty();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static Field recyclerViewItemTouchListenersField(Class<?> startClass) {
+        if (!recyclerViewItemTouchListenersFieldResolved) {
+            recyclerViewItemTouchListenersFieldResolved = true;
+            recyclerViewItemTouchListenersField =
+                    declaredFieldInHierarchy(startClass, "mOnItemTouchListeners");
+        }
+        return recyclerViewItemTouchListenersField;
+    }
+
+    private static boolean isRecyclerView(View view) {
+        Class<?> cls = view.getClass();
+        while (cls != null) {
+            if (RECYCLER_VIEW_CLASS_NAME.equals(cls.getName())) {
+                return true;
+            }
+            cls = cls.getSuperclass();
+        }
+        return false;
+    }
+
+    private static Field declaredFieldInHierarchy(Class<?> startClass, String name) {
+        Class<?> cls = startClass;
+        while (cls != null) {
+            Field field = declaredField(cls, name);
+            if (field != null) {
+                return field;
+            }
+            cls = cls.getSuperclass();
+        }
+        return null;
+    }
+
+    private static Field declaredField(Class<?> cls, String name) {
+        try {
+            Field field = cls.getDeclaredField(name);
+            field.setAccessible(true);
+            return field;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     // --- 工具方法 ---

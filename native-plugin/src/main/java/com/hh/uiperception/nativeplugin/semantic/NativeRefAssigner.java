@@ -16,9 +16,13 @@ public final class NativeRefAssigner {
     }
 
     private static boolean shouldAssignRef(NativeSemanticNode node) {
-        return node.bounds() != null
-                && node.bounds().isValid()
-                && isExecutableRole(node.role());
+        if (node.bounds() == null || !node.bounds().isValid()) {
+            return false;
+        }
+        if (node.role() == NativeSemanticRole.LIST_ITEM) {
+            return shouldAssignRefToListItem(node);
+        }
+        return isExecutableRole(node.role());
     }
 
     private static boolean isExecutableRole(NativeSemanticRole role) {
@@ -31,8 +35,18 @@ public final class NativeRefAssigner {
                 || role == NativeSemanticRole.PICKER
                 || role == NativeSemanticRole.LIST
                 || role == NativeSemanticRole.GRID
-                || role == NativeSemanticRole.LIST_ITEM
                 || role == NativeSemanticRole.SCROLL;
+    }
+
+    private static boolean shouldAssignRefToListItem(NativeSemanticNode node) {
+        if (node.states().contains(NativeSemanticStates.CLICKABLE)
+                || node.states().contains(NativeSemanticStates.CLICKABLE_INFERRED)) {
+            return true;
+        }
+        if (node.states().contains(NativeSemanticStates.CLICKABLE_GUESSED)) {
+            return !hasExecutableDescendant(node);
+        }
+        return false;
     }
 
     private static final class State {
@@ -50,7 +64,7 @@ public final class NativeRefAssigner {
             for (String state : node.states()) {
                 builder.addState(state);
             }
-            if (shouldAssignRef(node) && !isListItemWithExecutableDescendant(node)) {
+            if (shouldAssignRef(node)) {
                 builder.ref("n" + nextRef++);
             } else if (node.hasRef()) {
                 builder.ref(node.ref());
@@ -61,20 +75,14 @@ public final class NativeRefAssigner {
             return builder.build();
         }
 
-        private boolean isListItemWithExecutableDescendant(NativeSemanticNode node) {
-            if (node.role() != NativeSemanticRole.LIST_ITEM) {
-                return false;
-            }
-            return hasExecutableDescendant(node);
-        }
+    }
 
-        private boolean hasExecutableDescendant(NativeSemanticNode node) {
-            for (NativeSemanticNode child : node.children()) {
-                if (shouldAssignRef(child) || hasExecutableDescendant(child)) {
-                    return true;
-                }
+    private static boolean hasExecutableDescendant(NativeSemanticNode node) {
+        for (NativeSemanticNode child : node.children()) {
+            if (shouldAssignRef(child) || hasExecutableDescendant(child)) {
+                return true;
             }
-            return false;
         }
+        return false;
     }
 }

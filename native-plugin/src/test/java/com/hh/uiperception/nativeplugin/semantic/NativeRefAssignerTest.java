@@ -73,6 +73,7 @@ public final class NativeRefAssignerTest {
         NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
                 .bounds(NativeBounds.parse("[0,100][1080,900]"))
                 .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .addState(NativeSemanticStates.CLICKABLE_GUESSED)
                         .bounds(NativeBounds.parse("[0,100][1080,260]"))
                         .addChild(NativeSemanticNode.builder(NativeSemanticRole.TEXT)
                                 .name("标题")
@@ -93,6 +94,7 @@ public final class NativeRefAssignerTest {
         NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
                 .bounds(NativeBounds.parse("[0,100][1080,900]"))
                 .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .addState(NativeSemanticStates.CLICKABLE_GUESSED)
                         .bounds(NativeBounds.parse("[0,100][1080,260]"))
                         .addChild(NativeSemanticNode.builder(NativeSemanticRole.GENERIC)
                                 .addChild(NativeSemanticNode.builder(NativeSemanticRole.BUTTON)
@@ -108,5 +110,62 @@ public final class NativeRefAssignerTest {
 
         assertFalse(item.hasRef());
         assertEquals("n2", item.children().get(0).children().get(0).ref());
+    }
+
+    @Test
+    public void assignsRefToClickableListItemWithExecutableDescendant() {
+        NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .addState(NativeSemanticStates.CLICKABLE)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeSemanticNode.builder(NativeSemanticRole.BUTTON)
+                                .name("购买")
+                                .bounds(NativeBounds.parse("[920,180][1040,260]"))
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode assigned = NativeRefAssigner.assign(root);
+        NativeSemanticNode item = assigned.children().get(0);
+
+        assertEquals("n2", item.ref());
+        assertEquals("n3", item.children().get(0).ref());
+    }
+
+    @Test
+    public void assignsRefToClickableInferredListItemWithExecutableDescendant() {
+        NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .addState(NativeSemanticStates.CLICKABLE_INFERRED)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .addChild(NativeSemanticNode.builder(NativeSemanticRole.BUTTON)
+                                .name("拨打")
+                                .bounds(NativeBounds.parse("[920,180][1040,260]"))
+                                .build())
+                        .build())
+                .build();
+
+        NativeSemanticNode assigned = NativeRefAssigner.assign(root);
+        NativeSemanticNode item = assigned.children().get(0);
+
+        assertEquals("n2", item.ref());
+        assertEquals("n3", item.children().get(0).ref());
+    }
+
+    @Test
+    public void skipsListItemWithoutClickableState() {
+        NativeSemanticNode root = NativeSemanticNode.builder(NativeSemanticRole.LIST)
+                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .addChild(NativeSemanticNode.builder(NativeSemanticRole.LIST_ITEM)
+                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .build())
+                .build();
+
+        NativeSemanticNode assigned = NativeRefAssigner.assign(root);
+
+        assertEquals("n1", assigned.ref());
+        assertFalse(assigned.children().get(0).hasRef());
     }
 }
