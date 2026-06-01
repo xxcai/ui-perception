@@ -1,4 +1,4 @@
-package com.hh.uiperception.portal;
+package com.hh.uiperception.sdk.internal;
 
 import android.util.Log;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class PerceptionHttpServer {
 
-    private static final String TAG = "PerceptionPortal";
+    private static final String TAG = "PerceptionSdk";
     private static final int THREAD_POOL_SIZE = 3;
 
     private ServerSocket serverSocket;
@@ -102,7 +102,7 @@ public final class PerceptionHttpServer {
             if ("/ping".equals(path)) {
                 responseJson = "{\"status\":\"success\",\"result\":{\"version\":\"1.0.0\"}}";
             } else if ("/capture".equals(path)) {
-                responseJson = CaptureHandler.capture();
+                responseJson = com.hh.uiperception.sdk.PerceptionSdk.capture().toJson();
             } else {
                 responseJson = "{\"status\":\"error\",\"error\":\"Not found: " + path + "\"}";
             }

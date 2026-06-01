@@ -3,19 +3,12 @@ package com.hh.uiperception;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
-import android.util.Log;
 
-import com.hh.uiperception.portal.PerceptionHttpServer;
+import com.hh.uiperception.sdk.PerceptionSdk;
 
 public class App extends Application {
 
     private static final String TAG = "UIPerception";
-    private static volatile Activity foregroundActivity;
-    private final PerceptionHttpServer httpServer = new PerceptionHttpServer();
-
-    public static Activity getForegroundActivity() {
-        return foregroundActivity;
-    }
 
     @Override
     public void onCreate() {
@@ -30,8 +23,6 @@ public class App extends Application {
 
             @Override
             public void onActivityResumed(Activity activity) {
-                foregroundActivity = activity;
-
                 String className = activity.getClass().getName();
                 if (className.contains("uiperception.baseline.")) {
                     CaptureFloatingButton.show(activity);
@@ -42,11 +33,7 @@ public class App extends Application {
             }
 
             @Override
-            public void onActivityPaused(Activity activity) {
-                if (foregroundActivity == activity) {
-                    foregroundActivity = null;
-                }
-            }
+            public void onActivityPaused(Activity activity) {}
 
             @Override
             public void onActivityStopped(Activity activity) {}
@@ -55,14 +42,9 @@ public class App extends Application {
             public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
             @Override
-            public void onActivityDestroyed(Activity activity) {
-                if (foregroundActivity == activity) {
-                    foregroundActivity = null;
-                }
-            }
+            public void onActivityDestroyed(Activity activity) {}
         });
 
-        httpServer.start(9700);
-        Log.i(TAG, "PerceptionHttpServer started on port 9700");
+        PerceptionSdk.startHttpServer(9700);
     }
 }

@@ -39,7 +39,10 @@ dependencies {
     implementation project(':perception-core')
     implementation project(':evaluation')
     implementation project(':native-plugin')
+    implementation project(':perception-sdk')
     implementation project(':small-model-plugin')
     implementation project(':reflection-verifier')
+    implementation project(':yolo-plugin')
+    implementation project(':florence2-plugin')
     testImplementation 'junit:junit:4.13.2'
 }
