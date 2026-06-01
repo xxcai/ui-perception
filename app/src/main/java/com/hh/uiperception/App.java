@@ -3,18 +3,24 @@ package com.hh.uiperception;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
 
-/**
- * 应用入口。
- * 通过 ActivityLifecycleCallbacks 管理浮动抓取按钮的可见性。
- */
+import com.hh.uiperception.portal.PerceptionHttpServer;
+
 public class App extends Application {
+
+    private static final String TAG = "UIPerception";
+    private static volatile Activity foregroundActivity;
+    private final PerceptionHttpServer httpServer = new PerceptionHttpServer();
+
+    public static Activity getForegroundActivity() {
+        return foregroundActivity;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // 管理浮动抓取按钮的可见性和点击处理
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
@@ -24,6 +30,8 @@ public class App extends Application {
 
             @Override
             public void onActivityResumed(Activity activity) {
+                foregroundActivity = activity;
+
                 String className = activity.getClass().getName();
                 if (className.contains("uiperception.baseline.")) {
                     CaptureFloatingButton.show(activity);
@@ -34,7 +42,11 @@ public class App extends Application {
             }
 
             @Override
-            public void onActivityPaused(Activity activity) {}
+            public void onActivityPaused(Activity activity) {
+                if (foregroundActivity == activity) {
+                    foregroundActivity = null;
+                }
+            }
 
             @Override
             public void onActivityStopped(Activity activity) {}
@@ -43,7 +55,14 @@ public class App extends Application {
             public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
             @Override
-            public void onActivityDestroyed(Activity activity) {}
+            public void onActivityDestroyed(Activity activity) {
+                if (foregroundActivity == activity) {
+                    foregroundActivity = null;
+                }
+            }
         });
+
+        httpServer.start(9700);
+        Log.i(TAG, "PerceptionHttpServer started on port 9700");
     }
 }
