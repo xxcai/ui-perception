@@ -32,17 +32,21 @@ public final class WebDomSerializer {
         // ── 2. 可见性检测 ────────────────────────────────────
         // Playwright ref: roleUtils.ts:305 isElementHiddenForAria
         //   + domUtils.ts:133 isElementVisible
-        // 简化: 保留 display:none / visibility:hidden / opacity:0
+        // 保留: display:none / visibility:hidden / opacity:0 (或 checkVisibility API)
         //       + 祖先链 aria-hidden=true 检查
-        //       跳过 checkVisibility() API 和 display:contents 递归
+        //       跳过 display:contents 递归
         + "function isVisible(el){"
         + "  if(isHiddenTag(el.tagName))return false;"
         + "  var r=el.getBoundingClientRect();"
         + "  if(r.width===0&&r.height===0)return false;"
-        + "  var s=getComputedStyle(el);"
-        + "  if(s.display==='none')return false;"
-        + "  if(s.visibility==='hidden')return false;"
-        + "  if(parseFloat(s.opacity)===0)return false;"
+        + "  if(typeof el.checkVisibility==='function'){"
+        + "    if(!el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}))return false;"
+        + "  }else{"
+        + "    var s=getComputedStyle(el);"
+        + "    if(s.display==='none')return false;"
+        + "    if(s.visibility==='hidden')return false;"
+        + "    if(parseFloat(s.opacity)===0)return false;"
+        + "  }"
         // 祖先链 aria-hidden=true 检查
         // Playwright ref: roleUtils.ts:328 belongsToDisplayNoneOrAriaHiddenOrNonSlotted
         //   只取 aria-hidden 部分，跳过 display:none 祖先链（上面已检查自身）
@@ -100,20 +104,59 @@ public final class WebDomSerializer {
         + "  }"
         + "}"
 
+        // ── 4a. 辅助函数 ────────────────────────────────
+        // CSS ::before/::after 伪元素文本提取
+        // Playwright ref: roleUtils.ts:944 innerAccumulatedElementText
+        + "function pseudoText(s){"
+        + "  if(!s||s==='none'||s==='normal')return '';"
+        + "  var c=s.charCodeAt(0);"
+        + "  if((c===34||c===39)&&s.charCodeAt(s.length-1)===c)return s.substring(1,s.length-1);"
+        + "  return '';"
+        + "}"
+        // embedded control substitution: 表单控件值替代文本
+        // Playwright ref: roleUtils.ts:677-719 getTextAlternativeInternal step 2c
+        + "function textFromContent(el){"
+        + "  var parts=[];"
+        + "  for(var i=0;i<el.childNodes.length;i++){"
+        + "    var c=el.childNodes[i];"
+        + "    if(c.nodeType===3){"
+        + "      var t=c.textContent.trim();"
+        + "      if(t)parts.push(t);"
+        + "    }else if(c.nodeType===1){"
+        + "      var tag=c.tagName;"
+        + "      if(isHiddenTag(tag))continue;"
+        + "      if(tag==='INPUT'){"
+        + "        var tp=(c.type||'text').toLowerCase();"
+        + "        if(tp==='submit'||tp==='reset'||tp==='button'){parts.push(c.value||tp);}"
+        + "        else if(tp!=='hidden'&&tp!=='checkbox'&&tp!=='radio'){parts.push(c.value||'');}"
+        + "      }else if(tag==='SELECT'){"
+        + "        if(c.selectedIndex>=0&&c.options[c.selectedIndex])parts.push(c.options[c.selectedIndex].text);"
+        + "      }else if(tag==='TEXTAREA'){"
+        + "        parts.push(c.value||'');"
+        + "      }else{"
+        + "        var ct=textFromContent(c);"
+        + "        if(ct)parts.push(ct);"
+        + "      }"
+        + "    }"
+        + "  }"
+        + "  return parts.join(' ');"
+        + "}"
+
         // ── 4. 可访问名称 ──────────────────────────────────
         // Playwright ref: roleUtils.ts:504 getElementAccessibleName
         //   → line 622 getTextAlternativeInternal
-        // W3C accname spec 步骤简化:
+        // W3C accname spec 步骤:
         //   Step 2d: aria-label (line 723)
         //   Step 2b: aria-labelledby (line 653) — 只取 textContent，不递归
         //   Step 2e: native HTML naming (line 730-912)
         //     - img: alt (line 780)
         //     - input[submit/button/reset]: value (line 732)
         //     - input[text]: placeholder
-        //   Step 2f: name from content (line 918) — innerText 截取
+        //   Step 2f: name from content (line 918) — textFromContent + ::before/::after
         //   Step 2i: title fallback (line 933)
-        // 跳过: aria-labelledby 递归、embedded control substitution、
-        //       CSS ::before/::after、label association、SVG title
+        // 已实现: embedded control substitution (textFromContent)、
+        //         CSS ::before/::after (pseudoText)
+        // 跳过: aria-labelledby 递归、label association、SVG title
         + "function getName(el){"
         + "  var a=el.getAttribute('aria-label');"
         + "  if(a&&a.trim())return a.trim();"
@@ -133,9 +176,12 @@ public final class WebDomSerializer {
         + "    if(ph)return ph;"
         + "  }"
         + "  if(tag==='TEXTAREA'){var ph2=el.getAttribute('placeholder');if(ph2)return ph2;}"
-        + "  var inner=(el.innerText||'').trim();"
-        + "  if(inner){"
-        + "    return inner.length>200?inner.substring(0,200)+'...':inner;"
+        + "  var inner=textFromContent(el);"
+        + "  var before=pseudoText(getComputedStyle(el,'::before').content);"
+        + "  var after=pseudoText(getComputedStyle(el,'::after').content);"
+        + "  var combined=((before?before+' ':'')+inner+(after?' '+after:'')).trim();"
+        + "  if(combined){"
+        + "    return combined.length>200?combined.substring(0,200)+'...':combined;"
         + "  }"
         + "  var ttl=el.getAttribute('title');"
         + "  if(ttl)return ttl;"
@@ -155,13 +201,16 @@ public final class WebDomSerializer {
         //   getAriaChecked: roleUtils.ts:1004 — checked 属性
         //   getAriaDisabled: roleUtils.ts:1099 — disabled 属性 + fieldset 祖先
         //   getAriaLevel: roleUtils.ts:1083 — H1-H6 level
-        // 简化: 直接读 DOM 属性，跳过 aria-checked/disabled attribute、
-        //       fieldset 祖先链、indeterminate/mixed 状态
+        // 简化: 直接读 DOM 属性 + aria-pressed，跳过 aria-checked/disabled attribute、
+        //       fieldset 祖先链
         + "function getStates(el){"
         + "  var s=[];"
         + "  if(el.disabled)s.push('disabled');"
         + "  if(el.checked)s.push('checked');"
         + "  if(el.indeterminate)s.push('indeterminate');"
+        + "  var pressed=el.getAttribute('aria-pressed');"
+        + "  if(pressed==='true')s.push('pressed');"
+        + "  else if(pressed==='mixed')s.push('pressed=mixed');"
         + "  if(document.activeElement===el)s.push('focused');"
         + "  var m=el.tagName&&el.tagName.match(/^H(\\d)$/);"
         + "  if(m)s.push('level='+m[1]);"
