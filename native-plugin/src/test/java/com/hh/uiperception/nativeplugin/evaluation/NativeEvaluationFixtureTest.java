@@ -53,10 +53,10 @@ public final class NativeEvaluationFixtureTest {
                         + "page: message\n"
                         + "targets:\n"
                         + "  - id: search-entry\n"
-                        + "    role: link\n"
+                        + "    role: nonexistent_role\n"
                         + "    requiredRef: false\n"));
 
         assertTrue(error.getMessage().contains("role 非法"));
-        assertTrue(error.getMessage().contains("link"));
+        assertTrue(error.getMessage().contains("nonexistent_role"));
     }
 }

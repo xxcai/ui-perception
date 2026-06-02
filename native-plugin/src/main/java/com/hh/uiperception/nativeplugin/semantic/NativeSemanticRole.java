@@ -26,7 +26,10 @@ public enum NativeSemanticRole {
     SLIDER("slider"),
     PICKER("picker"),
     PROGRESS("progress"),
-    GENERIC("generic");
+    GENERIC("generic"),
+    LINK("link"),
+    HEADING("heading"),
+    NAVIGATION("navigation");
 
     private final String snapshotName;
 
