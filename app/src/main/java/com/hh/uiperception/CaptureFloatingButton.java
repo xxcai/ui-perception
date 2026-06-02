@@ -18,17 +18,18 @@ import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionEntryResult;
 import com.hh.uiperception.core.PerceptionComposer;
 import com.hh.uiperception.core.PerceptionPlan;
+import com.hh.uiperception.core.PerceptionPlugin;
 import com.hh.uiperception.core.PerceptionRunResult;
+import com.hh.uiperception.core.PluginRegistry;
 import com.hh.uiperception.core.TransformResult;
 import com.hh.uiperception.baseline.BaselineRoutes;
 import com.hh.uiperception.baseline.nativepage.NativeHomeActivity;
 import com.hh.uiperception.evaluation.OnDeviceEvaluationRunner;
-import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,7 +42,6 @@ import java.util.concurrent.Executors;
  */
 public final class CaptureFloatingButton {
 
-    private static final NativePerceptionPlugin NATIVE_PLUGIN = new NativePerceptionPlugin();
     private static final ExecutorService PERCEPTION_EXECUTOR = Executors.newSingleThreadExecutor();
 
     /** 单例视图，整个应用只有一个浮动按钮 */
@@ -187,11 +187,11 @@ public final class CaptureFloatingButton {
     private static PerceptionRunResult executePerceptionInternal(Activity activity) {
         String baselineId = resolveBaselineId(activity);
 
-        PerceptionPlan plan = new PerceptionPlan(
-                baselineId,
-                Collections.singletonList(NATIVE_PLUGIN),
-                true
-        );
+        List<PerceptionPlugin> plugins = PluginRegistry.getApplicable(activity);
+        if (plugins.isEmpty()) {
+            throw new IllegalStateException("No applicable plugin");
+        }
+        PerceptionPlan plan = new PerceptionPlan(baselineId, plugins, true);
         PerceptionRunResult runResult = PerceptionComposer.execute(activity, plan);
 
         for (PerceptionEntryResult entry : runResult.entries()) {

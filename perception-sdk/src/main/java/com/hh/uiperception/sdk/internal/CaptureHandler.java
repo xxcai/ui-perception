@@ -7,11 +7,13 @@ import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionComposer;
 import com.hh.uiperception.core.PerceptionEntryResult;
 import com.hh.uiperception.core.PerceptionPlan;
+import com.hh.uiperception.core.PerceptionPlugin;
 import com.hh.uiperception.core.PerceptionRunResult;
+import com.hh.uiperception.core.PluginRegistry;
 import com.hh.uiperception.core.TransformResult;
-import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 
 import java.util.Collections;
+import java.util.List;
 
 public final class CaptureHandler {
 
@@ -24,9 +26,13 @@ public final class CaptureHandler {
         }
 
         try {
+            List<PerceptionPlugin> plugins = PluginRegistry.getApplicable(activity);
+            if (plugins.isEmpty()) {
+                return CaptureResponse.error("No applicable plugin for " + activity.getClass().getSimpleName());
+            }
             PerceptionPlan plan = new PerceptionPlan(
                     activity.getClass().getSimpleName(),
-                    Collections.singletonList(new NativePerceptionPlugin()),
+                    plugins,
                     true
             );
             PerceptionRunResult runResult = PerceptionComposer.execute(activity, plan);

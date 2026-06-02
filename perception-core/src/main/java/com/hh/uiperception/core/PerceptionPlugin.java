@@ -14,6 +14,14 @@ public interface PerceptionPlugin {
     String name();
 
     /**
+     * 插件是否可以处理当前 Activity。
+     * 默认返回 true（向后兼容）。
+     */
+    default boolean canHandle(Activity activity) {
+        return true;
+    }
+
+    /**
      * 执行本技术方向的抓取能力；不支持时返回 null。
      */
     CaptureResult capture(Activity activity, CaptureRequest request);
