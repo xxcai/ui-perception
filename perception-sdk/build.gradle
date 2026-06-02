@@ -29,6 +29,7 @@ android {
 dependencies {
     implementation project(':perception-core')
     implementation project(':native-plugin')
+    implementation project(':web-plugin')
 }
 
 publishing {

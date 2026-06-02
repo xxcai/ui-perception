@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.hh.uiperception.core.PluginRegistry;
 import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
+import com.hh.uiperception.webplugin.WebPerceptionPlugin;
 import com.hh.uiperception.sdk.internal.CaptureHandler;
 import com.hh.uiperception.sdk.internal.CaptureResponse;
 import com.hh.uiperception.sdk.internal.ForegroundActivityTracker;
@@ -23,6 +24,7 @@ public final class PerceptionSdk {
     static void init(Application app) {
         ForegroundActivityTracker.register(app);
         PluginRegistry.register(new NativePerceptionPlugin());
+        PluginRegistry.register(new WebPerceptionPlugin());
         Log.i(TAG, "PerceptionSdk initialized");
     }
 
