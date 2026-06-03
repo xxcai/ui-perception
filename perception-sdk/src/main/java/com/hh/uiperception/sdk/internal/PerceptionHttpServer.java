@@ -111,6 +111,8 @@ public final class PerceptionHttpServer {
                 responseJson = com.hh.uiperception.sdk.PerceptionSdk.capture().toJson();
             } else if ("/capture-raw".equals(path)) {
                 responseJson = RawCaptureHandler.capture();
+            } else if ("/debug-dom".equals(path)) {
+                responseJson = DebugDomHandler.capture();
             } else if ("/click".equals(path) && "POST".equals(method)) {
                 responseJson = body != null ? OperationHandler.handleClick(body)
                         : OperationResponse.error("Missing body").toJson();

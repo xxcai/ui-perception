@@ -8,4 +8,6 @@ local.properties
 *.onnx
 **/assets/**/screenshot.jpg
 **/assets/**/screenshot.png
+debug-crops/
+tmp/
 
