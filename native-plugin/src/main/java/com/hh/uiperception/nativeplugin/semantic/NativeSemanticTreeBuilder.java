@@ -39,7 +39,7 @@ public final class NativeSemanticTreeBuilder {
                 .className(viewNode.className())
                 .bounds(viewNode.bounds())
                 .roleDecision(roleDecision);
-        appendStates(builder, viewNode);
+        appendStates(builder, viewNode, role);
         appendClickableState(builder, role, viewNode,
                 parentHasItemClickListener, parentHasItemTouchListener);
         appendVisualDescriptionState(builder, viewNode, role, name);
@@ -82,7 +82,7 @@ public final class NativeSemanticTreeBuilder {
         return "structure:collection-item";
     }
 
-    private static void appendStates(SemanticNode.Builder builder, NativeViewNode viewNode) {
+    private static void appendStates(SemanticNode.Builder builder, NativeViewNode viewNode, SemanticRole role) {
         if (!viewNode.enabled()) {
             builder.addState("disabled");
         }
@@ -100,6 +100,9 @@ public final class NativeSemanticTreeBuilder {
         }
         if (viewNode.password()) {
             builder.addState("password");
+        }
+        if (role == SemanticRole.INPUT && viewNode.hasText()) {
+            builder.addState("value=" + viewNode.text());
         }
     }
 

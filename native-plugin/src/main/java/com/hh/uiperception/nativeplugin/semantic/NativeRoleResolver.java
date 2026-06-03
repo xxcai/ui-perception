@@ -38,6 +38,9 @@ public final class NativeRoleResolver {
         if (node == null) {
             return "";
         }
+        if (role == SemanticRole.INPUT) {
+            return resolveInputName(node);
+        }
         if (node.hasText()) {
             return node.text();
         }
@@ -45,6 +48,19 @@ public final class NativeRoleResolver {
             return node.contentDescription();
         }
         if (role != SemanticRole.TEXT && node.hasResourceId()) {
+            return readableResourceName(node.resourceId());
+        }
+        return "";
+    }
+
+    private static String resolveInputName(NativeViewNode node) {
+        if (node.hasHint()) {
+            return node.hint();
+        }
+        if (node.hasContentDescription()) {
+            return node.contentDescription();
+        }
+        if (node.hasResourceId()) {
             return readableResourceName(node.resourceId());
         }
         return "";

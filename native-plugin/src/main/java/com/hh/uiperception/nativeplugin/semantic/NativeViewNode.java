@@ -13,6 +13,7 @@ public final class NativeViewNode {
 
     private final String className;
     private final String text;
+    private final String hint;
     private final String contentDescription;
     private final String resourceId;
     private final Bounds bounds;
@@ -33,6 +34,7 @@ public final class NativeViewNode {
     private NativeViewNode(Builder builder) {
         this.className = normalize(builder.className);
         this.text = normalize(builder.text);
+        this.hint = normalize(builder.hint);
         this.contentDescription = normalize(builder.contentDescription);
         this.resourceId = normalize(builder.resourceId);
         this.bounds = builder.bounds;
@@ -61,6 +63,10 @@ public final class NativeViewNode {
 
     public String text() {
         return text;
+    }
+
+    public String hint() {
+        return hint;
     }
 
     public String contentDescription() {
@@ -131,6 +137,10 @@ public final class NativeViewNode {
         return !text.isEmpty();
     }
 
+    public boolean hasHint() {
+        return !hint.isEmpty();
+    }
+
     public boolean hasContentDescription() {
         return !contentDescription.isEmpty();
     }
@@ -149,6 +159,7 @@ public final class NativeViewNode {
     public static final class Builder {
         private String className;
         private String text;
+        private String hint;
         private String contentDescription;
         private String resourceId;
         private Bounds bounds;
@@ -173,6 +184,11 @@ public final class NativeViewNode {
 
         public Builder text(String text) {
             this.text = text;
+            return this;
+        }
+
+        public Builder hint(String hint) {
+            this.hint = hint;
             return this;
         }
 

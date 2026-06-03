@@ -85,6 +85,7 @@ public final class NativeViewXmlParser {
                 .className(attr(element, "class"))
                 .resourceId(attr(element, "resource-id"))
                 .text(attr(element, "text"))
+                .hint(attr(element, "hint"))
                 .contentDescription(firstText(attr(element, "desc"), attr(element, "content-desc")))
                 .bounds(Bounds.parse(attr(element, "bounds")))
                 .clickable(parseBoolean(attr(element, "clickable")))

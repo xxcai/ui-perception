@@ -72,6 +72,7 @@ public final class ViewHierarchyDumper {
         xml.append(" class=\"").append(escape(view.getClass().getName())).append("\"");
         appendOptional(xml, "resource-id", resolveResourceId(view));
         appendOptional(xml, "text", extractText(view));
+        appendOptional(xml, "hint", extractHint(view));
         appendOptional(xml, "desc", extractDesc(view));
         xml.append(" bounds=\"").append(escape(extractBounds(view))).append("\"");
         xml.append(" clickable=\"").append(view.isClickable()).append("\"");
@@ -118,6 +119,12 @@ public final class ViewHierarchyDumper {
             if (!TextUtils.isEmpty(text)) {
                 return text.toString();
             }
+        }
+        return "";
+    }
+
+    private static String extractHint(View view) {
+        if (view instanceof TextView) {
             CharSequence hint = ((TextView) view).getHint();
             if (!TextUtils.isEmpty(hint)) {
                 return hint.toString();
