@@ -24,10 +24,16 @@ android {
             withSourcesJar()
         }
     }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
     implementation project(':perception-core')
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
 }
 
 publishing {

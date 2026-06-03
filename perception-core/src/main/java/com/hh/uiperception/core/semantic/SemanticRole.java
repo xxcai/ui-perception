@@ -30,7 +30,17 @@ public enum SemanticRole {
     WEBVIEW("webview"),
     LINK("link"),
     HEADING("heading"),
-    NAVIGATION("navigation");
+    NAVIGATION("navigation"),
+    TEXTBOX("textbox"),
+    SEARCHBOX("searchbox"),
+    SPINBUTTON("spinbutton"),
+    COMBOBOX("combobox"),
+    LISTBOX("listbox"),
+    TABLE_ROLE("table"),
+    ROW("row"),
+    CELL("cell"),
+    COLUMNHEADER("columnheader"),
+    ROWHEADER("rowheader");
 
     private final String snapshotName;
 

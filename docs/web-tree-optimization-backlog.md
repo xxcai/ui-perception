@@ -6,16 +6,32 @@ Web 模式采用 Playwright 风格的 ref 分配（所有有 valid bounds 的节
 
 **约束：不能折叠节点。** 后续 web 操作会使用 DOM 选择器（对齐 Playwright），折叠会丢失节点到 ref 的映射。
 
-## 优化点
+## 已解决
+
+### ~~6. 特殊页面 DOM 序列化不完整~~ → 已修复 (commit e89efec)
+
+**问题：** WeLink 客服聊天页面只有 6 个 ref，整棵 DOM 子树被误杀。
+
+**根因：** `WebDomSerializer.isVisible()` 使用 `getBoundingClientRect()` 零尺寸作为可见性过滤条件。WeLink 页面的 `#root > SPAN`（`display:inline`）包裹了整个应用，其 bounding rect 为零尺寸，导致整棵子树被丢弃。
+
+**修复：** 对齐 Playwright 的 `isElementHiddenForAria` 逻辑：
+1. 去掉零尺寸 bounding rect 检查（Playwright 不检查）
+2. 添加 `display:contents` 透明处理（递归检查子节点可见性）
+3. 不可见父节点的可见子节点 reattach 到祖父容器（不丢弃子树）
+4. 祖先链检查补充 `display:none`（之前只检查 `aria-hidden`）
+
+**验证结果：** WeLink 聊天页从 6 个 ref 恢复到 172 个 ref，聊天内容、FAQ 列表、服务记录、底部输入栏全部正常输出。
+
+## 待优化
 
 ### 1. Generic name 聚合过多子文本
 
 **现状：** `generic "公司 协会 代表处 协会 研究所 协会 + 公司爱心协会 + 公司读书协会 ..."`
-所有子节点的文本被拼接为父节点的 name，导致 name 过长且无语义区分度。
+所有子节点的文本被拼接为父节点的 name，导致 name 过长且无语义区分度。修复 reattach 后更加明显——多层 generic 都聚合了子树全部文本。
 
 **方案：** TreeNormalizer 中对 generic 节点的 name 生成策略优化——当 name 超过一定长度或包含过多子文本时，截断或只保留直接文本内容。
 
-**优先级：** 中
+**优先级：** 高（reattach 修复后 name 聚合问题更严重）
 
 ### 2. 深层 DOM 嵌套冗余
 
@@ -52,28 +68,33 @@ Web 模式采用 Playwright 风格的 ref 分配（所有有 valid bounds 的节
 
 **优先级：** 高（架构决策点，影响 TreeNormalizer 设计）
 
-### 6. 特殊页面 DOM 序列化不完整
+### 7. Hidden tag 子节点通过 reattach 泄漏（新发现）
 
-**现状：** WeLink 客服聊天页面只有 6 个 ref（5 个聊天气泡只有用户 ID，无实际文本）。而 `screen` 的 name 包含了全部聊天内容。原因是当前 DOM 序列化脚本（`WebDomSerializer`）通过 `childNodes` 递归遍历 DOM，对以下场景失效：
-- **虚拟滚动/懒加载**：不在视口的 DOM 节点可能被回收
-- **Shadow DOM 动态渲染**：内容通过 Shadow DOM 或 JS 动态填充，DOM 结构只有容器无文本子节点
-- **Canvas/自定义渲染**：不使用标准 DOM 节点展示文本
+**现状：** reattach 修复后，SCRIPT 标签内的文本节点（如 `document.body.addEventListener('touchstart', function () { });`）被 reattach 到父容器，出现在 web tree 末尾。STYLE 标签内的 CSS 文本同理。
 
-**方案：** 增强 `WebDomSerializer` 或提供备选采集方式：
-- **方案 A**：JS 注入时增加 `innerText` 感知逻辑，对空子节点的容器尝试 `innerText` 提取
-- **方案 B**：接入 Chrome DevTools Protocol（CDP）获取 WebView 的 accessibility tree，绕过 DOM 遍历限制
-- **方案 C**：对特定框架（React/Vue 虚拟列表）做适配
+**根因：** `isHiddenForAria` 对 hidden tag（SCRIPT/STYLE 等）返回 true，但 `serialize` 仍然遍历其 childNodes 并将文本节点 reattach 到祖父容器。
 
-**优先级：** 高（影响核心场景覆盖）
+**方案：** 在 `serialize` 中，对 hidden tag 的元素跳过子节点遍历（不做 reattach）。区分 "hidden tag"（直接跳过子树）和 "CSS 不可见"（reattach 子节点）两种情况。
 
-**验证页面：** WeLink 客服聊天页（`huawei.w3.h5.H5Activity`，内容为"12345客服"）
+**优先级：** 高（数据正确性问题）
+
+### 8. Bounds 对零尺寸元素无效（新发现）
+
+**现状：** reattach 后去掉了零尺寸 rect 过滤，导致大量 bounding rect 为 `[0,0,0,0]` 的元素进入输出。这些元素虽然 CSS 可见（如 `display:inline` 的 SPAN），但实际没有布局 box，bounds 信息无意义。
+
+**方案：** bounds 为零时不输出 bounds（或在 RefAssigner 中不分配 ref），但元素本身仍保留在树中。与 Playwright 的 `computeBox` 行为一致——Playwright 也不给无 box 的元素分配 ref。
+
+**优先级：** 中
 
 ## 关联文件
 
 | 文件 | 职责 |
 |------|------|
+| `web-plugin/.../WebDomSerializer.java` | JS DOM 序列化脚本 |
 | `web-plugin/.../WebJsonParser.java` | 解析 web accessibility JSON |
+| `web-plugin/.../WebDebugScript.java` | 调试用 DOM 诊断脚本 |
 | `perception-core/.../TreeNormalizer.java` | web tree 预处理 |
-| `perception-core/.../RefAssigner.java` | ref 分配（当前 web mode = Playwright 风格） |
+| `perception-core/.../RefAssigner.java` | ref 分配（web mode = Playwright 风格） |
 | `perception-core/.../SnapshotRenderer.java` | tree → YAML 文本渲染 |
+| `perception-sdk/.../PerceptionHttpServer.java` | HTTP Server（含 /debug-dom 调试端点） |
 | `mobile-vision-pi/.pi/SYSTEM.md` | Pi-Agent 系统提示词 |
