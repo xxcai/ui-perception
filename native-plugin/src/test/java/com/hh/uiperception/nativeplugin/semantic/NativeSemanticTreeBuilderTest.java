@@ -1,5 +1,7 @@
 package com.hh.uiperception.nativeplugin.semantic;
 
+import com.hh.uiperception.core.semantic.*;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -19,29 +21,29 @@ public final class NativeSemanticTreeBuilderTest {
         NativeViewNode root = NativeViewNode.builder()
                 .className("androidx.recyclerview.widget.RecyclerView")
                 .scrollable(true)
-                .bounds(NativeBounds.parse("[0,160][1080,1900]"))
+                .bounds(Bounds.parse("[0,160][1080,1900]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.TextView")
                         .text("提交")
                         .clickable(true)
                         .enabled(false)
-                        .bounds(NativeBounds.parse("[800,100][1000,180]"))
+                        .bounds(Bounds.parse("[800,100][1000,180]"))
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.LIST, semantic.role());
+        assertEquals(SemanticRole.LIST, semantic.role());
         assertTrue(semantic.states().contains("scrollable"));
         assertEquals("0,160,1080,1900", semantic.bounds().toSnapshotValue());
         assertEquals(1, semantic.children().size());
 
-        NativeSemanticNode item = semantic.children().get(0);
-        assertEquals(NativeSemanticRole.LIST_ITEM, item.role());
+        SemanticNode item = semantic.children().get(0);
+        assertEquals(SemanticRole.LIST_ITEM, item.role());
         assertEquals("提交", item.name());
         assertTrue(item.states().contains("disabled"));
-        assertTrue(item.states().contains(NativeSemanticStates.CLICKABLE));
+        assertTrue(item.states().contains(SemanticStates.CLICKABLE));
         assertEquals("structure:collection-item-clickable", item.roleDecision().source());
     }
 
@@ -55,10 +57,10 @@ public final class NativeSemanticTreeBuilderTest {
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.TEXT, semantic.role());
+        assertEquals(SemanticRole.TEXT, semantic.role());
         assertEquals("吴示例", semantic.name());
     }
 
@@ -76,10 +78,10 @@ public final class NativeSemanticTreeBuilderTest {
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.GENERIC, semantic.role());
+        assertEquals(SemanticRole.GENERIC, semantic.role());
         assertEquals(2, semantic.children().size());
     }
 
@@ -87,24 +89,24 @@ public final class NativeSemanticTreeBuilderTest {
     public void treatsDirectCollectionContainerChildrenAsListItems() {
         NativeViewNode root = NativeViewNode.builder()
                 .className("androidx.recyclerview.widget.RecyclerView")
-                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .bounds(Bounds.parse("[0,100][1080,900]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.LinearLayout")
-                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .bounds(Bounds.parse("[0,100][1080,260]"))
                         .addChild(NativeViewNode.builder()
                                 .className("android.widget.TextView")
                                 .text("标题")
-                                .bounds(NativeBounds.parse("[42,120][400,180]"))
+                                .bounds(Bounds.parse("[42,120][400,180]"))
                                 .build())
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.LIST, semantic.role());
+        assertEquals(SemanticRole.LIST, semantic.role());
         assertEquals(1, semantic.children().size());
-        assertEquals(NativeSemanticRole.LIST_ITEM, semantic.children().get(0).role());
+        assertEquals(SemanticRole.LIST_ITEM, semantic.children().get(0).role());
         assertEquals("structure:collection-item", semantic.children().get(0).roleDecision().source());
     }
 
@@ -112,11 +114,11 @@ public final class NativeSemanticTreeBuilderTest {
     public void clickableCollectionChildKeepsListItemRole() {
         NativeViewNode root = NativeViewNode.builder()
                 .className("android.widget.ListView")
-                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .bounds(Bounds.parse("[0,100][1080,900]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.LinearLayout")
                         .clickable(true)
-                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .bounds(Bounds.parse("[0,100][1080,260]"))
                         .addChild(NativeViewNode.builder()
                                 .className("android.widget.TextView")
                                 .text("标题")
@@ -124,12 +126,12 @@ public final class NativeSemanticTreeBuilderTest {
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.LIST_ITEM, semantic.children().get(0).role());
+        assertEquals(SemanticRole.LIST_ITEM, semantic.children().get(0).role());
         assertEquals("structure:collection-item-clickable", semantic.children().get(0).roleDecision().source());
-        assertTrue(semantic.children().get(0).states().contains(NativeSemanticStates.CLICKABLE));
+        assertTrue(semantic.children().get(0).states().contains(SemanticStates.CLICKABLE));
     }
 
     @Test
@@ -137,17 +139,17 @@ public final class NativeSemanticTreeBuilderTest {
         NativeViewNode root = NativeViewNode.builder()
                 .className("android.widget.LinearLayout")
                 .clickable(true)
-                .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                .bounds(Bounds.parse("[0,100][1080,260]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.TextView")
                         .text("标题")
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.BUTTON, semantic.role());
+        assertEquals(SemanticRole.BUTTON, semantic.role());
         assertEquals("attribute:clickable", semantic.roleDecision().source());
     }
 
@@ -156,10 +158,10 @@ public final class NativeSemanticTreeBuilderTest {
         NativeViewNode root = NativeViewNode.builder()
                 .className("android.widget.ListView")
                 .hasItemClickListener(true)
-                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .bounds(Bounds.parse("[0,100][1080,900]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.LinearLayout")
-                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .bounds(Bounds.parse("[0,100][1080,260]"))
                         .addChild(NativeViewNode.builder()
                                 .className("android.widget.TextView")
                                 .text("标题")
@@ -167,31 +169,31 @@ public final class NativeSemanticTreeBuilderTest {
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        NativeSemanticNode item = semantic.children().get(0);
-        assertEquals(NativeSemanticRole.LIST_ITEM, item.role());
-        assertTrue(item.states().contains(NativeSemanticStates.CLICKABLE_INFERRED));
+        SemanticNode item = semantic.children().get(0);
+        assertEquals(SemanticRole.LIST_ITEM, item.role());
+        assertTrue(item.states().contains(SemanticStates.CLICKABLE_INFERRED));
     }
 
     @Test
     public void listItemWithoutClickSignalsGetsClickableGuessedState() {
         NativeViewNode root = NativeViewNode.builder()
                 .className("androidx.recyclerview.widget.RecyclerView")
-                .bounds(NativeBounds.parse("[0,100][1080,900]"))
+                .bounds(Bounds.parse("[0,100][1080,900]"))
                 .addChild(NativeViewNode.builder()
                         .className("android.widget.LinearLayout")
-                        .bounds(NativeBounds.parse("[0,100][1080,260]"))
+                        .bounds(Bounds.parse("[0,100][1080,260]"))
                         .build())
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        NativeSemanticNode item = semantic.children().get(0);
-        assertEquals(NativeSemanticRole.LIST_ITEM, item.role());
-        assertTrue(item.states().contains(NativeSemanticStates.CLICKABLE_GUESSED));
+        SemanticNode item = semantic.children().get(0);
+        assertEquals(SemanticRole.LIST_ITEM, item.role());
+        assertTrue(item.states().contains(SemanticStates.CLICKABLE_GUESSED));
     }
 
     @Test
@@ -199,13 +201,13 @@ public final class NativeSemanticTreeBuilderTest {
         NativeViewNode root = NativeViewNode.builder()
                 .className("android.widget.ImageButton")
                 .clickable(true)
-                .bounds(NativeBounds.parse("[900,120][1000,220]"))
+                .bounds(Bounds.parse("[900,120][1000,220]"))
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.BUTTON, semantic.role());
+        assertEquals(SemanticRole.BUTTON, semantic.role());
         assertTrue(semantic.states().contains("needs_visual_desc"));
     }
 
@@ -215,13 +217,13 @@ public final class NativeSemanticTreeBuilderTest {
                 .className("android.widget.ImageButton")
                 .contentDescription("搜索")
                 .clickable(true)
-                .bounds(NativeBounds.parse("[900,120][1000,220]"))
+                .bounds(Bounds.parse("[900,120][1000,220]"))
                 .build();
 
-        NativeSemanticNode semantic = NativeSemanticTreeBuilder.build(root);
+        SemanticNode semantic = NativeSemanticTreeBuilder.build(root);
 
         assertNotNull(semantic);
-        assertEquals(NativeSemanticRole.BUTTON, semantic.role());
+        assertEquals(SemanticRole.BUTTON, semantic.role());
         assertEquals("搜索", semantic.name());
         assertTrue(!semantic.states().contains("needs_visual_desc"));
     }

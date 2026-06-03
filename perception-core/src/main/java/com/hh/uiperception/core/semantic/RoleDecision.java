@@ -1,15 +1,15 @@
-package com.hh.uiperception.nativeplugin.semantic;
+package com.hh.uiperception.core.semantic;
 
 /**
  * role 推导结果。role 是可演进的语义判断，不是原始事实。
  */
-public final class NativeRoleDecision {
+public final class RoleDecision {
 
-    private final NativeSemanticRole role;
+    private final SemanticRole role;
     private final String source;
     private final double confidence;
 
-    public NativeRoleDecision(NativeSemanticRole role, String source, double confidence) {
+    public RoleDecision(SemanticRole role, String source, double confidence) {
         if (role == null) {
             throw new IllegalArgumentException("role must not be null");
         }
@@ -18,7 +18,7 @@ public final class NativeRoleDecision {
         this.confidence = confidence;
     }
 
-    public NativeSemanticRole role() {
+    public SemanticRole role() {
         return role;
     }
 

@@ -1,4 +1,4 @@
-package com.hh.uiperception.nativeplugin.semantic;
+package com.hh.uiperception.core.semantic;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,21 +7,21 @@ import java.util.List;
 /**
  * 面向模型消费的 native 语义节点。
  */
-public final class NativeSemanticNode {
+public final class SemanticNode {
 
-    private final NativeSemanticRole role;
+    private final SemanticRole role;
     private final String name;
     private final String text;
     private final String contentDescription;
     private final String resourceId;
     private final String className;
-    private final NativeBounds bounds;
+    private final Bounds bounds;
     private final String ref;
-    private final NativeRoleDecision roleDecision;
+    private final RoleDecision roleDecision;
     private final List<String> states;
-    private final List<NativeSemanticNode> children;
+    private final List<SemanticNode> children;
 
-    private NativeSemanticNode(Builder builder) {
+    private SemanticNode(Builder builder) {
         if (builder.role == null) {
             throw new IllegalArgumentException("role must not be null");
         }
@@ -38,11 +38,11 @@ public final class NativeSemanticNode {
         this.children = Collections.unmodifiableList(new ArrayList<>(builder.children));
     }
 
-    public static Builder builder(NativeSemanticRole role) {
+    public static Builder builder(SemanticRole role) {
         return new Builder(role);
     }
 
-    public NativeSemanticRole role() {
+    public SemanticRole role() {
         return role;
     }
 
@@ -66,7 +66,7 @@ public final class NativeSemanticNode {
         return className;
     }
 
-    public NativeBounds bounds() {
+    public Bounds bounds() {
         return bounds;
     }
 
@@ -74,7 +74,7 @@ public final class NativeSemanticNode {
         return ref;
     }
 
-    public NativeRoleDecision roleDecision() {
+    public RoleDecision roleDecision() {
         return roleDecision;
     }
 
@@ -82,7 +82,7 @@ public final class NativeSemanticNode {
         return states;
     }
 
-    public List<NativeSemanticNode> children() {
+    public List<SemanticNode> children() {
         return children;
     }
 
@@ -98,19 +98,19 @@ public final class NativeSemanticNode {
     }
 
     public static final class Builder {
-        private final NativeSemanticRole role;
+        private final SemanticRole role;
         private String name;
         private String text;
         private String contentDescription;
         private String resourceId;
         private String className;
-        private NativeBounds bounds;
+        private Bounds bounds;
         private String ref;
-        private NativeRoleDecision roleDecision;
+        private RoleDecision roleDecision;
         private final List<String> states = new ArrayList<>();
-        private final List<NativeSemanticNode> children = new ArrayList<>();
+        private final List<SemanticNode> children = new ArrayList<>();
 
-        private Builder(NativeSemanticRole role) {
+        private Builder(SemanticRole role) {
             this.role = role;
         }
 
@@ -139,7 +139,7 @@ public final class NativeSemanticNode {
             return this;
         }
 
-        public Builder bounds(NativeBounds bounds) {
+        public Builder bounds(Bounds bounds) {
             this.bounds = bounds;
             return this;
         }
@@ -149,7 +149,7 @@ public final class NativeSemanticNode {
             return this;
         }
 
-        public Builder roleDecision(NativeRoleDecision roleDecision) {
+        public Builder roleDecision(RoleDecision roleDecision) {
             this.roleDecision = roleDecision;
             return this;
         }
@@ -162,15 +162,15 @@ public final class NativeSemanticNode {
             return this;
         }
 
-        public Builder addChild(NativeSemanticNode child) {
+        public Builder addChild(SemanticNode child) {
             if (child != null) {
                 children.add(child);
             }
             return this;
         }
 
-        public NativeSemanticNode build() {
-            return new NativeSemanticNode(this);
+        public SemanticNode build() {
+            return new SemanticNode(this);
         }
     }
 }

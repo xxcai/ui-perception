@@ -1,5 +1,7 @@
 package com.hh.uiperception.nativeplugin.semantic;
 
+import com.hh.uiperception.core.semantic.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -84,7 +86,7 @@ public final class NativeViewXmlParser {
                 .resourceId(attr(element, "resource-id"))
                 .text(attr(element, "text"))
                 .contentDescription(firstText(attr(element, "desc"), attr(element, "content-desc")))
-                .bounds(NativeBounds.parse(attr(element, "bounds")))
+                .bounds(Bounds.parse(attr(element, "bounds")))
                 .clickable(parseBoolean(attr(element, "clickable")))
                 .hasOnClickListener(parseBoolean(attr(element, "has-onclick-listener")))
                 .hasItemClickListener(parseBoolean(attr(element, "has-item-click-listener")))

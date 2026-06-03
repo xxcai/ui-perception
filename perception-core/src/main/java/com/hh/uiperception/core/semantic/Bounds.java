@@ -1,4 +1,4 @@
-package com.hh.uiperception.nativeplugin.semantic;
+package com.hh.uiperception.core.semantic;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /**
  * Android 屏幕坐标系中的节点矩形。
  */
-public final class NativeBounds {
+public final class Bounds {
 
     private static final Pattern BOUNDS_PATTERN =
             Pattern.compile("\\[(-?\\d+),(-?\\d+)]\\[(-?\\d+),(-?\\d+)]");
@@ -16,14 +16,14 @@ public final class NativeBounds {
     private final int right;
     private final int bottom;
 
-    public NativeBounds(int left, int top, int right, int bottom) {
+    public Bounds(int left, int top, int right, int bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
     }
 
-    public static NativeBounds parse(String value) {
+    public static Bounds parse(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
@@ -31,7 +31,7 @@ public final class NativeBounds {
         if (!matcher.matches()) {
             return null;
         }
-        return new NativeBounds(
+        return new Bounds(
                 Integer.parseInt(matcher.group(1)),
                 Integer.parseInt(matcher.group(2)),
                 Integer.parseInt(matcher.group(3)),

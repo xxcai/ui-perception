@@ -1,5 +1,7 @@
 package com.hh.uiperception.nativeplugin.semantic;
 
+import com.hh.uiperception.core.semantic.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +15,7 @@ public final class NativeViewNode {
     private final String text;
     private final String contentDescription;
     private final String resourceId;
-    private final NativeBounds bounds;
+    private final Bounds bounds;
     private final boolean clickable;
     private final boolean hasOnClickListener;
     private final boolean hasItemClickListener;
@@ -69,7 +71,7 @@ public final class NativeViewNode {
         return resourceId;
     }
 
-    public NativeBounds bounds() {
+    public Bounds bounds() {
         return bounds;
     }
 
@@ -149,7 +151,7 @@ public final class NativeViewNode {
         private String text;
         private String contentDescription;
         private String resourceId;
-        private NativeBounds bounds;
+        private Bounds bounds;
         private boolean clickable;
         private boolean hasOnClickListener;
         private boolean hasItemClickListener;
@@ -184,7 +186,7 @@ public final class NativeViewNode {
             return this;
         }
 
-        public Builder bounds(NativeBounds bounds) {
+        public Builder bounds(Bounds bounds) {
             this.bounds = bounds;
             return this;
         }

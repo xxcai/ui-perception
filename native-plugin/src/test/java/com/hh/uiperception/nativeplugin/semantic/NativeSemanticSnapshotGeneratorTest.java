@@ -1,5 +1,7 @@
 package com.hh.uiperception.nativeplugin.semantic;
 
+import com.hh.uiperception.core.semantic.*;
+
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -29,7 +31,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
                 + "  - text \"邮件\"\n"
                 + "  - button \"提交\" [ref=n1] [bounds=800,100,1000,180]\n"
                 + "  - list [scrollable] [ref=n2] [bounds=0,160,1080,1900]:\n"
-                + "    - listitem [clickable-inferred]:\n"
+                + "    - listitem [clickable=guessed]:\n"
                 + "      - text \"吴示例\"\n"
                 + "      - button \"拨打\" [ref=n3] [bounds=920,180,1040,260]", snapshot);
     }
@@ -43,7 +45,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
 
         String snapshot = NativeSemanticSnapshotGenerator.generate(
                 xml,
-                NativeSnapshotRenderOptions.builder().boxes(true).build()
+                SnapshotRenderOptions.builder().boxes(true).build()
         );
 
         assertEquals("- text \"邮件\" [bounds=1,2,3,4]", snapshot);
@@ -79,7 +81,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
 
         assertEquals(""
                 + "- list [scrollable] [ref=n1] [bounds=0,100,1080,900]:\n"
-                + "  - listitem [clickable-inferred] [ref=n2] [bounds=0,100,1080,260]:\n"
+                + "  - listitem [clickable=inferred] [ref=n2] [bounds=0,100,1080,260]:\n"
                 + "    - text \"华为 Wi-Fi\"\n"
                 + "    - button \"详情\" [ref=n3] [bounds=900,160,1040,240]", snapshot);
     }
@@ -101,7 +103,7 @@ public final class NativeSemanticSnapshotGeneratorTest {
 
         assertEquals(""
                 + "- list [scrollable] [ref=n1] [bounds=0,160,1080,1900]:\n"
-                + "  - listitem [clickable-inferred] [ref=n2] [bounds=0,160,1080,320]:\n"
+                + "  - listitem [clickable=inferred] [ref=n2] [bounds=0,160,1080,320]:\n"
                 + "    - text \"张三\"\n"
                 + "    - text \"会议纪要\"", snapshot);
     }

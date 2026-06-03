@@ -1,9 +1,9 @@
-package com.hh.uiperception.nativeplugin.semantic;
+package com.hh.uiperception.core.semantic;
 
 /**
  * Android native semantic snapshot 第一版 role 集合。
  */
-public enum NativeSemanticRole {
+public enum SemanticRole {
     SCREEN("screen"),
     TOOLBAR("toolbar"),
     TABBAR("tabbar"),
@@ -33,7 +33,7 @@ public enum NativeSemanticRole {
 
     private final String snapshotName;
 
-    NativeSemanticRole(String snapshotName) {
+    SemanticRole(String snapshotName) {
         this.snapshotName = snapshotName;
     }
 

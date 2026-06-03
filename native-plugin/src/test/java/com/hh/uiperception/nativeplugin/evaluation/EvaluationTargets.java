@@ -1,6 +1,6 @@
 package com.hh.uiperception.nativeplugin.evaluation;
 
-import com.hh.uiperception.nativeplugin.semantic.NativeSemanticRole;
+import com.hh.uiperception.core.semantic.SemanticRole;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -133,7 +133,7 @@ public final class EvaluationTargets {
 
     private static Set<String> allowedRoles() {
         Set<String> roles = new HashSet<>();
-        for (NativeSemanticRole role : NativeSemanticRole.values()) {
+        for (SemanticRole role : SemanticRole.values()) {
             roles.add(role.snapshotName());
         }
         return roles;

@@ -1,30 +1,30 @@
-package com.hh.uiperception.nativeplugin.semantic;
+package com.hh.uiperception.core.semantic;
 
 /**
  * 将 native semantic tree 渲染为 YAML 风格文本。
  */
-public final class NativeSnapshotRenderer {
+public final class SnapshotRenderer {
 
-    private NativeSnapshotRenderer() {
+    private SnapshotRenderer() {
     }
 
-    public static String render(NativeSemanticNode root) {
-        return render(root, NativeSnapshotRenderOptions.defaults());
+    public static String render(SemanticNode root) {
+        return render(root, SnapshotRenderOptions.defaults());
     }
 
-    public static String render(NativeSemanticNode root, NativeSnapshotRenderOptions options) {
+    public static String render(SemanticNode root, SnapshotRenderOptions options) {
         if (root == null) {
             return "";
         }
-        NativeSnapshotRenderOptions actualOptions = options == null
-                ? NativeSnapshotRenderOptions.defaults() : options;
+        SnapshotRenderOptions actualOptions = options == null
+                ? SnapshotRenderOptions.defaults() : options;
         StringBuilder builder = new StringBuilder();
         appendNode(builder, root, 0, actualOptions);
         return builder.toString();
     }
 
-    private static void appendNode(StringBuilder builder, NativeSemanticNode node,
-                                   int depth, NativeSnapshotRenderOptions options) {
+    private static void appendNode(StringBuilder builder, SemanticNode node,
+                                   int depth, SnapshotRenderOptions options) {
         if (options.hasDepthLimit() && depth >= options.maxDepth() - 1) {
             appendLine(builder, depth, keyFor(node, options));
             return;
@@ -37,12 +37,12 @@ public final class NativeSnapshotRenderer {
         }
 
         appendLine(builder, depth, key + ":");
-        for (NativeSemanticNode child : node.children()) {
+        for (SemanticNode child : node.children()) {
             appendNode(builder, child, depth + 1, options);
         }
     }
 
-    private static String keyFor(NativeSemanticNode node, NativeSnapshotRenderOptions options) {
+    private static String keyFor(SemanticNode node, SnapshotRenderOptions options) {
         StringBuilder key = new StringBuilder();
         key.append(node.role().snapshotName());
         if (!node.name().isEmpty()) {
@@ -60,14 +60,11 @@ public final class NativeSnapshotRenderer {
         return key.toString();
     }
 
-    private static boolean shouldRenderBounds(NativeSemanticNode node, NativeSnapshotRenderOptions options) {
+    private static boolean shouldRenderBounds(SemanticNode node, SnapshotRenderOptions options) {
         return node.bounds() != null && (node.hasRef() || options.boxes());
     }
 
     private static String renderState(String state) {
-        if (NativeSemanticStates.CLICKABLE_GUESSED.equals(state)) {
-            return NativeSemanticStates.CLICKABLE_INFERRED;
-        }
         return state;
     }
 
