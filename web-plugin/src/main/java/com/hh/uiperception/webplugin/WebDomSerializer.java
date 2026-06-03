@@ -31,32 +31,41 @@ public final class WebDomSerializer {
 
         // ── 2. 可见性检测 ────────────────────────────────────
         // Playwright ref: roleUtils.ts:305 isElementHiddenForAria
-        //   + domUtils.ts:133 isElementVisible
-        // 保留: display:none / visibility:hidden / opacity:0 (或 checkVisibility API)
-        //       + 祖先链 aria-hidden=true 检查
-        //       跳过 display:contents 递归
-        + "function isVisible(el){"
-        + "  if(isHiddenTag(el.tagName))return false;"
-        + "  var r=el.getBoundingClientRect();"
-        + "  if(r.width===0&&r.height===0)return false;"
-        + "  if(typeof el.checkVisibility==='function'){"
-        + "    if(!el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}))return false;"
-        + "  }else{"
-        + "    var s=getComputedStyle(el);"
-        + "    if(s.display==='none')return false;"
-        + "    if(s.visibility==='hidden')return false;"
-        + "    if(parseFloat(s.opacity)===0)return false;"
+        //   + roleUtils.ts:328 belongsToDisplayNoneOrAriaHiddenOrNonSlotted
+        // 不检查 bounding rect 尺寸（Playwright 不检查，inline 元素 rect 可为零但有可见子节点）
+        // display:contents 元素自身不可见，但子节点可见时视为可见
+        // 祖先链同时检查 display:none 和 aria-hidden=true
+        + "function isHiddenForAria(el){"
+        + "  if(isHiddenTag(el.tagName))return true;"
+        + "  var s=getComputedStyle(el);"
+        // display:contents — 透明处理，递归检查子节点
+        // Playwright ref: roleUtils.ts:309-318
+        + "  if(s.display==='contents'){"
+        + "    for(var i=0;i<el.childNodes.length;i++){"
+        + "      var c=el.childNodes[i];"
+        + "      if(c.nodeType===1&&!isHiddenForAria(c))return false;"
+        + "      if(c.nodeType===3){var t=c.textContent.trim();if(t)return false;}"
+        + "    }"
+        + "    return true;"
         + "  }"
-        // 祖先链 aria-hidden=true 检查
+        // CSS 可见性检查
+        + "  if(typeof el.checkVisibility==='function'){"
+        + "    if(!el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}))return true;"
+        + "  }else{"
+        + "    if(s.display==='none')return true;"
+        + "    if(s.visibility==='hidden')return true;"
+        + "    if(parseFloat(s.opacity)===0)return true;"
+        + "  }"
+        // 祖先链检查: display:none + aria-hidden=true
         // Playwright ref: roleUtils.ts:328 belongsToDisplayNoneOrAriaHiddenOrNonSlotted
-        //   只取 aria-hidden 部分，跳过 display:none 祖先链（上面已检查自身）
-        //   和 unslotted light DOM 检查
         + "  var p=el.parentElement;"
         + "  while(p){"
-        + "    if(p.getAttribute('aria-hidden')==='true')return false;"
+        + "    var ps=getComputedStyle(p);"
+        + "    if(ps.display==='none')return true;"
+        + "    if(p.getAttribute('aria-hidden')==='true')return true;"
         + "    p=p.parentElement;"
         + "  }"
-        + "  return true;"
+        + "  return false;"
         + "}"
 
         // ── 3. Role 映射 ────────────────────────────────────
@@ -236,46 +245,57 @@ public final class WebDomSerializer {
         // ── 8. 主遍历逻辑 ──────────────────────────────
         // Playwright ref: ariaSnapshot.ts:84 generateAriaTree
         //   → line 96 visit(ariaNode, node, parentElementVisible)
-        // 简化: 递归 childNodes，跳过 aria-owns、slot 分配
-        + "function serialize(node,depth){"
-        + "  if(depth>50)return null;"
+        // 关键: 不可见元素的可见子节点 reattach 到父容器（不丢弃子树）
+        //   Playwright: processElement(childAriaNode || ariaNode, ...)
+        //   我们: serialize(container, node, depth) — container 是输出目标
+        + "function serialize(container,node,depth){"
+        + "  if(depth>50)return;"
 
         // 文本节点
         // Playwright ref: ariaSnapshot.ts:108 — 直接收集为字符串
         + "  if(node.nodeType===3){"
         + "    var text=node.textContent.trim();"
-        + "    if(!text||text.length===0)return null;"
-        + "    return{role:'text',name:text,children:[]};"
+        + "    if(!text||text.length===0)return;"
+        + "    container.children.push({role:'text',name:text,children:[]});"
+        + "    return;"
         + "  }"
 
         // 非元素节点跳过
         // Playwright ref: ariaSnapshot.ts:112-113
-        + "  if(node.nodeType!==1)return null;"
+        + "  if(node.nodeType!==1)return;"
 
-        // 可见性过滤
-        + "  if(!isVisible(node))return null;"
+        // 可见性判断
+        // Playwright ref: ariaSnapshot.ts:123-128
+        //   visible → 创建子节点，子节点输出到 childResult
+        //   !visible → 不创建子节点，子节点输出到 container（reattach）
+        + "  var visible=!isHiddenForAria(node);"
 
+        + "  var result=null;"
+        + "  if(visible){"
         // Role 获取，role=null 的元素（如 input[type=hidden]）跳过
-        + "  var role=getRole(node);"
-        + "  if(!role)return null;"
-
-        + "  var result={"
-        + "    role:role,"
-        + "    name:getName(node),"
-        + "    states:getStates(node),"
-        + "    bounds:getBounds(node),"
-        + "    children:[]"
-        + "  };"
-
+        + "    var role=getRole(node);"
+        + "    if(!role)return;"
+        + "    result={"
+        + "      role:role,"
+        + "      name:getName(node),"
+        + "      states:getStates(node),"
+        + "      bounds:getBounds(node),"
+        + "      children:[]"
+        + "    };"
         // clickable 加入 states
-        + "  if(isClickable(node))result.states.push('clickable');"
-
+        + "    if(isClickable(node))result.states.push('clickable');"
         // input/textarea 的 value
         // Playwright ref: ariaSnapshot.ts:282-285 — input value 作为子节点
         //   简化: 直接放 states 中
-        + "  if(typeof node.value==='string'&&node.value){"
-        + "    result.states.push('value='+node.value);"
+        + "    if(typeof node.value==='string'&&node.value){"
+        + "      result.states.push('value='+node.value);"
+        + "    }"
+        + "    container.children.push(result);"
         + "  }"
+
+        // 子节点输出到 result（可见时）或 container（不可见时，reattach 到父容器）
+        // Playwright ref: ariaSnapshot.ts:148 processElement(childAriaNode || ariaNode, ...)
+        + "  var target=result||container;"
 
         // ── 8a. Shadow DOM ───────────────────────────────
         // Playwright ref: ariaSnapshot.ts:168-171
@@ -285,8 +305,7 @@ public final class WebDomSerializer {
         + "  if(shadow){"
         + "    var sc=shadow.firstChild;"
         + "    while(sc){"
-        + "      var child=serialize(sc,depth+1);"
-        + "      if(child)result.children.push(child);"
+        + "      serialize(target,sc,depth+1);"
         + "      sc=sc.nextSibling;"
         + "    }"
         + "  }"
@@ -296,8 +315,7 @@ public final class WebDomSerializer {
         //   跳过: hasAssignedSlot 检查、aria-owns 补充
         + "  var children=node.childNodes;"
         + "  for(var i=0;i<children.length;i++){"
-        + "    var child=serialize(children[i],depth+1);"
-        + "    if(child)result.children.push(child);"
+        + "    serialize(target,children[i],depth+1);"
         + "  }"
 
         // ── 8c. Same-origin iframe ──────────────────────
@@ -307,17 +325,10 @@ public final class WebDomSerializer {
         + "    try{"
         + "      var doc=node.contentDocument;"
         + "      if(doc&&doc.body){"
-        + "        var iframeChild=serialize(doc.body,depth+1);"
-        + "        if(iframeChild){"
-        + "          for(var j=0;j<iframeChild.children.length;j++){"
-        + "            result.children.push(iframeChild.children[j]);"
-        + "          }"
-        + "        }"
+        + "        serialize(target,doc.body,depth+1);"
         + "      }"
         + "    }catch(e){}"
         + "  }"
-
-        + "  return result;"
         + "}"
 
         // ── 9. 入口 ──────────────────────────────────────
@@ -326,9 +337,9 @@ public final class WebDomSerializer {
         //   我们直接从 document.body 开始序列化，不需要 render 阶段（Java 侧做）
         + "var body=document.body;"
         + "if(!body)return JSON.stringify({error:'no body'});"
-        + "var root=serialize(body,0);"
-        + "if(!root)return JSON.stringify({error:'empty result'});"
-        + "root.role='screen';"
+        + "var root={role:'screen',name:'',states:[],bounds:[],children:[]};"
+        + "serialize(root,body,0);"
+        + "if(root.children.length===0)return JSON.stringify({error:'empty result'});"
         + "return JSON.stringify({"
         + "  url:location.href,"
         + "  title:document.title||'',"
