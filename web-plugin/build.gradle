@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'maven-publish'
 }
 
 android {
@@ -17,8 +18,28 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
     implementation project(':perception-core')
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = GROUP
+            artifactId = 'web-plugin'
+            version = VERSION_NAME
+
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
 }
