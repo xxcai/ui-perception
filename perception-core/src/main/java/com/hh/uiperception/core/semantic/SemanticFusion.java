@@ -23,7 +23,7 @@ public final class SemanticFusion {
 
         SemanticNode marked = injectWebMarker(nativeTree);
         SemanticNode nativeWithRefs = RefAssigner.assign(marked, "n");
-        SemanticNode webWithRefs = RefAssigner.assign(webTree, "w");
+        SemanticNode webWithRefs = RefAssigner.assign(webTree, "w", true);
 
         StringBuilder sb = new StringBuilder();
         sb.append(SnapshotRenderer.render(nativeWithRefs));
@@ -33,7 +33,8 @@ public final class SemanticFusion {
     }
 
     private static String renderSingle(SemanticNode tree, String prefix) {
-        SemanticNode withRefs = RefAssigner.assign(tree, prefix);
+        boolean webMode = "w".equals(prefix);
+        SemanticNode withRefs = RefAssigner.assign(tree, prefix, webMode);
         return SnapshotRenderer.render(withRefs);
     }
 

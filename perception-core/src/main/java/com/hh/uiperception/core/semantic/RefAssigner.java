@@ -9,19 +9,26 @@ public final class RefAssigner {
     }
 
     public static SemanticNode assign(SemanticNode root) {
-        return assign(root, "n");
+        return assign(root, "n", false);
     }
 
     public static SemanticNode assign(SemanticNode root, String prefix) {
+        return assign(root, prefix, false);
+    }
+
+    public static SemanticNode assign(SemanticNode root, String prefix, boolean webMode) {
         if (root == null) {
             return null;
         }
-        return new State(prefix).assignNode(root);
+        return new State(prefix, webMode).assignNode(root);
     }
 
-    private static boolean shouldAssignRef(SemanticNode node) {
+    private static boolean shouldAssignRef(SemanticNode node, boolean webMode) {
         if (node.bounds() == null || !node.bounds().isValid()) {
             return false;
+        }
+        if (webMode) {
+            return true;
         }
         if (node.role() == SemanticRole.LIST_ITEM) {
             return shouldAssignRefToListItem(node);
@@ -56,10 +63,12 @@ public final class RefAssigner {
 
     private static final class State {
         private final String prefix;
+        private final boolean webMode;
         private int nextRef = 1;
 
-        State(String prefix) {
+        State(String prefix, boolean webMode) {
             this.prefix = prefix;
+            this.webMode = webMode;
         }
 
         private SemanticNode assignNode(SemanticNode node) {
@@ -74,7 +83,7 @@ public final class RefAssigner {
             for (String state : node.states()) {
                 builder.addState(state);
             }
-            if (shouldAssignRef(node)) {
+            if (shouldAssignRef(node, webMode)) {
                 builder.ref(prefix + nextRef++);
             } else if (node.hasRef()) {
                 builder.ref(node.ref());
@@ -89,7 +98,7 @@ public final class RefAssigner {
 
     private static boolean hasExecutableDescendant(SemanticNode node) {
         for (SemanticNode child : node.children()) {
-            if (shouldAssignRef(child) || hasExecutableDescendant(child)) {
+            if (shouldAssignRef(child, false) || hasExecutableDescendant(child)) {
                 return true;
             }
         }
