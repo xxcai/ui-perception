@@ -11,6 +11,11 @@ import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionPlugin;
 import com.hh.uiperception.core.TransformRequest;
 import com.hh.uiperception.core.TransformResult;
+import com.hh.uiperception.core.semantic.RefAssigner;
+import com.hh.uiperception.core.semantic.SemanticNode;
+import com.hh.uiperception.core.semantic.SnapshotRenderer;
+import com.hh.uiperception.webplugin.TreeNormalizer;
+import com.hh.uiperception.webplugin.WebJsonParser;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +96,30 @@ public final class WebPerceptionPlugin implements PerceptionPlugin {
 
     @Override
     public TransformResult transform(TransformRequest request) {
-        return null;
+        String json = request.sourceContent();
+        try {
+            SemanticNode root = WebJsonParser.parse(json);
+            if (root == null) {
+                return TransformResult.error("web_semantic_snapshot",
+                        request.sourceToolName(), request.baselineId(),
+                        "JSON parse returned null");
+            }
+            SemanticNode normalized = TreeNormalizer.normalize(root);
+            SemanticNode withRefs = RefAssigner.assign(normalized, "w");
+            String yaml = SnapshotRenderer.render(withRefs);
+            return TransformResult.success("web_semantic_snapshot",
+                    request.sourceToolName(), request.baselineId(),
+                    "text/yaml", yaml, request.activityClassName());
+        } catch (Exception e) {
+            return TransformResult.error("web_semantic_snapshot",
+                    request.sourceToolName(), request.baselineId(),
+                    e.getMessage());
+        }
+    }
+
+    @Override
+    public SemanticNode buildSemanticTree(CaptureResult captureResult) {
+        SemanticNode root = WebJsonParser.parse(captureResult.content());
+        return root != null ? TreeNormalizer.normalize(root) : null;
     }
 }

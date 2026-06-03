@@ -4,6 +4,7 @@ import android.app.Application;
 import android.util.Log;
 
 import com.hh.uiperception.core.PluginRegistry;
+import com.hh.uiperception.core.WebFusionMode;
 import com.hh.uiperception.nativeplugin.NativePerceptionPlugin;
 import com.hh.uiperception.webplugin.WebPerceptionPlugin;
 import com.hh.uiperception.sdk.internal.CaptureHandler;
@@ -18,6 +19,7 @@ public final class PerceptionSdk {
     private static final String TAG = "PerceptionSdk";
     private static final int DEFAULT_PORT = 9700;
     private static PerceptionHttpServer httpServer;
+    private static WebFusionMode fusionMode = WebFusionMode.FUSION;
 
     private PerceptionSdk() {}
 
@@ -64,5 +66,15 @@ public final class PerceptionSdk {
     public static OperationResponse swipe(String direction, String ref) {
         String body = "{\"direction\":\"" + direction + "\"" + (ref != null ? ",\"ref\":\"" + ref + "\"" : "") + "}";
         return OperationHandler.fromJson(OperationHandler.handleSwipe(body));
+    }
+
+    public static void setFusionMode(WebFusionMode mode) {
+        if (mode != null) {
+            fusionMode = mode;
+        }
+    }
+
+    public static WebFusionMode fusionMode() {
+        return fusionMode;
     }
 }

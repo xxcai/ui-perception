@@ -7,6 +7,10 @@ import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionPlugin;
 import com.hh.uiperception.core.TransformRequest;
 import com.hh.uiperception.core.TransformResult;
+import com.hh.uiperception.core.semantic.SemanticNode;
+import com.hh.uiperception.nativeplugin.semantic.NativeSemanticTreeBuilder;
+import com.hh.uiperception.nativeplugin.semantic.NativeViewNode;
+import com.hh.uiperception.nativeplugin.semantic.NativeViewXmlParser;
 
 /**
  * Native 技术方向工具集。
@@ -27,5 +31,11 @@ public final class NativePerceptionPlugin implements PerceptionPlugin {
     @Override
     public TransformResult transform(TransformRequest request) {
         return NativeXmlTransformTool.transform(request);
+    }
+
+    @Override
+    public SemanticNode buildSemanticTree(CaptureResult captureResult) {
+        NativeViewNode viewRoot = NativeViewXmlParser.parse(captureResult.content());
+        return NativeSemanticTreeBuilder.build(viewRoot);
     }
 }

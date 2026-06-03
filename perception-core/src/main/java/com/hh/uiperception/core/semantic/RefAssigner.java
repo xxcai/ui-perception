@@ -39,7 +39,8 @@ public final class RefAssigner {
                 || role == SemanticRole.PICKER
                 || role == SemanticRole.LIST
                 || role == SemanticRole.GRID
-                || role == SemanticRole.SCROLL;
+                || role == SemanticRole.SCROLL
+                || role == SemanticRole.WEBVIEW;
     }
 
     private static boolean shouldAssignRefToListItem(SemanticNode node) {

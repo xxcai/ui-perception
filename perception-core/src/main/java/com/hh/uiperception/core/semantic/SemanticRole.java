@@ -27,6 +27,7 @@ public enum SemanticRole {
     PICKER("picker"),
     PROGRESS("progress"),
     GENERIC("generic"),
+    WEBVIEW("webview"),
     LINK("link"),
     HEADING("heading"),
     NAVIGATION("navigation");

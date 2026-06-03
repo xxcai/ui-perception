@@ -73,6 +73,9 @@ public final class NativeRoleResolver {
         if (matches(simpleName, "DecorView") || className.endsWith(".DecorView")) {
             return new RoleDecision(SemanticRole.SCREEN, "class:root", 0.9);
         }
+        if (containsAny(simpleName, "WebView")) {
+            return new RoleDecision(SemanticRole.WEBVIEW, "class:webview", 0.9);
+        }
         if (containsAny(simpleName, "Toolbar", "ActionBar", "AppBar")) {
             return new RoleDecision(SemanticRole.TOOLBAR, "class:toolbar", 0.9);
         }
@@ -134,6 +137,9 @@ public final class NativeRoleResolver {
     }
 
     private static RoleDecision adjustByAttributes(NativeViewNode node, RoleDecision classDecision) {
+        if (classDecision != null && "class:webview".equals(classDecision.source())) {
+            return null;
+        }
         SemanticRole role = classDecision == null ? null : classDecision.role();
         boolean interactiveGeneric = role == null
                 || role == SemanticRole.TEXT
