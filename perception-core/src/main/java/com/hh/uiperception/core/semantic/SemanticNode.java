@@ -9,6 +9,8 @@ import java.util.List;
  */
 public final class SemanticNode {
 
+    private static final int NO_WEB_ELEMENT = -1;
+
     private final SemanticRole role;
     private final String name;
     private final String text;
@@ -20,6 +22,7 @@ public final class SemanticNode {
     private final RoleDecision roleDecision;
     private final List<String> states;
     private final List<SemanticNode> children;
+    private final int webElementIdx;
 
     private SemanticNode(Builder builder) {
         if (builder.role == null) {
@@ -36,6 +39,7 @@ public final class SemanticNode {
         this.roleDecision = builder.roleDecision;
         this.states = Collections.unmodifiableList(new ArrayList<>(builder.states));
         this.children = Collections.unmodifiableList(new ArrayList<>(builder.children));
+        this.webElementIdx = builder.webElementIdx;
     }
 
     public static Builder builder(SemanticRole role) {
@@ -90,6 +94,10 @@ public final class SemanticNode {
         return !ref.isEmpty();
     }
 
+    public int webElementIdx() {
+        return webElementIdx;
+    }
+
     private static String normalize(String value) {
         if (value == null) {
             return "";
@@ -109,6 +117,7 @@ public final class SemanticNode {
         private RoleDecision roleDecision;
         private final List<String> states = new ArrayList<>();
         private final List<SemanticNode> children = new ArrayList<>();
+        private int webElementIdx = NO_WEB_ELEMENT;
 
         private Builder(SemanticRole role) {
             this.role = role;
@@ -166,6 +175,11 @@ public final class SemanticNode {
             if (child != null) {
                 children.add(child);
             }
+            return this;
+        }
+
+        public Builder webElementIdx(int webElementIdx) {
+            this.webElementIdx = webElementIdx;
             return this;
         }
 

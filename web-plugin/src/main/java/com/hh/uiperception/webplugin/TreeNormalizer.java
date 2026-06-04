@@ -67,7 +67,8 @@ public final class TreeNormalizer {
                 .resourceId(node.resourceId())
                 .className(node.className())
                 .bounds(node.bounds())
-                .roleDecision(node.roleDecision());
+                .roleDecision(node.roleDecision())
+                .webElementIdx(node.webElementIdx());
         if (node.hasRef()) {
             builder.ref(node.ref());
         }
@@ -97,6 +98,7 @@ public final class TreeNormalizer {
                     textGroup = SemanticNode.builder(SemanticRole.TEXT)
                             .name(merged)
                             .bounds(textGroup.bounds())
+                            .webElementIdx(textGroup.webElementIdx())
                             .build();
                 }
             } else {

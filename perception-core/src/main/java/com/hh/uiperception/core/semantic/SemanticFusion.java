@@ -1,18 +1,17 @@
 package com.hh.uiperception.core.semantic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * 将 native 和 web SemanticNode 树融合为统一输出。
- */
 public final class SemanticFusion {
 
     private SemanticFusion() {}
 
-    public static String fuse(SemanticNode nativeTree, SemanticNode webTree) {
+    public static FusionResult fuse(SemanticNode nativeTree, SemanticNode webTree) {
         if (nativeTree == null && webTree == null) {
-            return "";
+            return new FusionResult("", null);
         }
         if (nativeTree == null) {
             return renderSingle(webTree, "w");
@@ -25,17 +24,33 @@ public final class SemanticFusion {
         SemanticNode nativeWithRefs = RefAssigner.assign(marked, "n");
         SemanticNode webWithRefs = RefAssigner.assign(webTree, "w", true);
 
+        Map<String, Integer> webElementMap = new HashMap<>();
+        collectWebElementMap(webWithRefs, webElementMap);
+
         StringBuilder sb = new StringBuilder();
         sb.append(SnapshotRenderer.render(nativeWithRefs));
         sb.append("\n\n--- Web ---\n");
         sb.append(SnapshotRenderer.render(webWithRefs));
-        return sb.toString();
+        return new FusionResult(sb.toString(), webElementMap);
     }
 
-    private static String renderSingle(SemanticNode tree, String prefix) {
+    private static FusionResult renderSingle(SemanticNode tree, String prefix) {
         boolean webMode = "w".equals(prefix);
         SemanticNode withRefs = RefAssigner.assign(tree, prefix, webMode);
-        return SnapshotRenderer.render(withRefs);
+        Map<String, Integer> webElementMap = new HashMap<>();
+        if (webMode) {
+            collectWebElementMap(withRefs, webElementMap);
+        }
+        return new FusionResult(SnapshotRenderer.render(withRefs), webElementMap);
+    }
+
+    private static void collectWebElementMap(SemanticNode node, Map<String, Integer> map) {
+        if (node.hasRef() && node.webElementIdx() >= 0) {
+            map.put(node.ref(), node.webElementIdx());
+        }
+        for (SemanticNode child : node.children()) {
+            collectWebElementMap(child, map);
+        }
     }
 
     private static SemanticNode injectWebMarker(SemanticNode node) {
@@ -64,7 +79,8 @@ public final class SemanticFusion {
                 .resourceId(node.resourceId())
                 .className(node.className())
                 .bounds(node.bounds())
-                .roleDecision(node.roleDecision());
+                .roleDecision(node.roleDecision())
+                .webElementIdx(node.webElementIdx());
         if (node.hasRef()) {
             builder.ref(node.ref());
         }
@@ -89,7 +105,8 @@ public final class SemanticFusion {
                 .resourceId(node.resourceId())
                 .className(node.className())
                 .bounds(node.bounds())
-                .roleDecision(node.roleDecision());
+                .roleDecision(node.roleDecision())
+                .webElementIdx(node.webElementIdx());
         if (node.hasRef()) {
             builder.ref(node.ref());
         }

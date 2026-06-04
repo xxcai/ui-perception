@@ -59,14 +59,45 @@ public final class PerceptionSdk {
         return httpServer != null && httpServer.isRunning();
     }
 
+    // ── Operations ─────────────────────────────────────────
+
     public static OperationResponse click(String ref) {
         return OperationHandler.fromJson(OperationHandler.handleClick("{\"ref\":\"" + ref + "\"}"));
+    }
+
+    public static OperationResponse longPress(String ref, int durationMs) {
+        return OperationHandler.fromJson(OperationHandler.handleLongPress(
+                "{\"ref\":\"" + ref + "\",\"duration\":" + durationMs + "}"));
     }
 
     public static OperationResponse swipe(String direction, String ref) {
         String body = "{\"direction\":\"" + direction + "\"" + (ref != null ? ",\"ref\":\"" + ref + "\"" : "") + "}";
         return OperationHandler.fromJson(OperationHandler.handleSwipe(body));
     }
+
+    public static OperationResponse typeText(String ref, String text, boolean clear) {
+        String body = "{\"ref\":\"" + ref + "\",\"text\":" + escapeJsonString(text) + ",\"clear\":" + clear + "}";
+        return OperationHandler.fromJson(OperationHandler.handleTypeText(body));
+    }
+
+    public static OperationResponse check(String ref) {
+        return OperationHandler.fromJson(OperationHandler.handleCheck("{\"ref\":\"" + ref + "\"}"));
+    }
+
+    public static OperationResponse uncheck(String ref) {
+        return OperationHandler.fromJson(OperationHandler.handleUncheck("{\"ref\":\"" + ref + "\"}"));
+    }
+
+    public static OperationResponse selectOption(String ref, String value) {
+        String body = "{\"ref\":\"" + ref + "\",\"value\":" + escapeJsonString(value) + "}";
+        return OperationHandler.fromJson(OperationHandler.handleSelectOption(body));
+    }
+
+    public static OperationResponse pressKey(String key) {
+        return OperationHandler.fromJson(OperationHandler.handlePressKey("{\"key\":\"" + key + "\"}"));
+    }
+
+    // ── Config ─────────────────────────────────────────────
 
     public static void setFusionMode(WebFusionMode mode) {
         if (mode != null) {
@@ -76,5 +107,11 @@ public final class PerceptionSdk {
 
     public static WebFusionMode fusionMode() {
         return fusionMode;
+    }
+
+    private static String escapeJsonString(String s) {
+        if (s == null) return "null";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + "\"";
     }
 }

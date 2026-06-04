@@ -43,7 +43,8 @@ public final class WebJsonParser {
 
         SemanticNode.Builder builder = SemanticNode.builder(role)
                 .name(name)
-                .bounds(bounds);
+                .bounds(bounds)
+                .webElementIdx(obj.optInt("__pr_idx", -1));
 
         JSONArray states = obj.optJSONArray("states");
         if (states != null) {

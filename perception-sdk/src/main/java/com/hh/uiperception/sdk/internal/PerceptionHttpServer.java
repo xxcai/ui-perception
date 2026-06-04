@@ -116,8 +116,26 @@ public final class PerceptionHttpServer {
             } else if ("/click".equals(path) && "POST".equals(method)) {
                 responseJson = body != null ? OperationHandler.handleClick(body)
                         : OperationResponse.error("Missing body").toJson();
+            } else if ("/long_press".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleLongPress(body)
+                        : OperationResponse.error("Missing body").toJson();
             } else if ("/swipe".equals(path) && "POST".equals(method)) {
                 responseJson = body != null ? OperationHandler.handleSwipe(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/type_text".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleTypeText(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/check".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleCheck(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/uncheck".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleUncheck(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/select_option".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handleSelectOption(body)
+                        : OperationResponse.error("Missing body").toJson();
+            } else if ("/press_key".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? OperationHandler.handlePressKey(body)
                         : OperationResponse.error("Missing body").toJson();
             } else {
                 responseJson = "{\"status\":\"error\",\"error\":\"Not found: " + path + "\"}";

@@ -53,6 +53,42 @@ final class TouchHandler {
         }
     }
 
+    static boolean longPress(Activity activity, float x, float y, int durationMs) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] result = {false};
+
+        activity.runOnUiThread(() -> {
+            try {
+                long downTime = SystemClock.uptimeMillis();
+
+                MotionEvent downEvent = MotionEvent.obtain(downTime, downTime,
+                        MotionEvent.ACTION_DOWN, x, y, 0);
+                result[0] = activity.dispatchTouchEvent(downEvent);
+                downEvent.recycle();
+
+                SystemClock.sleep(durationMs);
+
+                MotionEvent upEvent = MotionEvent.obtain(downTime, downTime + durationMs,
+                        MotionEvent.ACTION_UP, x, y, 0);
+                activity.dispatchTouchEvent(upEvent);
+                upEvent.recycle();
+
+                Log.i(TAG, "Long press at (" + x + ", " + y + ") for " + durationMs + "ms");
+            } catch (Exception e) {
+                Log.e(TAG, "Long press failed", e);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        try {
+            return latch.await(durationMs + 3000L, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
     static boolean swipe(Activity activity, float startX, float startY, float endX, float endY) {
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean[] result = {false};

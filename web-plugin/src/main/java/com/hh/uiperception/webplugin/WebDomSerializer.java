@@ -331,6 +331,11 @@ public final class WebDomSerializer {
         + "  return false;"
         + "}"
 
+        // ── 7a. 元素索引计数器 ────────────────────────────
+        // 为每个序列化的 DOM 元素分配递增索引，同时写入 __pr_idx 属性
+        // 用于后续操作时通过索引反查 DOM 元素
+        + "var prIdxCounter=0;"
+
         // ── 8. 主遍历逻辑 ──────────────────────────────
         // Playwright ref: ariaSnapshot.ts:84 generateAriaTree
         //   → line 96 visit(ariaNode, node, parentElementVisible)
@@ -369,11 +374,14 @@ public final class WebDomSerializer {
         // Role 获取，role=null 的元素（如 input[type=hidden]）跳过
         + "    var role=getRole(node);"
         + "    if(!role)return;"
+        + "    var prIdx=prIdxCounter++;"
+        + "    try{node.setAttribute('__pr_idx',prIdx);}catch(e){}"
         + "    result={"
         + "      role:role,"
         + "      name:getName(node),"
         + "      states:getStates(node),"
         + "      bounds:getBounds(node),"
+        + "      __pr_idx:prIdx,"
         + "      children:[]"
         + "    };"
         // clickable 加入 states

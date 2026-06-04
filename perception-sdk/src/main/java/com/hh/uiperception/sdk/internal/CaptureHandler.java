@@ -2,12 +2,16 @@ package com.hh.uiperception.sdk.internal;
 
 import android.app.Activity;
 import android.util.Log;
+import android.webkit.WebView;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.hh.uiperception.core.CaptureRequest;
 import com.hh.uiperception.core.CaptureResult;
 import com.hh.uiperception.core.PerceptionPlugin;
 import com.hh.uiperception.core.PluginRegistry;
 import com.hh.uiperception.core.WebFusionMode;
+import com.hh.uiperception.core.semantic.FusionResult;
 import com.hh.uiperception.core.semantic.SemanticFusion;
 import com.hh.uiperception.core.semantic.SemanticNode;
 import com.hh.uiperception.sdk.PerceptionSdk;
@@ -65,26 +69,29 @@ public final class CaptureHandler {
             }
 
             // Phase 3: Fusion or individual render
-            String yaml;
             SemanticNode nativeTree = trees.get("native");
             SemanticNode webTree = trees.get("web");
 
+            FusionResult fusionResult;
             if (nativeTree != null && webTree != null) {
                 WebFusionMode mode = PerceptionSdk.fusionMode();
                 if (mode == WebFusionMode.WEB_ONLY) {
-                    yaml = SemanticFusion.fuse(null, webTree);
+                    fusionResult = SemanticFusion.fuse(null, webTree);
                 } else {
-                    yaml = SemanticFusion.fuse(nativeTree, webTree);
+                    fusionResult = SemanticFusion.fuse(nativeTree, webTree);
                 }
             } else if (webTree != null) {
-                yaml = SemanticFusion.fuse(null, webTree);
+                fusionResult = SemanticFusion.fuse(null, webTree);
             } else {
-                yaml = SemanticFusion.fuse(nativeTree, null);
+                fusionResult = SemanticFusion.fuse(nativeTree, null);
             }
 
+            // Phase 4: Record WebView offset for coordinate-based operations
+            int[] webViewOffset = findWebViewOffset(activity);
+
             String activityClassName = captures.values().iterator().next().activityClassName();
-            RefBoundsCache.update(yaml);
-            return CaptureResponse.success(activityClassName, yaml);
+            RefBoundsCache.update(fusionResult.yaml(), fusionResult.webElementMap(), webViewOffset);
+            return CaptureResponse.success(activityClassName, fusionResult.yaml());
         } catch (Exception e) {
             Log.e(TAG, "Capture failed", e);
             return CaptureResponse.error("Capture failed: " + e.getMessage());
@@ -95,6 +102,32 @@ public final class CaptureHandler {
         for (PerceptionPlugin plugin : plugins) {
             if (plugin.name().equals(name)) {
                 return plugin;
+            }
+        }
+        return null;
+    }
+
+    private static int[] findWebViewOffset(Activity activity) {
+        WebView webView = findWebView(activity.getWindow().getDecorView());
+        if (webView != null) {
+            int[] location = new int[2];
+            webView.getLocationOnScreen(location);
+            return new int[]{location[0], location[1]};
+        }
+        return new int[]{0, 0};
+    }
+
+    private static WebView findWebView(View view) {
+        if (view instanceof WebView) {
+            return (WebView) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                WebView found = findWebView(group.getChildAt(i));
+                if (found != null) {
+                    return found;
+                }
             }
         }
         return null;

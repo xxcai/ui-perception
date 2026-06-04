@@ -79,7 +79,8 @@ public final class RefAssigner {
                     .resourceId(node.resourceId())
                     .className(node.className())
                     .bounds(node.bounds())
-                    .roleDecision(node.roleDecision());
+                    .roleDecision(node.roleDecision())
+                    .webElementIdx(node.webElementIdx());
             for (String state : node.states()) {
                 builder.addState(state);
             }
