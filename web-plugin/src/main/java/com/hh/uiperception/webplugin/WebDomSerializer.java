@@ -37,6 +37,8 @@ public final class WebDomSerializer {
         // 祖先链同时检查 display:none 和 aria-hidden=true
         + "function isHiddenForAria(el){"
         + "  if(isHiddenTag(el.tagName))return true;"
+        // Playwright ref: roleUtils.ts:323 — <option> inside <select> never hidden by CSS
+        + "  if(el.tagName==='OPTION'&&el.closest('select'))return false;"
         + "  var s=getComputedStyle(el);"
         // display:contents — 透明处理，递归检查子节点
         // Playwright ref: roleUtils.ts:309-318
@@ -87,7 +89,9 @@ public final class WebDomSerializer {
         // 简化: 保留 ~25 个常见 tag 映射，跳过 presentation 继承、TH scope
         + "function getRole(el){"
         + "  var explicit=el.getAttribute('role');"
-        + "  if(explicit&&explicit!=='presentation'&&explicit!=='none')return explicit;"
+        // Playwright ref: ariaSnapshot.ts:242 — presentation/none → null (transparent, children reattach)
+        + "  if(explicit==='presentation'||explicit==='none')return null;"
+        + "  if(explicit)return explicit;"
         + "  var t=el.tagName;"
         + "  if(!t)return 'generic';"
         + "  switch(t){"
@@ -347,9 +351,11 @@ public final class WebDomSerializer {
 
         // 文本节点
         // Playwright ref: ariaSnapshot.ts:108 — 直接收集为字符串
+        //   textbox 内部的文本不作为子节点（已通过 element.value 捕获）
         + "  if(node.nodeType===3){"
         + "    var text=node.textContent.trim();"
         + "    if(!text||text.length===0)return;"
+        + "    if(container._isTextbox)return;"
         + "    container.children.push({role:'text',name:text,children:[]});"
         + "    return;"
         + "  }"
@@ -371,9 +377,15 @@ public final class WebDomSerializer {
 
         + "  var result=null;"
         + "  if(visible){"
-        // Role 获取，role=null 的元素（如 input[type=hidden]）跳过
+        // Role 获取，role=null 的元素（如 input[type=hidden]、presentation）跳过
         + "    var role=getRole(node);"
         + "    if(!role)return;"
+        // Playwright ref: ariaSnapshot.ts:249 — inline generic with single text child → skip node
+        //   文本会在后续子节点遍历中自然挂到 container
+        + "    if(role==='generic'){"
+        + "      var cs=getComputedStyle(node);"
+        + "      if(cs.display==='inline'&&node.childNodes.length===1&&node.childNodes[0].nodeType===3)return;"
+        + "    }"
         + "    var prIdx=prIdxCounter++;"
         + "    try{node.setAttribute('__pr_idx',prIdx);}catch(e){}"
         + "    result={"
@@ -386,6 +398,8 @@ public final class WebDomSerializer {
         + "    };"
         // clickable 加入 states
         + "    if(isClickable(node))result.states.push('clickable');"
+        // Playwright ref: ariaSnapshot.ts:107 — textbox 内文本不作为子节点
+        + "    result._isTextbox=(role==='textbox');"
         // input/textarea 的 value
         // Playwright ref: ariaSnapshot.ts:282-285 — input value 作为子节点
         //   简化: 直接放 states 中
@@ -398,6 +412,12 @@ public final class WebDomSerializer {
         // 子节点输出到 result（可见时）或 container（不可见时，reattach 到父容器）
         // Playwright ref: ariaSnapshot.ts:148 processElement(childAriaNode || ariaNode, ...)
         + "  var target=result||container;"
+
+        // Playwright ref: ariaSnapshot.ts:158,177 — ::before/::after 伪元素作为子节点
+        + "  if(result){"
+        + "    var before=pseudoText(getComputedStyle(node,'::before').content);"
+        + "    if(before)result.children.push({role:'text',name:before,children:[]});"
+        + "  }"
 
         // ── 8a. Shadow DOM ───────────────────────────────
         // Playwright ref: ariaSnapshot.ts:168-171
@@ -418,6 +438,13 @@ public final class WebDomSerializer {
         + "  var children=node.childNodes;"
         + "  for(var i=0;i<children.length;i++){"
         + "    serialize(target,children[i],depth+1);"
+        + "  }"
+
+        // ── 8b-2. ::after 伪元素 ──────────────────────
+        // Playwright ref: ariaSnapshot.ts:177
+        + "  if(result){"
+        + "    var after=pseudoText(getComputedStyle(node,'::after').content);"
+        + "    if(after)result.children.push({role:'text',name:after,children:[]});"
         + "  }"
 
         // ── 8c. Same-origin iframe ──────────────────────
