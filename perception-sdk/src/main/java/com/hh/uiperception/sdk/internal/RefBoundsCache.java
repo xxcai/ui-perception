@@ -13,17 +13,19 @@ final class RefBoundsCache {
     private static final Map<String, int[]> boundsCache = new HashMap<>();
     private static final Map<String, Integer> webElementMap = new HashMap<>();
     private static int[] webViewOffset = {0, 0};
+    private static float webScale = 1.0f;
 
     private RefBoundsCache() {}
 
     static void update(String yaml) {
-        update(yaml, null, null);
+        update(yaml, null, null, 1.0f);
     }
 
-    static void update(String yaml, Map<String, Integer> elementMap, int[] offset) {
+    static void update(String yaml, Map<String, Integer> elementMap, int[] offset, float scale) {
         boundsCache.clear();
         webElementMap.clear();
         webViewOffset = new int[]{0, 0};
+        webScale = 1.0f;
 
         if (yaml == null) return;
 
@@ -50,6 +52,9 @@ final class RefBoundsCache {
         if (offset != null) {
             webViewOffset = offset;
         }
+        if (scale > 0) {
+            webScale = scale;
+        }
     }
 
     static int[] getBounds(String ref) {
@@ -68,11 +73,13 @@ final class RefBoundsCache {
         float cy = (bounds[1] + bounds[3]) / 2f;
 
         if (isWebRef(ref)) {
-            cx += webViewOffset[0];
-            cy += webViewOffset[1];
+            // DOM bounds are in CSS pixels; MotionEvent uses physical pixels.
+            // Convert: screen = css * scale + offset
+            cx = cx * webScale + webViewOffset[0];
+            cy = cy * webScale + webViewOffset[1];
         }
 
-        return new int[]{(int) cx, (int) cy};
+        return new int[]{Math.round(cx), Math.round(cy)};
     }
 
     static int getWebElementIdx(String ref) {
@@ -88,5 +95,6 @@ final class RefBoundsCache {
         boundsCache.clear();
         webElementMap.clear();
         webViewOffset = new int[]{0, 0};
+        webScale = 1.0f;
     }
 }

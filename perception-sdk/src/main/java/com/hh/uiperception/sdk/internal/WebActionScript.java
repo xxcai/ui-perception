@@ -19,14 +19,14 @@ final class WebActionScript {
                   + "else if(el.createTextRange){var r=el.createTextRange();r.select();}"
                 : "")
             // Strategy W1: execCommand('insertText') — closest to CDP Input.insertText
-            + "if(clear&&document.execCommand){"
-            + "  document.execCommand('selectAll',false,null);"
+            + "if(document.execCommand){"
+            + (clear ? "document.execCommand('selectAll',false,null);" : "")
             + "  if(document.execCommand('insertText',false,\"" + escaped + "\")){"
             + "    return JSON.stringify({status:'success',result:{method:'execCommand'}});"
             + "  }"
             + "}"
             // Strategy W2: direct value assignment + synthetic events
-            + "if(clear){el.value='';}"
+            + (clear ? "el.value='';" : "")
             + "el.value=el.value+\"" + escaped + "\";"
             + "el.dispatchEvent(new Event('input',{bubbles:true}));"
             + "el.dispatchEvent(new Event('change',{bubbles:true}));"

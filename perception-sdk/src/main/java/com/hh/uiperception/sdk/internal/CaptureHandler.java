@@ -86,11 +86,12 @@ public final class CaptureHandler {
                 fusionResult = SemanticFusion.fuse(nativeTree, null);
             }
 
-            // Phase 4: Record WebView offset for coordinate-based operations
+            // Phase 4: Record WebView offset & CSS→physical scale for coordinate operations
             int[] webViewOffset = findWebViewOffset(activity);
+            float webScale = activity.getResources().getDisplayMetrics().density;
 
             String activityClassName = captures.values().iterator().next().activityClassName();
-            RefBoundsCache.update(fusionResult.yaml(), fusionResult.webElementMap(), webViewOffset);
+            RefBoundsCache.update(fusionResult.yaml(), fusionResult.webElementMap(), webViewOffset, webScale);
             return CaptureResponse.success(activityClassName, fusionResult.yaml());
         } catch (Exception e) {
             Log.e(TAG, "Capture failed", e);
