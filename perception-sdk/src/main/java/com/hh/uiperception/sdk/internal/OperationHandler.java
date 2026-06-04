@@ -331,6 +331,12 @@ public final class OperationHandler {
                 case "tab":
                     keyCode = android.view.KeyEvent.KEYCODE_TAB;
                     break;
+                case "home":
+                    keyCode = android.view.KeyEvent.KEYCODE_HOME;
+                    break;
+                case "menu":
+                    keyCode = android.view.KeyEvent.KEYCODE_MENU;
+                    break;
                 default:
                     return OperationResponse.error("Unsupported key: " + key).toJson();
             }
