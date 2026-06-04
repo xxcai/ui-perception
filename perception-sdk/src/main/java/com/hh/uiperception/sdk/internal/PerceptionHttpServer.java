@@ -137,6 +137,9 @@ public final class PerceptionHttpServer {
             } else if ("/press_key".equals(path) && "POST".equals(method)) {
                 responseJson = body != null ? OperationHandler.handlePressKey(body)
                         : OperationResponse.error("Missing body").toJson();
+            } else if ("/exec_js".equals(path) && "POST".equals(method)) {
+                responseJson = body != null ? DebugExecJsHandler.execute(body)
+                        : OperationResponse.error("Missing body").toJson();
             } else {
                 responseJson = "{\"status\":\"error\",\"error\":\"Not found: " + path + "\"}";
             }
