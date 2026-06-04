@@ -66,13 +66,6 @@ final class WebActionScript {
             + "})()";
     }
 
-    static String goBack() {
-        return "(function(){"
-            + "if(window.history.length>1){window.history.back();return JSON.stringify({status:'success'});}"
-            + "return JSON.stringify({status:'error',error:'No history'});"
-            + "})()";
-    }
-
     private static String escapeJs(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\")

@@ -320,38 +320,29 @@ public final class OperationHandler {
             Activity activity = getValidActivity();
             if (activity == null) return noActivityError();
 
+            final int keyCode;
             switch (key) {
                 case "back":
-                    activity.runOnUiThread(() -> activity.onBackPressed());
-                    return OperationResponse.success("back").toJson();
-
-                case "enter": {
-                    int keyCode = android.view.KeyEvent.KEYCODE_ENTER;
-                    activity.runOnUiThread(() -> {
-                        long time = android.os.SystemClock.uptimeMillis();
-                        activity.dispatchKeyEvent(new android.view.KeyEvent(
-                                time, time, android.view.KeyEvent.ACTION_DOWN, keyCode, 0));
-                        activity.dispatchKeyEvent(new android.view.KeyEvent(
-                                time, time + 1, android.view.KeyEvent.ACTION_UP, keyCode, 0));
-                    });
-                    return OperationResponse.success("enter").toJson();
-                }
-
-                case "tab": {
-                    int keyCode = android.view.KeyEvent.KEYCODE_TAB;
-                    activity.runOnUiThread(() -> {
-                        long time = android.os.SystemClock.uptimeMillis();
-                        activity.dispatchKeyEvent(new android.view.KeyEvent(
-                                time, time, android.view.KeyEvent.ACTION_DOWN, keyCode, 0));
-                        activity.dispatchKeyEvent(new android.view.KeyEvent(
-                                time, time + 1, android.view.KeyEvent.ACTION_UP, keyCode, 0));
-                    });
-                    return OperationResponse.success("tab").toJson();
-                }
-
+                    keyCode = android.view.KeyEvent.KEYCODE_BACK;
+                    break;
+                case "enter":
+                    keyCode = android.view.KeyEvent.KEYCODE_ENTER;
+                    break;
+                case "tab":
+                    keyCode = android.view.KeyEvent.KEYCODE_TAB;
+                    break;
                 default:
                     return OperationResponse.error("Unsupported key: " + key).toJson();
             }
+
+            activity.runOnUiThread(() -> {
+                long time = android.os.SystemClock.uptimeMillis();
+                activity.dispatchKeyEvent(new android.view.KeyEvent(
+                        time, time, android.view.KeyEvent.ACTION_DOWN, keyCode, 0));
+                activity.dispatchKeyEvent(new android.view.KeyEvent(
+                        time, time + 1, android.view.KeyEvent.ACTION_UP, keyCode, 0));
+            });
+            return OperationResponse.success(key).toJson();
         } catch (JSONException e) {
             return OperationResponse.error("Invalid request: expected {\"key\":\"back\"}").toJson();
         }
