@@ -322,12 +322,6 @@ public final class OperationHandler {
 
             switch (key) {
                 case "back":
-                    if (json.optBoolean("web", false)) {
-                        // Web back via JS
-                        String jsResult = WebViewExecutor.executeJs(activity, WebActionScript.goBack());
-                        if (jsResult != null) return jsResult;
-                    }
-                    // Native back
                     activity.runOnUiThread(() -> activity.onBackPressed());
                     return OperationResponse.success("back").toJson();
 

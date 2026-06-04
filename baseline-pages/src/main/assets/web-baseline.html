@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body { font-family: sans-serif; padding: 16px; margin: 0 }
+h1 { font-size: 24px; color: #333; margin: 0 0 16px }
+h2 { font-size: 20px; color: #333; margin: 16px 0 8px; border-bottom: 1px solid #eee; padding-bottom: 4px }
+p { color: #555; line-height: 1.5; margin: 0 0 12px }
+a { color: #1593FF }
+button { padding: 12px 24px; background: #1593FF; color: #fff; border: none; border-radius: 8px; font-size: 16px; margin: 4px 0 }
+input[type=text],input[type=email],input[type=password],input[type=number],
+input[type=search],input[type=tel],input[type=url],input[type=range] {
+  padding: 12px; border: 1px solid #ddd; border-radius: 4px; width: 100%;
+  box-sizing: border-box; margin: 4px 0; font-size: 16px }
+textarea { padding: 12px; border: 1px solid #ddd; border-radius: 4px;
+  width: 100%; box-sizing: border-box; margin: 4px 0; font-size: 16px; height: 80px }
+select { padding: 12px; border: 1px solid #ddd; border-radius: 4px;
+  width: 100%; box-sizing: border-box; margin: 4px 0; font-size: 16px }
+ul,ol { padding-left: 20px; margin: 8px 0 } li { margin: 8px 0 }
+label { margin-left: 4px; line-height: 2 }
+.output { min-height: 24px; color: #666; margin: 4px 0; padding: 8px;
+  background: #f5f5f5; border-radius: 4px; font-family: monospace }
+.row { margin: 8px 0 }
+section { margin-bottom: 24px }
+table { width: 100%; border-collapse: collapse }
+th,td { border: 1px solid #ddd; padding: 8px; text-align: left }
+</style>
+</head>
+<body>
+
+<h1>UI Perception Baseline</h1>
+
+<!-- ====== Section 1: Click ====== -->
+<section>
+<h2>Click</h2>
+<button id="btn1" onclick="document.getElementById('click-output').textContent='Clicked!'">Click Me</button>
+<div id="click-output" class="output">-</div>
+</section>
+
+<!-- ====== Section 2: Type Text ====== -->
+<section>
+<h2>Type Text</h2>
+<input type="text" id="input-text" placeholder="Type something...">
+<div id="type-output" class="output">-</div>
+<input type="email" id="input-email" placeholder="Email address">
+<input type="password" id="input-password" placeholder="Password">
+<input type="number" id="input-number" placeholder="Number">
+<textarea id="input-textarea" placeholder="Multiline text"></textarea>
+</section>
+
+<!-- ====== Section 3: Checkbox ====== -->
+<section>
+<h2>Checkbox</h2>
+<div class="row">
+<input type="checkbox" id="cb1" onchange="document.getElementById('cb-output').textContent='checked='+this.checked">
+<label for="cb1">Check this</label>
+</div>
+<div id="cb-output" class="output">-</div>
+</section>
+
+<!-- ====== Section 4: Radio ====== -->
+<section>
+<h2>Radio</h2>
+<div class="row">
+<input type="radio" name="choice" id="r1" value="A" onchange="document.getElementById('radio-output').textContent='selected='+this.value">
+<label for="r1">Option A</label><br>
+<input type="radio" name="choice" id="r2" value="B" onchange="document.getElementById('radio-output').textContent='selected='+this.value">
+<label for="r2">Option B</label>
+</div>
+<div id="radio-output" class="output">-</div>
+</section>
+
+<!-- ====== Section 5: Select ====== -->
+<section>
+<h2>Select</h2>
+<select id="select1" onchange="document.getElementById('select-output').textContent='value='+this.value">
+  <option value="">Choose...</option>
+  <option value="apple">Apple</option>
+  <option value="banana">Banana</option>
+  <option value="cherry">Cherry</option>
+</select>
+<select id="select-multi" multiple size="3">
+  <option value="x">X</option>
+  <option value="y">Y</option>
+  <option value="z">Z</option>
+</select>
+<div id="select-output" class="output">-</div>
+</section>
+
+<!-- ====== Section 6: Long Press ====== -->
+<section>
+<h2>Long Press</h2>
+<div id="longpress-area" style="padding:24px;background:#e8f4ff;border-radius:8px;text-align:center"
+  onmousedown="lpTimer=setTimeout(function(){document.getElementById('lp-output').textContent='Long pressed!'},500)"
+  onmouseup="clearTimeout(lpTimer)"
+  ontouchstart="lpTimer=setTimeout(function(){document.getElementById('lp-output').textContent='Long pressed!'},500)"
+  ontouchend="clearTimeout(lpTimer)">
+Press and hold here</div>
+<div id="lp-output" class="output">-</div>
+</section>
+
+<!-- ====== Section 7: Scroll ====== -->
+<section>
+<h2>Scroll</h2>
+<div id="scroll-container" style="height:120px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:8px">
+<div style="height:400px">
+<p>Scroll content line 1</p>
+<p>Scroll content line 2</p>
+<p>Scroll content line 3</p>
+<p>Scroll content line 4</p>
+<p>Scroll content line 5</p>
+<p id="scroll-target">Scroll target line</p>
+<p>Scroll content line 7</p>
+<p>Scroll content line 8</p>
+</div></div>
+</section>
+
+<!-- ====== Section 8: Links ====== -->
+<section>
+<h2>Links</h2>
+<ul>
+<li><a href="#item1">Item 1</a></li>
+<li><a href="#item2">Item 2</a></li>
+<li><a href="#item3">Item 3</a></li>
+</ul>
+</section>
+
+<!-- ====== Section 9: Table ====== -->
+<section>
+<h2>Table</h2>
+<table>
+  <caption>Sample Data</caption>
+  <thead><tr><th>Name</th><th>Value</th></tr></thead>
+  <tbody><tr><td>Row 1</td><td>100</td></tr>
+  <tr><td>Row 2</td><td>200</td></tr></tbody>
+  <tfoot><tr><td>Total</td><td>300</td></tr></tfoot>
+</table>
+</section>
+
+<!-- ====== Section 10: Role Mapping ====== -->
+<section>
+<h2>Role Mapping</h2>
+
+<article>This is an article</article>
+<aside>This is an aside</aside>
+<blockquote>This is a quote</blockquote>
+
+<details id="details1" open>
+  <summary>Details summary</summary>
+  <p>Details content</p>
+</details>
+<details id="details2">
+  <summary>Closed details</summary>
+  <p>Hidden content</p>
+</details>
+
+<dialog id="dialog1" open>
+  <p>Dialog content</p>
+</dialog>
+
+<dl>
+  <dt>Term 1</dt>
+  <dd>Definition 1</dd>
+  <dt>Term 2</dt>
+  <dd>Definition 2</dd>
+</dl>
+
+<hr>
+
+<label>Search: <input type="search" id="input-search" placeholder="Search..."></label>
+<label>Range: <input type="range" id="input-range" min="0" max="100" value="50"></label>
+
+<meter value="0.7" min="0" max="1">70%</meter>
+<progress value="60" max="100">60%</progress>
+
+<output id="output1">42</output>
+
+<p>A paragraph of text.</p>
+
+<menu>
+  <li><button onclick="">Menu item 1</button></li>
+  <li><button onclick="">Menu item 2</button></li>
+</menu>
+
+<fieldset>
+  <legend>Fieldset legend</legend>
+  <label for="fs-input">Field:</label>
+  <input type="text" id="fs-input" placeholder="Field input">
+</fieldset>
+
+<figure>
+  <figcaption>Figure caption</figcaption>
+  <p>Figure content</p>
+</figure>
+
+<datalist id="dl1">
+  <option value="opt1">
+  <option value="opt2">
+  <option value="opt3">
+</datalist>
+<input type="text" id="input-datalist" list="dl1" placeholder="With datalist">
+
+<optgroup label="Group A">
+  <option>A1</option>
+  <option>A2</option>
+</optgroup>
+</section>
+
+<!-- ====== Section 11: Name Computation ====== -->
+<section>
+<h2>Name Computation</h2>
+
+<!-- aria-labelledby multi-ID -->
+<div id="lb-first">First</div>
+<div id="lb-second">Second</div>
+<button aria-labelledby="lb-first lb-second" id="btn-multi-label">_</button>
+
+<!-- Label wrapping (no for attribute) -->
+<label>Wrapped label input <input type="text" id="input-wrapped"></label>
+
+<!-- Label for (existing test, repeated for completeness) -->
+<label for="input-for">For-attribute label</label>
+<input type="text" id="input-for">
+
+<!-- aria-label -->
+<button aria-label="Aria labeled button" id="btn-aria-label">raw text</button>
+</section>
+
+<!-- ====== Section 12: States ====== -->
+<section>
+<h2>States</h2>
+
+<!-- aria-checked -->
+<div role="checkbox" aria-checked="true" tabindex="0" id="ariacb1">aria-checked true</div>
+<div role="checkbox" aria-checked="false" tabindex="0" id="ariacb2">aria-checked false</div>
+
+<!-- aria-disabled -->
+<button aria-disabled="true" id="btn-adisabled">aria-disabled button</button>
+<div aria-disabled="true">
+  <button id="btn-inherit-disabled">child of aria-disabled</button>
+</div>
+
+<!-- fieldset disabled -->
+<fieldset disabled>
+  <legend>Disabled fieldset</legend>
+  <input type="text" placeholder="disabled input" id="fs-disabled-input">
+  <button id="fs-disabled-btn">Disabled button</button>
+</fieldset>
+
+<!-- option selected -->
+<select id="select-selected">
+  <option value="a">Alpha</option>
+  <option value="b" selected>Beta</option>
+  <option value="c">Gamma</option>
+</select>
+
+<!-- readonly -->
+<input type="text" readonly value="readonly text" id="input-readonly">
+<textarea readonly id="textarea-readonly">readonly textarea</textarea>
+
+<!-- invalid -->
+<input type="email" value="not-an-email" id="input-invalid">
+<input type="email" value="a@b.com" id="input-valid">
+<input type="text" aria-invalid="true" value="aria-invalid" id="input-aria-invalid">
+
+<!-- expanded -->
+<button aria-expanded="true" id="btn-expanded">Expanded button</button>
+<button aria-expanded="false" id="btn-collapsed">Collapsed button</button>
+</section>
+
+<!-- ====== Section 13: Explicit Role Attributes ====== -->
+<section>
+<h2>Role Attributes</h2>
+
+<!-- multi-token role -->
+<div role="button menuitem" id="multi-role">Multi token role</div>
+
+<!-- presentation conflict resolution -->
+<div role="presentation" aria-label="Named presentation" id="pres-conflict">
+  <button id="pres-child">Child of presentation</button>
+</div>
+
+<!-- pure presentation (no conflict) -->
+<div role="presentation" id="pres-pure">
+  <span>Inside presentation</span>
+</div>
+</section>
+
+</body>
+</html>

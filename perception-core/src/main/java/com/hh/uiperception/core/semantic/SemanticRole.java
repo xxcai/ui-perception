@@ -40,7 +40,21 @@ public enum SemanticRole {
     ROW("row"),
     CELL("cell"),
     COLUMNHEADER("columnheader"),
-    ROWHEADER("rowheader");
+    ROWHEADER("rowheader"),
+    FORM("form"),
+    ARTICLE("article"),
+    COMPLEMENTARY("complementary"),
+    BLOCKQUOTE("blockquote"),
+    CAPTION("caption"),
+    GROUP("group"),
+    TERM("term"),
+    DEFINITION("definition"),
+    SEPARATOR("separator"),
+    METER("meter"),
+    OPTION_ROLE("option"),
+    STATUS("status"),
+    PARAGRAPH("paragraph"),
+    ROWGROUP("rowgroup");
 
     private final String snapshotName;
 

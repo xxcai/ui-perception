@@ -69,6 +69,86 @@ public final class WebJsonParserTest {
         assertEquals(SemanticRole.GENERIC, node.role());
     }
 
+    // --- New role mappings ---
+
+    @Test
+    public void mapsArticleRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"article\",\"name\":\"Art\",\"states\":[],\"bounds\":[0,0,300,200],\"children\":[]}");
+        assertEquals(SemanticRole.ARTICLE, node.role());
+    }
+
+    @Test
+    public void mapsComplementaryRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"complementary\",\"name\":\"Aside\",\"states\":[],\"bounds\":[0,0,200,100],\"children\":[]}");
+        assertEquals(SemanticRole.COMPLEMENTARY, node.role());
+    }
+
+    @Test
+    public void mapsBlockquoteRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"blockquote\",\"name\":\"Quote\",\"states\":[],\"bounds\":[0,0,200,100],\"children\":[]}");
+        assertEquals(SemanticRole.BLOCKQUOTE, node.role());
+    }
+
+    @Test
+    public void mapsCaptionRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"caption\",\"name\":\"Table Caption\",\"states\":[],\"bounds\":[0,0,200,30],\"children\":[]}");
+        assertEquals(SemanticRole.CAPTION, node.role());
+    }
+
+    @Test
+    public void mapsGroupRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"group\",\"name\":\"Details\",\"states\":[],\"bounds\":[0,0,200,100],\"children\":[]}");
+        assertEquals(SemanticRole.GROUP, node.role());
+    }
+
+    @Test
+    public void mapsTermRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"term\",\"name\":\"DT\",\"states\":[],\"bounds\":[0,0,100,20],\"children\":[]}");
+        assertEquals(SemanticRole.TERM, node.role());
+    }
+
+    @Test
+    public void mapsDefinitionRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"definition\",\"name\":\"DD\",\"states\":[],\"bounds\":[0,0,100,20],\"children\":[]}");
+        assertEquals(SemanticRole.DEFINITION, node.role());
+    }
+
+    @Test
+    public void mapsSeparatorRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"separator\",\"name\":\"\",\"states\":[],\"bounds\":[0,0,200,2],\"children\":[]}");
+        assertEquals(SemanticRole.SEPARATOR, node.role());
+    }
+
+    @Test
+    public void mapsMeterRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"meter\",\"name\":\"Disk usage\",\"states\":[],\"bounds\":[0,0,100,20],\"children\":[]}");
+        assertEquals(SemanticRole.METER, node.role());
+    }
+
+    @Test
+    public void mapsOptionRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"option\",\"name\":\"Alpha\",\"states\":[\"selected\"],\"bounds\":[0,0,100,20],\"children\":[]}");
+        assertEquals(SemanticRole.OPTION_ROLE, node.role());
+    }
+
+    @Test
+    public void mapsStatusRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"status\",\"name\":\"Result\",\"states\":[],\"bounds\":[0,0,100,20],\"children\":[]}");
+        assertEquals(SemanticRole.STATUS, node.role());
+    }
+
+    @Test
+    public void mapsParagraphRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"paragraph\",\"name\":\"A paragraph\",\"states\":[],\"bounds\":[0,0,300,20],\"children\":[]}");
+        assertEquals(SemanticRole.PARAGRAPH, node.role());
+    }
+
+    @Test
+    public void mapsRowgroupRole() {
+        SemanticNode node = parseSingleNode("{\"role\":\"rowgroup\",\"name\":\"\",\"states\":[],\"bounds\":[0,0,300,60],\"children\":[]}");
+        assertEquals(SemanticRole.ROWGROUP, node.role());
+    }
+
     // --- States ---
 
     @Test

@@ -83,15 +83,36 @@ public final class WebDomSerializer {
         + "  return false;"
         + "}"
         // ── 3. Role 映射 ────────────────────────────────────
+        // Playwright ref: roleUtils.ts:262 validRoles — 合法 ARIA role 列表
+        + "var VALID_ROLES='alert,alertdialog,application,article,association,banner,blockquote," +
+          "button,caption,cell,checkbox,code,columnheader,combobox,complementary," +
+          "contentinfo,definition,deletion,dialog,directory,document,feed,figure," +
+          "form,grid,gridcell,group,heading,img,image,insertion,link,list,listbox," +
+          "listitem,log,main,marquee,math,menu,menubar,menuitem,menuitemcheckbox," +
+          "menuitemradio,meter,navigation,none,note,option,paragraph,presentation," +
+          "progressbar,radio,radiogroup,region,row,rowgroup,rowheader,scrollbar," +
+          "search,searchbox,section,separator,slider,slot,spinbutton,status," +
+          "strong,subscript,suggestion,superswitch,switch,tab,table,tablist," +
+          "tabpanel,term,textbox,time,timer,toolbar,tooltip,tree,treegrid," +
+          "treeitem'.split(',');"
+        // Playwright ref: roleUtils.ts:59 hasGlobalAriaAttribute
+        //   检查元素是否有全局 ARIA 属性（用于 presentation 冲突解决）
+        + "var GLOBAL_ARIA=['aria-atomic','aria-busy','aria-controls','aria-current',"
+        + "  'aria-describedby','aria-details','aria-disabled','aria-dropeffect',"
+        + "  'aria-errormessage','aria-flowto','aria-grabbed','aria-haspopup',"
+        + "  'aria-hidden','aria-invalid','aria-keyshortcuts','aria-label',"
+        + "  'aria-labelledby','aria-live','aria-owns','aria-relevant',"
+        + "  'aria-roledescription'];"
+        + "function hasGlobalAria(el){"
+        + "  for(var i=0;i<GLOBAL_ARIA.length;i++){"
+        + "    if(el.hasAttribute(GLOBAL_ARIA[i]))return true;"
+        + "  }"
+        + "  return false;"
+        + "}"
         // Playwright ref: roleUtils.ts:281 getAriaRole
         //   → line 270 getExplicitAriaRole (显式 role 属性)
         //   → line 242 getImplicitAriaRole (kImplicitRoleByTagName 表)
-        // 简化: 保留 ~25 个常见 tag 映射，跳过 presentation 继承、TH scope
-        + "function getRole(el){"
-        + "  var explicit=el.getAttribute('role');"
-        // Playwright ref: ariaSnapshot.ts:242 — presentation/none → null (transparent, children reattach)
-        + "  if(explicit==='presentation'||explicit==='none')return null;"
-        + "  if(explicit)return explicit;"
+        + "function getImplicitRole(el){"
         + "  var t=el.tagName;"
         + "  if(!t)return 'generic';"
         + "  switch(t){"
@@ -130,8 +151,11 @@ public final class WebDomSerializer {
         // Playwright ref: roleUtils.ts:140 H1-H6 → heading
         + "    case 'H1':case 'H2':case 'H3':"
         + "    case 'H4':case 'H5':case 'H6':return 'heading';"
-        + "    case 'UL':case 'OL':return 'list';"
+        + "    case 'UL':case 'OL':case 'MENU':return 'list';"
         + "    case 'LI':return 'listitem';"
+        + "    case 'DL':return 'list';"
+        + "    case 'DT':return 'term';"
+        + "    case 'DD':return 'definition';"
         + "    case 'NAV':return 'navigation';"
         // Playwright ref: roleUtils.ts:157 SECTION — 仅在有 accessible name 时 → region
         + "    case 'SECTION':"
@@ -146,18 +170,75 @@ public final class WebDomSerializer {
         + "      if(inLandmark(el))return 'generic';"
         + "      return 'section';"
         + "    case 'MAIN':return 'screen';"
+        + "    case 'ARTICLE':return 'article';"
+        + "    case 'ASIDE':return 'complementary';"
+        + "    case 'BLOCKQUOTE':return 'blockquote';"
+        + "    case 'HR':return 'separator';"
+        + "    case 'P':return 'paragraph';"
+        + "    case 'DATALIST':return 'listbox';"
+        + "    case 'DETAILS':return 'group';"
+        + "    case 'DIALOG':return el.hasAttribute('open')?'dialog':null;"
+        + "    case 'METER':return 'meter';"
+        + "    case 'OPTGROUP':return 'group';"
+        + "    case 'OPTION':return 'option';"
+        + "    case 'OUTPUT':return 'status';"
+        + "    case 'PROGRESS':return 'progress';"
+        + "    case 'AREA':return el.hasAttribute('href')?'link':'generic';"
         // Playwright ref: roleUtils.ts:113 FORM — 仅在有 accessible name 时 → form
         + "    case 'FORM':"
-        + "      if(el.getAttribute('aria-label')||el.getAttribute('aria-labelledby')||el.getAttribute('title'))return 'generic';"
+        + "      if(el.getAttribute('aria-label')||el.getAttribute('aria-labelledby')||el.getAttribute('title'))return 'form';"
         + "      return 'generic';"
         // Playwright ref: roleUtils.ts:170-175 TABLE/TR/TD/TH
         + "    case 'TABLE':return 'table';"
+        + "    case 'CAPTION':return 'caption';"
         + "    case 'TR':return 'row';"
-        + "    case 'TD':return 'cell';"
-        + "    case 'TH':return 'columnheader';"
+        // Playwright ref: roleUtils.ts TD — 祖先 table role=grid/treegrid → gridcell
+        + "    case 'TD':{"
+        + "      var tbl=el.closest('table');"
+        + "      var tr=tbl?getRole(tbl):'';"
+        + "      return(tr==='grid'||tr==='treegrid')?'gridcell':'cell';"
+        + "    }"
+        // Playwright ref: roleUtils.ts TH — 分析 sibling 判断 columnheader/rowheader
+        + "    case 'TH':{"
+        + "      var scope=el.getAttribute('scope');"
+        + "      if(scope==='row')return 'rowheader';"
+        + "      if(scope==='col'||scope==='colgroup')return 'columnheader';"
+        + "      var row=el.closest('tr');"
+        + "      if(row){"
+        + "        if(row.parentNode&&row.parentNode.tagName==='THEAD')return 'columnheader';"
+        + "        var cells=row.cells;"
+        + "        for(var ci=0;ci<cells.length;ci++){"
+        + "          if(cells[ci]===el){"
+        + "            return ci===0?'rowheader':'columnheader';"
+        + "          }"
+        + "        }"
+        + "      }"
+        + "      return 'columnheader';"
+        + "    }"
+        + "    case 'THEAD':case 'TBODY':case 'TFOOT':return 'rowgroup';"
         + "    case 'IFRAME':return 'generic';"
         + "    default:return 'generic';"
         + "  }"
+        + "}"
+        // Playwright ref: roleUtils.ts:281 getAriaRole
+        //   显式 role + presentation 冲突解决 + implicit fallback
+        + "function getRole(el){"
+        + "  var raw=el.getAttribute('role');"
+        + "  if(raw){"
+        // Playwright ref: roleUtils.ts:270 — 取首个合法 token
+        + "    var tokens=raw.trim().split(/\\s+/);"
+        + "    var explicit=null;"
+        + "    for(var i=0;i<tokens.length;i++){"
+        + "      if(VALID_ROLES.indexOf(tokens[i])>=0){explicit=tokens[i];break;}"
+        + "    }"
+        // Playwright ref: roleUtils.ts:276-279 — presentation/none 冲突解决
+        + "    if(explicit==='presentation'||explicit==='none'){"
+        + "      if(hasGlobalAria(el)||el.hasAttribute('tabindex'))return getImplicitRole(el);"
+        + "      return null;"
+        + "    }"
+        + "    if(explicit)return explicit;"
+        + "  }"
+        + "  return getImplicitRole(el);"
         + "}"
 
         // ── 4a. 辅助函数 ────────────────────────────────
@@ -223,10 +304,16 @@ public final class WebDomSerializer {
         + "function getName(el){"
         + "  var a=el.getAttribute('aria-label');"
         + "  if(a&&a.trim())return a.trim();"
+        // Playwright ref: roleUtils.ts:653 aria-labelledby — 多 ID 空格分隔
         + "  var lb=el.getAttribute('aria-labelledby');"
         + "  if(lb){"
-        + "    var ref=document.getElementById(lb);"
-        + "    if(ref){var t=ref.textContent.trim();if(t)return t;}"
+        + "    var ids=lb.trim().split(/\\s+/);"
+        + "    var parts=[];"
+        + "    for(var li=0;li<ids.length;li++){"
+        + "      var ref=document.getElementById(ids[li]);"
+        + "      if(ref){var t=ref.textContent.trim();if(t)parts.push(t);}"
+        + "    }"
+        + "    if(parts.length)return parts.join(' ');"
         + "  }"
         // Label association: <label for="id">
         // Playwright ref: roleUtils.ts:805-817 getTextAlternativeInternal step 2e
@@ -235,6 +322,14 @@ public final class WebDomSerializer {
         + "    var lbl=document.querySelector('label[for=\"'+elId+'\"]');"
         + "    if(lbl){var lt=lbl.textContent.trim();if(lt)return lt;}"
         + "  }"
+        // Label wrapping: <label>text <input></label>
+        // Playwright ref: roleUtils.ts:805-817 — element.labels 或 el.closest('label')
+        + "  var parentLabel=el.closest('label');"
+        + "  if(parentLabel){"
+        + "    var plt=parentLabel.textContent.trim();"
+        + "    if(plt)return plt;"
+        + "  }"
+        // Native HTML naming (Playwright ref: roleUtils.ts:730-912)
         + "  var tag=el.tagName;"
         + "  if(tag==='IMG'){var alt=el.getAttribute('alt');if(alt!=null)return alt;}"
         + "  if(tag==='INPUT'){"
@@ -247,7 +342,24 @@ public final class WebDomSerializer {
         + "    if(ph)return ph;"
         + "  }"
         + "  if(tag==='TEXTAREA'){var ph2=el.getAttribute('placeholder');if(ph2)return ph2;}"
-        + "  var inner=textFromContent(el);"
+        // TABLE → caption, FIGURE → figcaption, FIELDSET → legend, DETAILS → summary
+        // Playwright ref: roleUtils.ts:780-912 native HTML naming
+        + "  if(tag==='TABLE'){var cap=el.querySelector('caption');if(cap){var ct=cap.textContent.trim();if(ct)return ct;}}"
+        + "  if(tag==='FIGURE'){var fc=el.querySelector('figcaption');if(fc){var ft=fc.textContent.trim();if(ft)return ft;}}"
+        + "  if(tag==='FIELDSET'){var lg=el.querySelector('legend');if(lg){var lgt=lg.textContent.trim();if(lgt)return lgt;}}"
+        + "  if(tag==='DETAILS'){var sm=el.querySelector('summary');if(sm){var smt=sm.textContent.trim();if(smt)return smt;}}"
+        // Step 2f: name from content — only if role allows it
+        // Playwright ref: roleUtils.ts:491-502 allowsNameFromContent
+        + "  var nmRole=getRole(el)||'generic';"
+        + "  var nameFromContent='heading,listitem,button,link,treeitem,option,tab,menuitem,"
+        + "menuitemcheckbox,menuitemradio,cell,gridcell,columnheader,rowheader,tooltip,term,"
+        + "definition,group,note,section,caption,paragraph,separator,alert,log,status,marquee,"
+        + "timer,alertdialog,dialog,article,navigation,region,application,form,toolbar,search,"
+        + "generic'.split(',');"
+        + "  var inner='';"
+        + "  if(nameFromContent.indexOf(nmRole)>=0){"
+        + "    inner=textFromContent(el);"
+        + "  }"
         + "  var before=pseudoText(getComputedStyle(el,'::before').content);"
         + "  var after=pseudoText(getComputedStyle(el,'::after').content);"
         + "  var combined=((before?before+' ':'')+inner+(after?' '+after:'')).trim();"
@@ -270,44 +382,64 @@ public final class WebDomSerializer {
         // ── 6. 状态提取 ──────────────────────────────────
         // Playwright ref: ariaSnapshot.ts:264-280 toAriaNode
         //   每个状态只在特定 role 上提取（role-gating），对齐 Playwright 行为
-        //   checked: checkbox, menuitemcheckbox, option, radio, switch, menuitemradio, treeitem
-        //   disabled: 大部分交互 role
-        //   expanded: application, button, combobox, listbox, menuitem, tab, treeitem, etc.
-        //   level: heading, listitem, row, treeitem
-        //   pressed: button
-        //   selected: gridcell, option, row, tab, rowheader, columnheader, treeitem
         + "function getStates(el){"
         + "  var s=[];"
         + "  var role=getRole(el)||'generic';"
-        // checked — role-gated
-        + "  if(el.checked){"
-        + "    if('checkbox,radio,menuitemcheckbox,option,switch,menuitemradio,treeitem'.indexOf(role)>=0){"
-        + "      s.push('checked');"
-        + "    }"
+        // checked — role-gated: native + aria-checked
+        // Playwright ref: roleUtils.ts:1004-1037
+        + "  var checkedRoles='checkbox,radio,menuitemcheckbox,option,switch,menuitemradio,treeitem';"
+        + "  if(el.checked&&checkedRoles.indexOf(role)>=0){s.push('checked');}"
+        + "  if(el.indeterminate&&checkedRoles.indexOf(role)>=0)s.push('indeterminate');"
+        + "  var ac=el.getAttribute('aria-checked');"
+        + "  if(ac&&checkedRoles.indexOf(role)>=0){"
+        + "    if(ac==='true'&&!el.checked)s.push('checked');"
+        + "    else if(ac==='mixed'&&!el.indeterminate)s.push('indeterminate');"
         + "  }"
-        + "  if(el.indeterminate)s.push('indeterminate');"
-        // disabled — 大部分交互 role 都适用
-        + "  if(el.disabled)s.push('disabled');"
-        // expanded — role-gated
-        + "  var expanded=el.getAttribute('aria-expanded');"
-        + "  if(expanded){"
-        + "    if('application,button,combobox,listbox,menuitem,row,rowheader,tab,treeitem,columnheader,menuitemcheckbox,menuitemradio,switch'.indexOf(role)>=0){"
-        + "      s.push(expanded==='true'?'expanded':'collapsed');"
-        + "    }"
+        // disabled — role-gated + aria-disabled + fieldset 继承
+        // Playwright ref: roleUtils.ts:1099-1121
+        + "  var disabledRoles='application,button,composite,gridcell,group,input,link,menuitem,"
+        + "scrollbar,separator,tab,checkbox,columnheader,combobox,grid,listbox,menu,menubar,"
+        + "menuitemcheckbox,menuitemradio,option,radio,radiogroup,row,rowheader,searchbox,"
+        + "select,slider,spinbutton,switch,tablist,textbox,toolbar,tree,treegrid,treeitem';"
+        + "  if(isDisabled(el)&&disabledRoles.indexOf(role)>=0)s.push('disabled');"
+        // expanded — role-gated + DETAILS.open
+        // Playwright ref: roleUtils.ts:1066-1080
+        + "  var expandedRoles='application,button,checkbox,combobox,gridcell,link,listbox,"
+        + "menuitem,row,rowheader,tab,treeitem,columnheader,menuitemcheckbox,menuitemradio,switch';"
+        + "  if(expandedRoles.indexOf(role)>=0){"
+        + "    var isExp=el.getAttribute('aria-expanded');"
+        + "    if(el.tagName==='DETAILS')isExp=el.open?'true':'false';"
+        + "    if(isExp!==null&&isExp!==undefined)s.push(isExp==='true'||isExp===true?'expanded':'collapsed');"
         + "  }"
         // pressed — role-gated (only button)
+        // Playwright ref: roleUtils.ts:1053
         + "  var pressed=el.getAttribute('aria-pressed');"
         + "  if(pressed&&role==='button'){"
         + "    if(pressed==='true')s.push('pressed');"
         + "    else if(pressed==='mixed')s.push('pressed=mixed');"
         + "  }"
-        // selected — role-gated
-        + "  var selected=el.getAttribute('aria-selected');"
-        + "  if(selected==='true'){"
-        + "    if('gridcell,option,row,tab,rowheader,columnheader,treeitem'.indexOf(role)>=0){"
-        + "      s.push('selected');"
-        + "    }"
+        // selected — role-gated + native OPTION.selected
+        // Playwright ref: roleUtils.ts:993-1001
+        + "  var selectedRoles='gridcell,option,row,tab,rowheader,columnheader,treeitem';"
+        + "  if(selectedRoles.indexOf(role)>=0){"
+        + "    var isSel=el.getAttribute('aria-selected');"
+        + "    if(el.tagName==='OPTION'&&el.selected)isSel='true';"
+        + "    if(isSel==='true')s.push('selected');"
         + "  }"
+        // readonly — role-gated
+        // Playwright ref: roleUtils.ts:1039-1050
+        + "  var readonlyRoles='checkbox,combobox,grid,gridcell,listbox,radiogroup,slider,"
+        + "spinbutton,textbox,columnheader,rowheader,searchbox,switch,treegrid';"
+        + "  if(readonlyRoles.indexOf(role)>=0){"
+        + "    if(el.readOnly||el.getAttribute('aria-readonly')==='true')s.push('readonly');"
+        + "  }"
+        // invalid — aria-invalid + HTML5 validity
+        // Playwright ref: roleUtils.ts:562-580
+        + "  var inv=el.getAttribute('aria-invalid');"
+        + "  if(inv==='true'){s.push('invalid');}"
+        + "  else if(inv==='grammar')s.push('invalid=grammar');"
+        + "  else if(inv==='spelling')s.push('invalid=spelling');"
+        + "  else if(typeof el.validity==='object'&&el.validity&&!el.validity.valid)s.push('invalid');"
         // focused
         + "  if(document.activeElement===el)s.push('focused');"
         // level — role-gated
@@ -317,6 +449,25 @@ public final class WebDomSerializer {
         + "    else{var m=el.tagName&&el.tagName.match(/^H(\\d)$/);if(m)s.push('level='+m[1]);}"
         + "  }"
         + "  return s;"
+        + "}"
+        // isDisabled: native disabled + aria-disabled + fieldset disabled 继承
+        // Playwright ref: roleUtils.ts:1099-1121 getAriaDisabled
+        + "function isDisabled(el){"
+        + "  if(el.disabled)return true;"
+        + "  if(el.getAttribute('aria-disabled')==='true')return true;"
+        // fieldset[disabled] 继承（排除 legend 内部）
+        // Playwright ref: roleUtils.ts:1115 belongsToDisabledFieldSet
+        + "  var p=el.parentElement;"
+        + "  while(p){"
+        + "    if(p.tagName==='FIELDSET'&&p.disabled){"
+        + "      var lg=p.querySelector('legend');"
+        + "      if(lg&&!lg.contains(el))return true;"
+        + "    }"
+        + "    var ad=p.getAttribute('aria-disabled');"
+        + "    if(ad==='true')return true;"
+        + "    p=p.parentElement;"
+        + "  }"
+        + "  return false;"
         + "}"
 
         // ── 7. Clickable 推断 ────────────────────────────
