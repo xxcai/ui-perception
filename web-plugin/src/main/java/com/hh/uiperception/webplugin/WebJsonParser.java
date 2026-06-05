@@ -9,12 +9,33 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 将 WebDomSerializer JS 输出的 JSON 解析为 SemanticNode 树。
+ * Parses the JSON output from dom-serializer.js into a SemanticNode tree.
+ *
+ * Data flow: WebView → evaluateJavascript(dom-serializer.js) → JSON string → this parser → SemanticNode tree
+ *
+ * Expected JSON structure:
+ * <pre>{@code
+ * {
+ *   "url": "https://...",
+ *   "title": "Page Title",
+ *   "root": {
+ *     "role": "screen",
+ *     "name": "",
+ *     "states": [],
+ *     "bounds": [],
+ *     "__pr_idx": 0,
+ *     "children": [
+ *       { "role": "button", "name": "Submit", "states": ["clickable"], "__pr_idx": 1, "bounds": [10,20,100,50], "children": [] }
+ *     ]
+ *   }
+ * }
+ * }</pre>
  */
 public final class WebJsonParser {
 
     private WebJsonParser() {}
 
+    /** Entry point: parse the top-level JSON and extract the "root" node. */
     public static SemanticNode parse(String json) {
         if (json == null || json.trim().isEmpty()) {
             return null;
@@ -31,6 +52,10 @@ public final class WebJsonParser {
         }
     }
 
+    /**
+     * Recursively parse a JSON node into a SemanticNode.
+     * Maps JSON fields: role → SemanticRole, name, bounds, states, __pr_idx → webElementIdx, children → recursive.
+     */
     private static SemanticNode parseNode(JSONObject obj) throws JSONException {
         String roleStr = obj.optString("role", "");
         SemanticRole role = mapRole(roleStr);
@@ -69,6 +94,10 @@ public final class WebJsonParser {
         return builder.build();
     }
 
+    /**
+     * Map a role string from JS to SemanticRole enum.
+     * Matches against SemanticRole.snapshotName(); unknown roles default to GENERIC.
+     */
     private static SemanticRole mapRole(String role) {
         if (role == null || role.isEmpty()) {
             return SemanticRole.GENERIC;
@@ -81,6 +110,7 @@ public final class WebJsonParser {
         return SemanticRole.GENERIC;
     }
 
+    /** Parse a [x1, y1, x2, y2] JSON array into a Bounds object. */
     private static Bounds parseBounds(JSONArray arr) throws JSONException {
         if (arr == null || arr.length() != 4) {
             return null;

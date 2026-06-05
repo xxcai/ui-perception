@@ -44,7 +44,7 @@ public final class WebPerceptionPlugin implements PerceptionPlugin {
         }
 
         WebView webView = finding.dominantWebView;
-        String js = WebDomSerializer.script();
+        String js = WebDomSerializer.script(activity);
 
         AtomicReference<String> resultRef = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);

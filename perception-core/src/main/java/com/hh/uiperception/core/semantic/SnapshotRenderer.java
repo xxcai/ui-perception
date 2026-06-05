@@ -1,7 +1,20 @@
 package com.hh.uiperception.core.semantic;
 
 /**
- * 将 native semantic tree 渲染为 YAML 风格文本。
+ * Renders a SemanticNode tree into a YAML-like text snapshot.
+ *
+ * Output format — indentation reflects tree depth, each node is a bullet point:
+ * <pre>
+ * - screen:
+ *   - toolbar "My App":
+ *     - button "Submit" [clickable] [ref=n1] [bounds=10,20,100,50]
+ *     - text "Hello world"
+ * </pre>
+ *
+ * Line format: {@code role "name" [state1] [state2] [ref=nX] [bounds=x1,y1,x2,y2]}
+ * - Parent nodes end with ":"
+ * - Leaf nodes are flat
+ * - Bounds are only rendered for nodes with a ref or when the boxes option is enabled
  */
 public final class SnapshotRenderer {
 
@@ -23,6 +36,10 @@ public final class SnapshotRenderer {
         return builder.toString();
     }
 
+    /**
+     * Recursively render a node and its children.
+     * Leaf nodes render as a single line; parent nodes append ":" and recurse.
+     */
     private static void appendNode(StringBuilder builder, SemanticNode node,
                                    int depth, SnapshotRenderOptions options) {
         if (options.hasDepthLimit() && depth >= options.maxDepth() - 1) {
@@ -42,6 +59,10 @@ public final class SnapshotRenderer {
         }
     }
 
+    /**
+     * Build the display string for a single node.
+     * Format: {@code role "name" [state1] [state2] [ref=nX] [bounds=x1,y1,x2,y2]}
+     */
     private static String keyFor(SemanticNode node, SnapshotRenderOptions options) {
         StringBuilder key = new StringBuilder();
         key.append(node.role().snapshotName());
@@ -60,6 +81,7 @@ public final class SnapshotRenderer {
         return key.toString();
     }
 
+    /** Bounds are rendered only if the node has a ref or the boxes option is enabled. */
     private static boolean shouldRenderBounds(SemanticNode node, SnapshotRenderOptions options) {
         return node.bounds() != null && (node.hasRef() || options.boxes());
     }
