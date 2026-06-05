@@ -418,9 +418,10 @@ public final class WebDomSerializer {
         + "    if(el.tagName==='DETAILS')isExp=el.open?'true':'false';"
         + "    if(isExp!==null&&isExp!==undefined)s.push(isExp==='true'||isExp===true?'expanded':'collapsed');"
         + "  }"
-        // pressed — aria-pressed on any role (Playwright gates to button only)
+        // pressed — role-gated (only button)
+        // Playwright ref: roleUtils.ts:1052-1063
         + "  var pressed=el.getAttribute('aria-pressed');"
-        + "  if(pressed){"
+        + "  if(pressed&&role==='button'){"
         + "    if(pressed==='true')s.push('pressed');"
         + "    else if(pressed==='mixed')s.push('pressed=mixed');"
         + "  }"
