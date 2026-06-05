@@ -3,6 +3,7 @@ package com.hh.uiperception.sdk.internal;
 import android.app.Activity;
 import android.os.SystemClock;
 import android.util.Log;
+import android.widget.EditText;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -163,41 +164,25 @@ public final class OperationHandler {
 
         // Click to focus
         TouchHandler.click(activity, coords[0], coords[1]);
-        SystemClock.sleep(100);
+        SystemClock.sleep(200);
 
-        // Clear existing text by selecting all and deleting
-        if (clear) {
-            // Select all then delete
+        // Find focused EditText and inject text directly
+        EditText editText = findFocusedEditText(activity);
+        if (editText != null) {
+            final EditText et = editText;
+            final String finalText = text;
+            final boolean shouldClear = clear;
             activity.runOnUiThread(() -> {
-                android.view.KeyEvent selectAll = new android.view.KeyEvent(
-                        android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_A);
-                activity.dispatchTouchEvent(android.view.MotionEvent.obtain(
-                        android.os.SystemClock.uptimeMillis(),
-                        android.os.SystemClock.uptimeMillis(),
-                        android.view.MotionEvent.ACTION_DOWN,
-                        coords[0], coords[1], 0));
+                if (shouldClear) {
+                    et.setText(finalText);
+                } else {
+                    et.append(finalText);
+                }
             });
+            return OperationResponse.success(ref).toJson();
         }
 
-        // Type each character via dispatchKeyEvent
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            int keyCode = charToKeyCode(c);
-            if (keyCode > 0) {
-                int metaState = Character.isUpperCase(c) ? android.view.KeyEvent.META_SHIFT_ON : 0;
-                final int kc = keyCode;
-                final int ms = metaState;
-                activity.runOnUiThread(() -> {
-                    long time = android.os.SystemClock.uptimeMillis();
-                    activity.dispatchKeyEvent(new android.view.KeyEvent(
-                            time, time, android.view.KeyEvent.ACTION_DOWN, kc, 0, ms));
-                    activity.dispatchKeyEvent(new android.view.KeyEvent(
-                            time, time + 1, android.view.KeyEvent.ACTION_UP, kc, 0, ms));
-                });
-            }
-        }
-
-        return OperationResponse.success(ref).toJson();
+        return OperationResponse.error("No focused EditText found for ref: " + ref).toJson();
     }
 
     // ── Check / Uncheck ────────────────────────────────────
@@ -401,19 +386,9 @@ public final class OperationHandler {
         return new float[]{startX, startY, endX, endY};
     }
 
-    private static int charToKeyCode(char c) {
-        if (c >= 'a' && c <= 'z') return android.view.KeyEvent.KEYCODE_A + (c - 'a');
-        if (c >= 'A' && c <= 'Z') return android.view.KeyEvent.KEYCODE_A + (c - 'A');
-        if (c >= '0' && c <= '9') return android.view.KeyEvent.KEYCODE_0 + (c - '0');
-        switch (c) {
-            case ' ': return android.view.KeyEvent.KEYCODE_SPACE;
-            case '.': return android.view.KeyEvent.KEYCODE_PERIOD;
-            case ',': return android.view.KeyEvent.KEYCODE_COMMA;
-            case '\n': return android.view.KeyEvent.KEYCODE_ENTER;
-            case '\t': return android.view.KeyEvent.KEYCODE_TAB;
-            case '@': return android.view.KeyEvent.KEYCODE_AT;
-            case '_': return android.view.KeyEvent.KEYCODE_MINUS; // shift+minus
-            default: return -1; // non-keyboard char, use ACTION_MULTIPLE
-        }
+    private static EditText findFocusedEditText(Activity activity) {
+        android.view.View focused = activity.getWindow().getCurrentFocus();
+        if (focused instanceof EditText) return (EditText) focused;
+        return null;
     }
 }
