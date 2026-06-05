@@ -13,7 +13,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 进程内 View 层级遍历器。
@@ -28,6 +31,7 @@ public final class ViewHierarchyDumper {
     private static boolean adapterViewItemClickListenerFieldResolved;
     private static Field recyclerViewItemTouchListenersField;
     private static boolean recyclerViewItemTouchListenersFieldResolved;
+    private static final Map<Class<?>, Boolean> onTouchEventOverrideCache = new HashMap<>();
 
     private ViewHierarchyDumper() {
     }
@@ -78,6 +82,7 @@ public final class ViewHierarchyDumper {
         xml.append(" clickable=\"").append(view.isClickable()).append("\"");
         xml.append(" has-onclick-listener=\"").append(view.hasOnClickListeners()).append("\"");
         appendContainerClickSignals(xml, view);
+        xml.append(" overrides-onTouchEvent=\"").append(overridesOnTouchEvent(view)).append("\"");
         xml.append(" enabled=\"").append(view.isEnabled()).append("\"");
         xml.append(" focusable=\"").append(view.isFocusable()).append("\"");
         xml.append(" checked=\"").append(extractChecked(view)).append("\"");
@@ -231,6 +236,31 @@ public final class ViewHierarchyDumper {
             cls = cls.getSuperclass();
         }
         return false;
+    }
+
+    /**
+     * Check if a View's class overrides onTouchEvent (compared to View/ViewGroup base).
+     * Uses per-class cache to avoid repeated reflection. Not synchronized — dump runs on UI thread.
+     */
+    private static boolean overridesOnTouchEvent(View view) {
+        Class<?> cls = view.getClass();
+        Boolean cached = onTouchEventOverrideCache.get(cls);
+        if (cached != null) {
+            return cached;
+        }
+        boolean result = computeOverridesOnTouchEvent(cls);
+        onTouchEventOverrideCache.put(cls, result);
+        return result;
+    }
+
+    private static boolean computeOverridesOnTouchEvent(Class<?> cls) {
+        try {
+            Method m = cls.getMethod("onTouchEvent", android.view.MotionEvent.class);
+            Class<?> declaring = m.getDeclaringClass();
+            return declaring != View.class && declaring != ViewGroup.class;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 
     private static Field declaredFieldInHierarchy(Class<?> startClass, String name) {

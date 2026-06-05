@@ -129,7 +129,7 @@ public final class NativeSemanticTreeBuilder {
         if (role != SemanticRole.LIST_ITEM) {
             return null;
         }
-        if (viewNode.clickable() || viewNode.hasOnClickListener()) {
+        if (viewNode.clickable() || viewNode.hasOnClickListener() || viewNode.hasTouchOverride()) {
             return SemanticStates.CLICKABLE;
         }
         if (parentHasItemClickListener || parentHasItemTouchListener) {

@@ -92,6 +92,7 @@ public final class NativeViewXmlParser {
                 .hasOnClickListener(parseBoolean(attr(element, "has-onclick-listener")))
                 .hasItemClickListener(parseBoolean(attr(element, "has-item-click-listener")))
                 .hasItemTouchListener(parseBoolean(attr(element, "has-item-touch-listener")))
+                .hasTouchOverride(parseBoolean(attr(element, "overrides-onTouchEvent")))
                 .enabled(parseBoolean(attr(element, "enabled"), true))
                 .checked(parseBoolean(attr(element, "checked")))
                 .selected(parseBoolean(attr(element, "selected")))

@@ -145,7 +145,7 @@ public final class NativeRoleResolver {
                 || role == SemanticRole.TEXT
                 || role == SemanticRole.IMAGE
                 || role == SemanticRole.GENERIC;
-        if ((node.clickable() || node.longClickable()) && interactiveGeneric) {
+        if ((node.clickable() || node.longClickable() || node.hasTouchOverride()) && interactiveGeneric) {
             return new RoleDecision(SemanticRole.BUTTON, "attribute:clickable", 0.8);
         }
         if (node.scrollable() && (role == null || role == SemanticRole.GENERIC)) {

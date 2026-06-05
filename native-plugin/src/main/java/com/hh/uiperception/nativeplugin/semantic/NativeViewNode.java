@@ -21,6 +21,7 @@ public final class NativeViewNode {
     private final boolean hasOnClickListener;
     private final boolean hasItemClickListener;
     private final boolean hasItemTouchListener;
+    private final boolean hasTouchOverride;
     private final boolean longClickable;
     private final boolean enabled;
     private final boolean checked;
@@ -42,6 +43,7 @@ public final class NativeViewNode {
         this.hasOnClickListener = builder.hasOnClickListener;
         this.hasItemClickListener = builder.hasItemClickListener;
         this.hasItemTouchListener = builder.hasItemTouchListener;
+        this.hasTouchOverride = builder.hasTouchOverride;
         this.longClickable = builder.longClickable;
         this.enabled = builder.enabled;
         this.checked = builder.checked;
@@ -95,6 +97,10 @@ public final class NativeViewNode {
 
     public boolean hasItemTouchListener() {
         return hasItemTouchListener;
+    }
+
+    public boolean hasTouchOverride() {
+        return hasTouchOverride;
     }
 
     public boolean longClickable() {
@@ -167,6 +173,7 @@ public final class NativeViewNode {
         private boolean hasOnClickListener;
         private boolean hasItemClickListener;
         private boolean hasItemTouchListener;
+        private boolean hasTouchOverride;
         private boolean longClickable;
         private boolean enabled = true;
         private boolean checked;
@@ -224,6 +231,11 @@ public final class NativeViewNode {
 
         public Builder hasItemTouchListener(boolean hasItemTouchListener) {
             this.hasItemTouchListener = hasItemTouchListener;
+            return this;
+        }
+
+        public Builder hasTouchOverride(boolean hasTouchOverride) {
+            this.hasTouchOverride = hasTouchOverride;
             return this;
         }
 
