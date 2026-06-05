@@ -216,6 +216,8 @@ public final class WebDomSerializer {
         + "      return 'columnheader';"
         + "    }"
         + "    case 'THEAD':case 'TBODY':case 'TFOOT':return 'rowgroup';"
+        // Playwright ref: roleUtils.ts:166 SVG -> img
+        + "    case 'SVG':return 'image';"
         + "    case 'IFRAME':return 'generic';"
         + "    default:return 'generic';"
         + "  }"
@@ -263,6 +265,8 @@ public final class WebDomSerializer {
         + "    }else if(c.nodeType===1){"
         + "      var tag=c.tagName;"
         + "      if(isHiddenTag(tag))continue;"
+        // SVG <title>: display:none, only contributes to SVG's name
+        + "      if(tag==='TITLE'&&c.ownerSVGElement)continue;"
         // Block spacing: non-inline 元素的文本贡献前后加空格
         + "      var cs=getComputedStyle(c);"
         + "      var isBlock=cs.display!=='inline';"
@@ -348,6 +352,9 @@ public final class WebDomSerializer {
         + "  if(tag==='FIGURE'){var fc=el.querySelector('figcaption');if(fc){var ft=fc.textContent.trim();if(ft)return ft;}}"
         + "  if(tag==='FIELDSET'){var lg=el.querySelector('legend');if(lg){var lgt=lg.textContent.trim();if(lgt)return lgt;}}"
         + "  if(tag==='DETAILS'){var sm=el.querySelector('summary');if(sm){var smt=sm.textContent.trim();if(smt)return smt;}}"
+        // SVG → first <title> child
+        // Playwright ref: roleUtils.ts:893-904 — SVG name from <title> child element
+        + "  if(tag==='SVG'){var st=el.querySelector('title');if(st){var stt=st.textContent.trim();if(stt)return stt;}}"
         // Step 2f: name from content — only if role allows it
         // Playwright ref: roleUtils.ts:491-502 allowsNameFromContent
         + "  var nmRole=getRole(el)||'generic';"
@@ -519,6 +526,8 @@ public final class WebDomSerializer {
         // Playwright ref: ariaSnapshot.ts:125-126 — aria 模式下 hidden 元素直接 return
         //   isElementIgnoredForAria 返回 true 时，不遍历子节点
         + "  if(isHiddenTag(node.tagName))return;"
+        // SVG <title>: display:none, only contributes to SVG's name (Playwright ref: roleUtils.ts:893)
+        + "  if(node.tagName==='TITLE'&&node.ownerSVGElement)return;"
 
         // 可见性判断
         // Playwright ref: ariaSnapshot.ts:123-128
