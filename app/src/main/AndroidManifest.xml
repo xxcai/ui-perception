@@ -28,6 +28,15 @@
             android:exported="false" />
 
         <activity
+            android:name=".WindowTestActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".DialogStyleActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog" />
+
+        <activity
             android:name="com.hh.uiperception.florence2plugin.ui.Florence2DebugActivity"
             android:exported="false" />
 

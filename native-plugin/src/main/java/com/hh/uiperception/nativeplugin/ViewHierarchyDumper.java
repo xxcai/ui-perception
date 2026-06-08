@@ -38,14 +38,18 @@ public final class ViewHierarchyDumper {
 
     /**
      * 抓取给定 Activity 的 View 层级，输出 XML。
+     * 自动检测焦点窗口（能覆盖 Dialog 等弹窗场景）。
      */
     public static DumpResult dump(Activity activity) {
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
             return DumpResult.error("Activity 不可用");
         }
-        View decorView = activity.getWindow() != null
-                ? activity.getWindow().getDecorView() : null;
-        if (decorView == null) {
+
+        View rootView = WindowManagerHelper.getFocusedWindowView(activity);
+        if (rootView == null) {
+            rootView = activity.getWindow() != null ? activity.getWindow().getDecorView() : null;
+        }
+        if (rootView == null) {
             return DumpResult.error("Activity 没有 DecorView");
         }
 
@@ -54,7 +58,7 @@ public final class ViewHierarchyDumper {
         xml.append("<hierarchy activity=\"")
            .append(escape(activity.getClass().getName()))
            .append("\">");
-        appendNode(xml, decorView, state);
+        appendNode(xml, rootView, state);
         xml.append("</hierarchy>");
 
         return DumpResult.success(xml.toString(), activity.getClass().getName(), state.nodeCount);

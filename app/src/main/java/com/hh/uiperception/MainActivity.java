@@ -72,6 +72,16 @@ public class MainActivity extends Activity {
         debugParams.setMargins(0, dp(4), 0, dp(12));
         content.addView(smallModelDebug, debugParams);
 
+        TextView windowTest = actionButton("窗口捕获测试", 0xFFFCE8E6);
+        windowTest.setOnClickListener(v ->
+                startActivity(new Intent(this, WindowTestActivity.class)));
+        LinearLayout.LayoutParams windowTestParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        windowTestParams.setMargins(0, dp(4), 0, dp(12));
+        content.addView(windowTest, windowTestParams);
+
         setContentView(scrollView);
     }
 

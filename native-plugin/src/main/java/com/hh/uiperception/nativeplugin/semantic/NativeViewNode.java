@@ -30,6 +30,7 @@ public final class NativeViewNode {
     private final boolean scrollable;
     private final boolean editable;
     private final boolean password;
+    private final boolean windowFocused;
     private final List<NativeViewNode> children;
 
     private NativeViewNode(Builder builder) {
@@ -52,11 +53,40 @@ public final class NativeViewNode {
         this.scrollable = builder.scrollable;
         this.editable = builder.editable;
         this.password = builder.password;
+        this.windowFocused = builder.windowFocused;
         this.children = Collections.unmodifiableList(new ArrayList<>(builder.children));
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Builder toBuilder() {
+        Builder b = builder()
+                .className(className)
+                .text(text)
+                .hint(hint)
+                .contentDescription(contentDescription)
+                .resourceId(resourceId)
+                .bounds(bounds)
+                .clickable(clickable)
+                .hasOnClickListener(hasOnClickListener)
+                .hasItemClickListener(hasItemClickListener)
+                .hasItemTouchListener(hasItemTouchListener)
+                .hasTouchOverride(hasTouchOverride)
+                .longClickable(longClickable)
+                .enabled(enabled)
+                .checked(checked)
+                .selected(selected)
+                .focused(focused)
+                .scrollable(scrollable)
+                .editable(editable)
+                .password(password)
+                .windowFocused(windowFocused);
+        for (NativeViewNode child : children) {
+            b.addChild(child);
+        }
+        return b;
     }
 
     public String className() {
@@ -135,6 +165,10 @@ public final class NativeViewNode {
         return password;
     }
 
+    public boolean windowFocused() {
+        return windowFocused;
+    }
+
     public List<NativeViewNode> children() {
         return children;
     }
@@ -182,6 +216,7 @@ public final class NativeViewNode {
         private boolean scrollable;
         private boolean editable;
         private boolean password;
+        private boolean windowFocused;
         private final List<NativeViewNode> children = new ArrayList<>();
 
         public Builder className(String className) {
@@ -276,6 +311,11 @@ public final class NativeViewNode {
 
         public Builder password(boolean password) {
             this.password = password;
+            return this;
+        }
+
+        public Builder windowFocused(boolean windowFocused) {
+            this.windowFocused = windowFocused;
             return this;
         }
 
