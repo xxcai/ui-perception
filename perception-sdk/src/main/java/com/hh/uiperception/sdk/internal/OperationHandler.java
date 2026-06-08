@@ -305,26 +305,10 @@ public final class OperationHandler {
             Activity activity = getValidActivity();
             if (activity == null) return noActivityError();
 
-            final int keyCode;
-            switch (key) {
-                case "back":
-                    keyCode = android.view.KeyEvent.KEYCODE_BACK;
-                    break;
-                case "enter":
-                    keyCode = android.view.KeyEvent.KEYCODE_ENTER;
-                    break;
-                case "tab":
-                    keyCode = android.view.KeyEvent.KEYCODE_TAB;
-                    break;
-                case "home":
-                    keyCode = android.view.KeyEvent.KEYCODE_HOME;
-                    break;
-                case "menu":
-                    keyCode = android.view.KeyEvent.KEYCODE_MENU;
-                    break;
-                default:
-                    return OperationResponse.error("Unsupported key: " + key).toJson();
+            if (!"back".equals(key)) {
+                return OperationResponse.error("Unsupported key: " + key + ". Only 'back' is supported.").toJson();
             }
+            final int keyCode = android.view.KeyEvent.KEYCODE_BACK;
 
             activity.runOnUiThread(() -> {
                 long time = android.os.SystemClock.uptimeMillis();
