@@ -5,8 +5,11 @@
 ### 1.1 Native Pipeline
 
 ```
-Activity DecorView
-       │
+WindowManagerHelper.getFocusedWindowView(activity)
+       │  反射 WindowManagerGlobal.mViews (ArrayList/Array 兼容)
+       │  从末尾往前找第一个 hasWindowFocus()==true 的 View
+       │  覆盖 AlertDialog / PopupWindow / 手动添加窗口
+       │  回退: activity.getWindow().getDecorView()
        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │  ViewHierarchyDumper  (UI 线程, in-process)                      │

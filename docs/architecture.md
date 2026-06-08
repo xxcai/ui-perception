@@ -18,6 +18,11 @@ ui-perception/
 ```
 App Activity
     │
+    ├─ WindowManagerHelper.getFocusedWindowView()  ← 焦点窗口选择
+    │   反射 WindowManagerGlobal.mViews
+    │   找 hasWindowFocus()==true 的 View (Dialog/PopupWindow)
+    │   回退到 activity.getDecorView()
+    │
     ├─ Native View Tree XML ──→ NativePlugin
     │                              │
     │                              ├─ NativeViewXmlParser (XML → NativeViewNode)
@@ -79,6 +84,7 @@ App Activity
 | `RefAssigner` | perception-core | ref 分配（支持 native/web 双模式） |
 | `SemanticFusion` | perception-core | native + web 树融合 |
 | `SnapshotRenderer` | perception-core | SemanticNode → YAML 文本 |
+| `WindowManagerHelper` | native-plugin | 焦点窗口选择（反射 WindowManagerGlobal） |
 | `NativeRoleResolver` | native-plugin | Android className → SemanticRole 推导 |
 | `NativeSemanticTreeBuilder` | native-plugin | NativeViewNode → SemanticNode 转换 |
 | `WebJsonParser` | web-plugin | Accessibility JSON → SemanticNode |

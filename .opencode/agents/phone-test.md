@@ -70,6 +70,8 @@ Both types use the same tool APIs. You do not need to treat them differently.
 2. `--- Web ---` separator
 3. **Web tree** (bottom) — Web page content with `w`-prefixed refs
 
+**Focused window capture:** The SDK captures the focused window's view hierarchy. When a Dialog, PopupWindow, or overlay is visible, the output shows the popup content (not the underlying main page). Clicking elements within popups works normally via ref.
+
 ## Execution Guidelines
 
 - Always call phone_capture_ui first to see the current screen before taking any action
