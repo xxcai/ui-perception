@@ -1,0 +1,6 @@
+{
+  "name": "phone-auto-test",
+  "version": "1.0.0",
+  "description": "Automated UI testing for Android apps via ADB + Perception SDK",
+  "skills": ["skills/phone-test"]
+}

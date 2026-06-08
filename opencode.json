@@ -3,7 +3,7 @@
   "mcp": {
     "phone": {
       "type": "local",
-      "command": ["node", "tools/phone-mcp-server/dist/index.js"],
+      "command": ["node", "phone-auto-test/mcp-server/dist/index.js"],
       "enabled": true
     }
   }

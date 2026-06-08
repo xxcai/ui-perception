@@ -10,6 +10,6 @@ local.properties
 **/assets/**/screenshot.png
 debug-crops/
 tmp/
-tools/phone-mcp-server/dist/
-tools/phone-mcp-server/node_modules/
+phone-auto-test/mcp-server/dist/
+phone-auto-test/mcp-server/node_modules/
 

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "phone": {
+      "type": "local",
+      "command": "node",
+      "args": ["${PLUGIN_ROOT}/mcp-server/dist/index.js"],
+      "enabled": true
+    }
+  }
+}

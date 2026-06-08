@@ -11,7 +11,7 @@ function execCmd(
   timeout: number
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    const proc = execFile(cmd, args, { timeout }, (error, stdout, stderr) => {
+    const proc = execFile(cmd, args, { timeout, shell: true }, (error, stdout, stderr) => {
       resolve({
         code: error ? (error as NodeJS.ErrnoException).code === "ETIMEDOUT" ? -1 : 1 : 0,
         stdout: stdout ?? "",
