@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import type { Plugin, ToolDef } from "@opencode-ai/plugin";
+import type { Plugin } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin";
 
 // ── ADB Bridge ──────────────────────────────────────────
@@ -238,7 +238,7 @@ function appendLog(type: string, data: Record<string, unknown>) {
 
 // ── Plugin Export ───────────────────────────────────────
 
-export const PhoneAutoTest: Plugin = async ({ client, directory }) => {
+export const PhoneAutoTest: Plugin = async ({ directory }) => {
   const logDir = join(directory ?? process.cwd(), LOG_DIR);
   mkdirSync(logDir, { recursive: true });
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
