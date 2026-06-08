@@ -10,6 +10,5 @@ local.properties
 **/assets/**/screenshot.png
 debug-crops/
 tmp/
-phone-auto-test/mcp-server/dist/
-phone-auto-test/mcp-server/node_modules/
+.opencode/plugins/node_modules/
 
