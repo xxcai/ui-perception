@@ -69,6 +69,18 @@ async function phonePost(path: string, body: Record<string, unknown>): Promise<a
   });
 }
 
+// ── Tool Helper ─────────────────────────────────────────
+
+async function phoneAction(name: string, path: string, body: Record<string, unknown>, ok: string) {
+  try {
+    const result = await phonePost(path, body);
+    if (result.status === "error") return `${name} failed: ${result.error}`;
+    return ok;
+  } catch (err: any) {
+    return `${name} failed: ${err.message}`;
+  }
+}
+
 // ── Tools ───────────────────────────────────────────────
 
 const phone_capture_ui = tool({
@@ -91,17 +103,9 @@ const phone_capture_ui = tool({
 const phone_click = tool({
   description:
     "Clicks an interactive element on the phone screen identified by its ref (e.g. 'n1'). The ref comes from the YAML output of phone_capture_ui.",
-  args: {
-    ref: tool.schema.string().describe("The ref identifier from YAML, e.g. 'n1'"),
-  },
+  args: { ref: tool.schema.string().describe("The ref identifier from YAML, e.g. 'n1'") },
   async execute({ ref }) {
-    try {
-      const result = await phonePost("/click", { ref });
-      if (result.status === "error") return `Click failed: ${result.error}`;
-      return `Clicked element ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_click failed: ${err.message}`;
-    }
+    return phoneAction("phone_click", "/click", { ref }, `Clicked ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
@@ -113,15 +117,9 @@ const phone_swipe = tool({
     ref: tool.schema.string().optional().describe("Optional: swipe within a specific scrollable element"),
   },
   async execute({ direction, ref }) {
-    try {
-      const body: Record<string, unknown> = { direction };
-      if (ref) body.ref = ref;
-      const result = await phonePost("/swipe", body);
-      if (result.status === "error") return `Swipe failed: ${result.error}`;
-      return `Swiped ${direction}${ref ? ` on ${ref}` : ""}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_swipe failed: ${err.message}`;
-    }
+    const body: Record<string, unknown> = { direction };
+    if (ref) body.ref = ref;
+    return phoneAction("phone_swipe", "/swipe", body, `Swiped ${direction}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
@@ -134,13 +132,7 @@ const phone_type_text = tool({
     clear: tool.schema.boolean().optional().describe("Clear existing text first (default: true)"),
   },
   async execute({ ref, text, clear }) {
-    try {
-      const result = await phonePost("/type_text", { ref, text, clear: clear ?? true });
-      if (result.status === "error") return `Type text failed: ${result.error}`;
-      return `Typed text into ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_type_text failed: ${err.message}`;
-    }
+    return phoneAction("phone_type_text", "/type_text", { ref, text, clear: clear ?? true }, `Typed into ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
@@ -151,45 +143,23 @@ const phone_long_press = tool({
     duration: tool.schema.number().optional().describe("Press duration in ms (default: 500)"),
   },
   async execute({ ref, duration }) {
-    try {
-      const result = await phonePost("/long_press", { ref, duration: duration ?? 500 });
-      if (result.status === "error") return `Long press failed: ${result.error}`;
-      return `Long pressed ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_long_press failed: ${err.message}`;
-    }
+    return phoneAction("phone_long_press", "/long_press", { ref, duration: duration ?? 500 }, `Long pressed ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
 const phone_check = tool({
   description: "Sets a checkbox to checked state (idempotent).",
-  args: {
-    ref: tool.schema.string().describe("The checkbox element's ref identifier"),
-  },
+  args: { ref: tool.schema.string().describe("The checkbox element's ref identifier") },
   async execute({ ref }) {
-    try {
-      const result = await phonePost("/check", { ref });
-      if (result.status === "error") return `Check failed: ${result.error}`;
-      return `Checked ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_check failed: ${err.message}`;
-    }
+    return phoneAction("phone_check", "/check", { ref }, `Checked ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
 const phone_uncheck = tool({
   description: "Sets a checkbox to unchecked state (idempotent).",
-  args: {
-    ref: tool.schema.string().describe("The checkbox element's ref identifier"),
-  },
+  args: { ref: tool.schema.string().describe("The checkbox element's ref identifier") },
   async execute({ ref }) {
-    try {
-      const result = await phonePost("/uncheck", { ref });
-      if (result.status === "error") return `Uncheck failed: ${result.error}`;
-      return `Unchecked ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_uncheck failed: ${err.message}`;
-    }
+    return phoneAction("phone_uncheck", "/uncheck", { ref }, `Unchecked ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
@@ -200,29 +170,15 @@ const phone_select_option = tool({
     value: tool.schema.string().describe("The option value to select"),
   },
   async execute({ ref, value }) {
-    try {
-      const result = await phonePost("/select_option", { ref, value });
-      if (result.status === "error") return `Select option failed: ${result.error}`;
-      return `Selected '${value}' in ${ref}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_select_option failed: ${err.message}`;
-    }
+    return phoneAction("phone_select_option", "/select_option", { ref, value }, `Selected '${value}' in ${ref}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
 const phone_press_key = tool({
   description: "Presses the back key. Dismisses keyboard, closes dialogs, navigates back.",
-  args: {
-    key: tool.schema.literal("back").describe("Only 'back' is supported"),
-  },
+  args: { key: tool.schema.literal("back").describe("Only 'back' is supported") },
   async execute({ key }) {
-    try {
-      const result = await phonePost("/press_key", { key });
-      if (result.status === "error") return `Press key failed: ${result.error}`;
-      return `Pressed ${key}. Call phone_capture_ui to see the updated screen.`;
-    } catch (err: any) {
-      return `phone_press_key failed: ${err.message}`;
-    }
+    return phoneAction("phone_press_key", "/press_key", { key }, `Pressed ${key}. Call phone_capture_ui to see the updated screen.`);
   },
 });
 
