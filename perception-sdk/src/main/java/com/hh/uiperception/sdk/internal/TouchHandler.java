@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
+
+import com.hh.uiperception.nativeplugin.WindowManagerHelper;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,14 +30,14 @@ final class TouchHandler {
 
                 MotionEvent downEvent = MotionEvent.obtain(downTime, downTime,
                         MotionEvent.ACTION_DOWN, x, y, 0);
-                result[0] = activity.dispatchTouchEvent(downEvent);
+                result[0] = dispatchTouchEvent(activity, downEvent, x, y);
                 downEvent.recycle();
 
                 SystemClock.sleep(CLICK_DURATION_MS);
 
                 MotionEvent upEvent = MotionEvent.obtain(downTime, downTime + CLICK_DURATION_MS,
                         MotionEvent.ACTION_UP, x, y, 0);
-                activity.dispatchTouchEvent(upEvent);
+                dispatchTouchEvent(activity, upEvent, x, y);
                 upEvent.recycle();
 
                 Log.i(TAG, "Click at (" + x + ", " + y + ")");
@@ -63,14 +66,14 @@ final class TouchHandler {
 
                 MotionEvent downEvent = MotionEvent.obtain(downTime, downTime,
                         MotionEvent.ACTION_DOWN, x, y, 0);
-                result[0] = activity.dispatchTouchEvent(downEvent);
+                result[0] = dispatchTouchEvent(activity, downEvent, x, y);
                 downEvent.recycle();
 
                 SystemClock.sleep(durationMs);
 
                 MotionEvent upEvent = MotionEvent.obtain(downTime, downTime + durationMs,
                         MotionEvent.ACTION_UP, x, y, 0);
-                activity.dispatchTouchEvent(upEvent);
+                dispatchTouchEvent(activity, upEvent, x, y);
                 upEvent.recycle();
 
                 Log.i(TAG, "Long press at (" + x + ", " + y + ") for " + durationMs + "ms");
@@ -100,7 +103,7 @@ final class TouchHandler {
 
                 MotionEvent downEvent = MotionEvent.obtain(downTime, downTime,
                         MotionEvent.ACTION_DOWN, startX, startY, 0);
-                activity.dispatchTouchEvent(downEvent);
+                dispatchTouchEvent(activity, downEvent, startX, startY);
                 downEvent.recycle();
 
                 for (int i = 1; i <= SWIPE_STEPS; i++) {
@@ -111,7 +114,7 @@ final class TouchHandler {
 
                     MotionEvent moveEvent = MotionEvent.obtain(downTime, time,
                             MotionEvent.ACTION_MOVE, x, y, 0);
-                    activity.dispatchTouchEvent(moveEvent);
+                    dispatchTouchEvent(activity, moveEvent, x, y);
                     moveEvent.recycle();
 
                     SystemClock.sleep(stepTime);
@@ -120,7 +123,7 @@ final class TouchHandler {
                 long upTime = downTime + SWIPE_DURATION_MS;
                 MotionEvent upEvent = MotionEvent.obtain(downTime, upTime,
                         MotionEvent.ACTION_UP, endX, endY, 0);
-                activity.dispatchTouchEvent(upEvent);
+                dispatchTouchEvent(activity, upEvent, endX, endY);
                 upEvent.recycle();
 
                 result[0] = true;
@@ -138,5 +141,28 @@ final class TouchHandler {
             Thread.currentThread().interrupt();
             return false;
         }
+    }
+
+    /**
+     * Dispatch a touch event to the focused window's root view.
+     * Falls back to activity.dispatchTouchEvent() when the focused window is the Activity's own window.
+     */
+    private static boolean dispatchTouchEvent(Activity activity, MotionEvent event, float screenX, float screenY) {
+        View rootView = WindowManagerHelper.getFocusedWindowView(activity);
+        if (rootView == null || rootView == activity.getWindow().getDecorView()) {
+            return activity.dispatchTouchEvent(event);
+        }
+
+        // Adjust coordinates to be relative to the focused window's root view
+        int[] loc = new int[2];
+        rootView.getLocationOnScreen(loc);
+        float localX = screenX - loc[0];
+        float localY = screenY - loc[1];
+
+        MotionEvent localEvent = MotionEvent.obtain(event);
+        localEvent.setLocation(localX, localY);
+        boolean result = rootView.dispatchTouchEvent(localEvent);
+        localEvent.recycle();
+        return result;
     }
 }

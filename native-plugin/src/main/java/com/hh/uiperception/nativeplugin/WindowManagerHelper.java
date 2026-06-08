@@ -8,11 +8,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-final class WindowManagerHelper {
+public final class WindowManagerHelper {
 
     private WindowManagerHelper() {}
 
-    static View getFocusedWindowView(Activity activity) {
+    public static View getFocusedWindowView(Activity activity) {
         try {
             Object wmGlobal = getGlobalInstance();
             if (wmGlobal == null) return fallback(activity);
