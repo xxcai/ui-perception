@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import type { Plugin, ToolDef } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin";
 
@@ -224,9 +226,25 @@ const phone_press_key = tool({
   },
 });
 
+// ── Session Logger ──────────────────────────────────────
+
+const LOG_DIR = "test-logs";
+let logFilePath: string | null = null;
+
+function appendLog(type: string, data: Record<string, unknown>) {
+  if (!logFilePath) return;
+  appendFileSync(logFilePath, JSON.stringify({ ts: new Date().toISOString(), type, data }) + "\n", "utf8");
+}
+
 // ── Plugin Export ───────────────────────────────────────
 
-export const PhoneAutoTest: Plugin = async ({ client }) => {
+export const PhoneAutoTest: Plugin = async ({ client, directory }) => {
+  const logDir = join(directory ?? process.cwd(), LOG_DIR);
+  mkdirSync(logDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  logFilePath = join(logDir, `${timestamp}.jsonl`);
+  appendLog("session_start", {});
+
   return {
     tool: {
       phone_capture_ui,
@@ -242,27 +260,13 @@ export const PhoneAutoTest: Plugin = async ({ client }) => {
 
     "tool.execute.before": async (input, output) => {
       if (input.tool.startsWith("phone_")) {
-        await client.app.log({
-          body: {
-            service: "phone-auto-test",
-            level: "info",
-            message: `tool call: ${input.tool}`,
-            extra: { args: output.args },
-          },
-        });
+        appendLog("tool_call", { tool: input.tool, args: output.args });
       }
     },
 
     "tool.execute.after": async (input, output) => {
       if (input.tool.startsWith("phone_")) {
-        await client.app.log({
-          body: {
-            service: "phone-auto-test",
-            level: "info",
-            message: `tool result: ${input.tool}`,
-            extra: { result: output.result },
-          },
-        });
+        appendLog("tool_result", { tool: input.tool, result: output.result });
       }
     },
   };

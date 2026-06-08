@@ -11,4 +11,5 @@ local.properties
 debug-crops/
 tmp/
 .opencode/plugins/node_modules/
+test-logs/
 
