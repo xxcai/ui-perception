@@ -14,6 +14,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <meta-data android:name="OpenUriProvider" android:value="com.hh.uiperception.TestUriHandler" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

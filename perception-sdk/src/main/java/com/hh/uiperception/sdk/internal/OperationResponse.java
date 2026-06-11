@@ -30,7 +30,7 @@ public class OperationResponse {
         }
     }
 
-    private static String escape(String s) {
+    static String escape(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
