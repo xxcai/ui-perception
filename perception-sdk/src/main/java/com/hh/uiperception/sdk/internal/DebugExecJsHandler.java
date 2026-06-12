@@ -5,11 +5,11 @@ import android.app.Activity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-final class DebugExecJsHandler {
+public final class DebugExecJsHandler {
 
     private DebugExecJsHandler() {}
 
-    static String execute(String body) {
+    public static String execute(String body) {
         try {
             JSONObject json = new JSONObject(body);
             String js = json.getString("js");

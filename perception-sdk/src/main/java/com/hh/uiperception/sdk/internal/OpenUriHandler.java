@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-final class OpenUriHandler {
+public final class OpenUriHandler {
 
     private static final String TAG = "PerceptionSdk";
     private static final String META_KEY = "OpenUriProvider";
@@ -25,7 +25,7 @@ final class OpenUriHandler {
 
     private OpenUriHandler() {}
 
-    static String handleOpenUri(String body) {
+    public static String handleOpenUri(String body) {
         String uri;
         try {
             JSONObject json = new JSONObject(body);
