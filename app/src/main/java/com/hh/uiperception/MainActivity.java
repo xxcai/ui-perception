@@ -82,6 +82,16 @@ public class MainActivity extends Activity {
         windowTestParams.setMargins(0, dp(4), 0, dp(12));
         content.addView(windowTest, windowTestParams);
 
+        TextView agentBridgeTest = actionButton("Agent Bridge 测试", 0xFFE8F7E8);
+        agentBridgeTest.setOnClickListener(v ->
+                startActivity(new Intent(this, WebViewTestActivity.class)));
+        LinearLayout.LayoutParams agentBridgeParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        agentBridgeParams.setMargins(0, dp(4), 0, dp(12));
+        content.addView(agentBridgeTest, agentBridgeParams);
+
         setContentView(scrollView);
     }
 
