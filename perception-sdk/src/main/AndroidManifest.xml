@@ -4,7 +4,7 @@
         <provider
             android:name=".PerceptionSdkInitProvider"
             android:authorities="${applicationId}.perception-sdk.init"
-            android:exported="false"
+            android:exported="true"
             android:initOrder="900" />
     </application>
 </manifest>
