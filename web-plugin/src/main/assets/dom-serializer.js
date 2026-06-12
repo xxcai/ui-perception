@@ -611,37 +611,44 @@ function serialize(container, node, depth) {
     var role = getRole(node);
     if (!role) return;
 
-    // Inline generic with single text child → skip node, text flows to container naturally
-    // Playwright ref: ariaSnapshot.ts:249
+    // Inline generic with single text child → skip node creation (toAriaNode returns null)
+    // Children are still traversed below — text flows up to parent container naturally
+    // Playwright ref: ariaSnapshot.ts:249 + line 148 processElement(childAriaNode || ariaNode, ...)
+    var skipNode = false;
     if (role === 'generic') {
       var cs = getComputedStyle(node);
-      if (cs.display === 'inline' && node.childNodes.length === 1 && node.childNodes[0].nodeType === 3) return;
+      if (cs.display === 'inline' && node.childNodes.length === 1 && node.childNodes[0].nodeType === 3) {
+        skipNode = true;
+      }
     }
 
-    var prIdx = prIdxCounter++;
-    try { node.setAttribute('__pr_idx', prIdx); } catch (e) {}
+    if (!skipNode) {
+      var prIdx = prIdxCounter++;
+      try { node.setAttribute('__pr_idx', prIdx); } catch (e) {}
 
-    result = {
-      role: role,
-      name: getName(node),
-      states: getStates(node),
-      bounds: getBounds(node),
-      __pr_idx: prIdx,
-      children: []
-    };
+      result = {
+        role: role,
+        name: getName(node),
+        states: getStates(node),
+        bounds: getBounds(node),
+        __pr_idx: prIdx,
+        children: []
+      };
 
-    if (isClickable(node)) result.states.push('clickable');
-    result._isTextbox = (role === 'textbox');
+      if (isClickable(node)) result.states.push('clickable');
+      result._isTextbox = (role === 'textbox');
 
-    // Input/textarea value as state (Playwright ref: ariaSnapshot.ts:282-285)
-    if (typeof node.value === 'string' && node.value) {
-      result.states.push('value=' + node.value);
+      // Input/textarea value as state (Playwright ref: ariaSnapshot.ts:282-285)
+      if (typeof node.value === 'string' && node.value) {
+        result.states.push('value=' + node.value);
+      }
+
+      container.children.push(result);
     }
-
-    container.children.push(result);
   }
 
-  // Children output to result (visible) or container (invisible → reattach)
+  // Children output to result (visible, not skipped) or container (invisible/skipped → reattach)
+  // Playwright ref: ariaSnapshot.ts:148 processElement(childAriaNode || ariaNode, ...)
   var target = result || container;
 
   // ::before pseudo-element as text child (Playwright ref: ariaSnapshot.ts:158)
