@@ -92,6 +92,16 @@ public class MainActivity extends Activity {
         agentBridgeParams.setMargins(0, dp(4), 0, dp(12));
         content.addView(agentBridgeTest, agentBridgeParams);
 
+        TextView nonFullscreenTest = actionButton("非全屏 Activity 偏移验证", 0xFFFFF4E5);
+        nonFullscreenTest.setOnClickListener(v ->
+                startActivity(new Intent(this, NonFullscreenTestActivity.class)));
+        LinearLayout.LayoutParams nonFullscreenParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        nonFullscreenParams.setMargins(0, dp(4), 0, dp(12));
+        content.addView(nonFullscreenTest, nonFullscreenParams);
+
         setContentView(scrollView);
     }
 

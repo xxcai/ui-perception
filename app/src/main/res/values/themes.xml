@@ -4,4 +4,14 @@
         <item name="android:statusBarColor">@color/screen_background</item>
         <item name="android:navigationBarColor">@color/screen_background</item>
     </style>
+
+    <!--
+      非全屏主题：窗口不铺满屏幕（dialog 风格，居中悬浮）。
+      这样 decorView 在屏幕上的位置不是 (0, 0)，而是某个非零坐标，
+      用于验证 native 点击路径在窗口有屏幕偏移时的 Y 偏移问题。
+      （API 35+ 强制 edge-to-edge，windowDrawsSystemBarBackgrounds=false 已经
+      没法把窗口下移；改用 Dialog 主题是触发非零 decorView 位置的唯一可靠方式。）
+    -->
+    <style name="NonFullscreenTheme" parent="@android:style/Theme.DeviceDefault.Light.Dialog">
+    </style>
 </resources>

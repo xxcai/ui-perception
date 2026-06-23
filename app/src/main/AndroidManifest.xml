@@ -44,6 +44,11 @@
             android:exported="true" />
 
         <activity
+            android:name=".NonFullscreenTestActivity"
+            android:exported="true"
+            android:theme="@style/NonFullscreenTheme" />
+
+        <activity
             android:name="com.hh.uiperception.florence2plugin.ui.Florence2DebugActivity"
             android:exported="false" />
 
