@@ -145,15 +145,23 @@ final class TouchHandler {
 
     /**
      * Dispatch a touch event to the focused window's root view.
-     * Falls back to activity.dispatchTouchEvent() when the focused window is the Activity's own window.
+     *
+     * Caller passes SCREEN-ABSOLUTE coordinates (origin = top-left of physical screen).
+     * The framework's dispatchTouchEvent treats the event X/Y as coords relative to the
+     * receiving view, so we must subtract rootView's screen position to convert.
+     *
+     * Previously this method had two paths: activity.dispatchTouchEvent() (no conversion)
+     * when rootView was the activity's own decorView, and direct rootView.dispatchTouchEvent()
+     * with conversion otherwise. The no-conversion path was only correct when decorView
+     * sat at screen (0, 0) — it produced a Y-offset bug for Dialog-themed activities,
+     * multi-window, and any case where the window was placed below/right of (0, 0).
      */
     private static boolean dispatchTouchEvent(Activity activity, MotionEvent event, float screenX, float screenY) {
         View rootView = WindowManagerHelper.getFocusedWindowView(activity);
-        if (rootView == null || rootView == activity.getWindow().getDecorView()) {
+        if (rootView == null) {
             return activity.dispatchTouchEvent(event);
         }
 
-        // Adjust coordinates to be relative to the focused window's root view
         int[] loc = new int[2];
         rootView.getLocationOnScreen(loc);
         float localX = screenX - loc[0];

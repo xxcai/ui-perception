@@ -103,8 +103,11 @@ public final class OperationHandler {
                 startX = swipeCoords[0]; startY = swipeCoords[1];
                 endX = swipeCoords[2]; endY = swipeCoords[3];
             } else {
-                float screenCx = activity.getWindow().getDecorView().getWidth() / 2f;
-                float screenCy = activity.getWindow().getDecorView().getHeight() / 2f;
+                android.view.View decor = activity.getWindow().getDecorView();
+                int[] decorLoc = new int[2];
+                decor.getLocationOnScreen(decorLoc);
+                float screenCx = decorLoc[0] + decor.getWidth() / 2f;
+                float screenCy = decorLoc[1] + decor.getHeight() / 2f;
                 float[] swipeCoords = computeSwipeCoords(direction, screenCx, screenCy, SCREEN_MARGIN);
                 startX = swipeCoords[0]; startY = swipeCoords[1];
                 endX = swipeCoords[2]; endY = swipeCoords[3];
