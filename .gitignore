@@ -13,3 +13,8 @@ tmp/
 .opencode/plugins/node_modules/
 test-logs/
 
+# iOS / Xcode
+**/xcuserdata/
+*.xcuserstate
+DerivedData/
+.build/
