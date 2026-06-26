@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "UIPerception harmony entry module" },
+    { "name": "EntryAbility_desc", "value": "UIPerception harmony entry ability" },
+    { "name": "EntryAbility_label", "value": "UIPerception" }
+  ]
+}

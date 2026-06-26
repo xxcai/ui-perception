@@ -1,0 +1,11 @@
+{
+  "modelVersion": "6.1.1",
+  "name": "uiperception-harmony",
+  "version": "1.0.0",
+  "description": "UIPerception HarmonyOS PoC - native capture target app",
+  "main": "",
+  "author": "hh",
+  "license": "Apache-2.0",
+  "dependencies": {},
+  "devDependencies": {}
+}

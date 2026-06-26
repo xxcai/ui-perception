@@ -18,3 +18,15 @@ test-logs/
 *.xcuserstate
 DerivedData/
 .build/
+
+# HarmonyOS
+harmony/.hvigor/
+harmony/.idea/
+harmony/build/
+harmony/entry/build/
+harmony/oh_modules/
+harmony/entry/oh_modules/
+harmony/.cxx/
+harmony/local.properties
+harmony/**/*.hap
+harmony/**/*.hap unsigned
