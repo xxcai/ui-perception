@@ -1,5 +1,6 @@
 import { HarmonyInspectorNode, HarmonyRoleResolver } from './HarmonyRoleResolver';
 import { SemanticNode } from './SemanticNode';
+import { SemanticRole } from './SemanticRole';
 import { Bounds } from './Bounds';
 import { SemanticStates } from './SemanticStates';
 
@@ -52,15 +53,36 @@ export class HarmonySemanticTreeBuilder {
     }
 
     const scrollable = node.attrs.get('scrollable');
-    if (scrollable === 'true') {
+    if (scrollable === 'true' && !HarmonySemanticTreeBuilder.suppressScrollableForRole(role)) {
       builder.addState(SemanticStates.SCROLLABLE);
     }
 
+    // collapse pure-container children: filter Blank() empty generics
     for (let i = 0; i < node.children.length; i++) {
-      const child = HarmonySemanticTreeBuilder.buildNode(node.children[i]);
+      const childNode = node.children[i];
+      if (HarmonySemanticTreeBuilder.isBlankPlaceholder(childNode)) {
+        continue;
+      }
+      const child = HarmonySemanticTreeBuilder.buildNode(childNode);
       builder.addChild(child);
     }
 
     return builder.build();
+  }
+
+  private static suppressScrollableForRole(role: SemanticRole): boolean {
+    // TextInput/TextArea report scrollable=true internally (text scroll) — not what we want to expose.
+    return role === SemanticRole.Input;
+  }
+
+  private static isBlankPlaceholder(node: HarmonyInspectorNode): boolean {
+    if (node.type !== 'Blank') {
+      return false;
+    }
+    const content = node.attrs.get('content');
+    if (content !== undefined && content.length > 0) {
+      return false;
+    }
+    return node.children.length === 0;
   }
 }

@@ -31,6 +31,9 @@ export class HarmonyRoleResolver {
 
   static resolve(node: HarmonyInspectorNode): RoleDecision {
     const type = node.type;
+    if (type === 'root' || type === 'RootNode') {
+      return new RoleDecision(SemanticRole.Screen, 'type:root', 0.9);
+    }
     if (type === 'Button') {
       return new RoleDecision(SemanticRole.Button, 'type:button', 0.95);
     }
@@ -126,6 +129,10 @@ export class HarmonyRoleResolver {
       if (placeholder !== undefined && placeholder.length > 0) {
         return placeholder;
       }
+    }
+    const label = node.attrs.get('label');
+    if (label !== undefined && label.length > 0) {
+      return label;
     }
     const content = node.attrs.get('content');
     if (content !== undefined && content.length > 0) {

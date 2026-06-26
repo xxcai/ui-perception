@@ -1,0 +1,29 @@
+- screen:
+  - generic:
+    - text "UIPerception 鸿蒙 PoC"
+    - button "点击我" [clickable] [ref=n1] [bounds=510,430,811,570]
+    - generic:
+      - text "启用通知"
+      - switch [clickable] [ref=n2] [bounds=1089,640,1215,710]
+    - input "请输入搜索关键词" [clickable-inferred] [ref=n3] [bounds=99,780,1221,920]
+    - list [ref=n4] [bounds=66,976,1254,2197]:
+      - listitem [clickable] [ref=n5] [bounds=66,976,1254,1126]:
+        - generic:
+          - text "梁晓舟"
+          - text "#1"
+      - listitem [clickable] [ref=n6] [bounds=66,1168,1254,1318]:
+        - generic:
+          - text "苏清沅"
+          - text "#2"
+      - listitem [clickable] [ref=n7] [bounds=66,1360,1254,1510]:
+        - generic:
+          - text "顾衍"
+          - text "#3"
+      - listitem [clickable] [ref=n8] [bounds=66,1552,1254,1702]:
+        - generic:
+          - text "林晚秋"
+          - text "#4"
+    - separator
+    - button "抓取布局 (A+B 对比)" [clickable] [ref=n9] [bounds=349,2254,972,2394]
+    - button "测试 B filters" [clickable] [ref=n10] [bounds=441,2422,880,2562]
+    - button "V5 算法 (parse→semantic→ref→yaml)" [clickable] [ref=n11] [bounds=110,2590,1211,2730]

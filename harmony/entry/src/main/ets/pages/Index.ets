@@ -171,9 +171,10 @@ struct Index {
     const ctx = getContext(this) as common.Context;
     const filesDir = ctx.filesDir;
     const filters: Array<string> = [
-      'content', 'enabled', 'focusable', 'selected', 'selectable',
-      'scrollable', 'accessibilityText', 'accessibilityDescription',
-      'accessibilityRole', 'accessibilityActionOptions', 'placeholder',
+      'content', 'label', 'placeholder', 'enabled', 'focusable',
+      'selected', 'selectable', 'scrollable',
+      'accessibilityText', 'accessibilityDescription',
+      'accessibilityRole', 'accessibilityActionOptions',
     ];
 
     let inspectorJson = '';
@@ -221,6 +222,7 @@ struct Index {
       `V5: ${nodeCount} nodes → ${yamlBytes}b yaml${writeErr.length > 0 ? ' WRITE_ERR ' + writeErr : ''}`;
     this.captureAPath = yamlPath;
     this.captureBPath = rawPath;
+    console.info(`[UIPerception] V5 yaml path=${yamlPath} raw=${rawPath} status=${this.captureStatus}`);
     console.info(`[UIPerception] V5 yaml:\n${yaml}`);
   }
 
