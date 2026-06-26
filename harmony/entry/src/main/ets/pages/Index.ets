@@ -1,6 +1,11 @@
 import { FrameNode } from '@ohos.arkui.node';
 import fs from '@ohos.file.fs';
 import common from '@ohos.app.ability.common';
+import { HarmonyInspectorParser } from '../perception/HarmonyInspectorParser';
+import { HarmonySemanticTreeBuilder } from '../perception/HarmonySemanticTreeBuilder';
+import { RefAssigner } from '../perception/RefAssigner';
+import { SnapshotRenderer } from '../perception/SnapshotRenderer';
+import { SemanticNode } from '../perception/SemanticNode';
 
 interface LayoutNode {
   type: string;
@@ -162,6 +167,74 @@ struct Index {
     console.info(`[UIPerception] filter test: ${this.captureStatus}`);
   }
 
+  private testV5Algorithm(): void {
+    const ctx = getContext(this) as common.Context;
+    const filesDir = ctx.filesDir;
+    const filters: Array<string> = [
+      'content', 'enabled', 'focusable', 'selected', 'selectable',
+      'scrollable', 'accessibilityText', 'accessibilityDescription',
+      'accessibilityRole', 'accessibilityActionOptions', 'placeholder',
+    ];
+
+    let inspectorJson = '';
+    let captureErr = '';
+    try {
+      inspectorJson = this.captureBFiltered(filters);
+    } catch (e) {
+      captureErr = (e as Error).message ?? String(e);
+    }
+
+    if (inspectorJson.length === 0) {
+      this.captureStatus = `V5 CAP_ERR: ${captureErr}`;
+      return;
+    }
+
+    const inspectorRoot = HarmonyInspectorParser.parse(inspectorJson);
+    if (inspectorRoot === null) {
+      this.captureStatus = `V5 PARSE_ERR (inspector json ${inspectorJson.length}b)`;
+      return;
+    }
+
+    const semanticRoot = HarmonySemanticTreeBuilder.build(inspectorRoot);
+    if (semanticRoot === null) {
+      this.captureStatus = 'V5 BUILD_ERR';
+      return;
+    }
+
+    const assigned = RefAssigner.assign(semanticRoot, 'n', false);
+    const yaml = SnapshotRenderer.render(assigned);
+
+    const ts = new Date().getTime();
+    const yamlPath = `${filesDir}/v5_snapshot_${ts}.yml`;
+    const rawPath = `${filesDir}/v5_inspector_${ts}.json`;
+    let writeErr = '';
+    try {
+      this.writeToFile(yamlPath, yaml);
+      this.writeToFile(rawPath, inspectorJson);
+    } catch (e) {
+      writeErr = (e as Error).message ?? String(e);
+    }
+
+    const yamlBytes = yaml.length;
+    const nodeCount = this.countSemanticNodes(assigned);
+    this.captureStatus =
+      `V5: ${nodeCount} nodes → ${yamlBytes}b yaml${writeErr.length > 0 ? ' WRITE_ERR ' + writeErr : ''}`;
+    this.captureAPath = yamlPath;
+    this.captureBPath = rawPath;
+    console.info(`[UIPerception] V5 yaml:\n${yaml}`);
+  }
+
+  private countSemanticNodes(node: SemanticNode | null): number {
+    if (node === null) {
+      return 0;
+    }
+    let count = 1;
+    for (let i = 0; i < node.children.length; i++) {
+      count += this.countSemanticNodes(node.children[i]);
+    }
+    return count;
+  }
+
   build() {
     Column() {
       Text('UIPerception 鸿蒙 PoC')
@@ -233,6 +306,14 @@ struct Index {
         .margin({ bottom: 8 })
         .onClick(() => {
           this.testFilters();
+        })
+
+      Button('V5 算法 (parse→semantic→ref→yaml)')
+        .fontSize(16)
+        .backgroundColor('#FF9800')
+        .margin({ bottom: 8 })
+        .onClick(() => {
+          this.testV5Algorithm();
         })
 
       if (this.captureStatus.length > 0) {
