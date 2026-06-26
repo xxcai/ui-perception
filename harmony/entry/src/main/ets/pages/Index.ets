@@ -1,3 +1,19 @@
+import { FrameNode } from '@ohos.arkui.node';
+import fs from '@ohos.file.fs';
+import common from '@ohos.app.ability.common';
+
+interface LayoutNode {
+  type: string;
+  id: string;
+  uniqueId: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  hasInspectorInfo: boolean;
+  children: LayoutNode[];
+}
+
 @Entry
 @Component
 struct Index {
@@ -5,6 +21,146 @@ struct Index {
   @State switchOn: boolean = false;
   @State inputText: string = '';
   @State items: Array<string> = ['梁晓舟', '苏清沅', '顾衍', '林晚秋'];
+  @State captureStatus: string = '';
+  @State captureAPath: string = '';
+  @State captureBPath: string = '';
+
+  private walkFrameNode(node: FrameNode): LayoutNode {
+    const pos = node.getPositionToWindow();
+    const size = node.getMeasuredSize();
+    const count: number = node.getChildrenCount();
+    const children: LayoutNode[] = [];
+    for (let i = 0; i < count; i++) {
+      const child = node.getChild(i);
+      if (child !== null) {
+        children.push(this.walkFrameNode(child));
+      }
+    }
+    let hasInfo = false;
+    try {
+      const info = node.getInspectorInfo();
+      hasInfo = info !== null && info !== undefined;
+    } catch (e) {
+      hasInfo = false;
+    }
+    return {
+      type: node.getNodeType(),
+      id: node.getId(),
+      uniqueId: node.getUniqueId(),
+      x: pos.x,
+      y: pos.y,
+      width: size.width,
+      height: size.height,
+      hasInspectorInfo: hasInfo,
+      children: children,
+    };
+  }
+
+  private captureA(): string {
+    const ctx = this.getUIContext();
+    const root = ctx.getFrameNodeById('app_root');
+    if (root === null) {
+      return JSON.stringify({ error: 'root FrameNode not found' });
+    }
+    const tree: LayoutNode = this.walkFrameNode(root);
+    return JSON.stringify(tree, null, 2);
+  }
+
+  private captureB(): string {
+    const ctx = this.getUIContext();
+    return ctx.getFilteredInspectorTree();
+  }
+
+  private captureBFiltered(filters: Array<string>): string {
+    const ctx = this.getUIContext();
+    return ctx.getFilteredInspectorTree(filters);
+  }
+
+  private writeToFile(path: string, content: string): void {
+    const file = fs.openSync(path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+    fs.writeSync(file.fd, content);
+    fs.closeSync(file);
+  }
+
+  private captureBoth(): void {
+    const ctx = getContext(this) as common.Context;
+    const filesDir = ctx.filesDir;
+    console.info(`[UIPerception] filesDir=${filesDir}`);
+    let jsonA: string = '';
+    let jsonB: string = '';
+    let errA: string = '';
+    let errB: string = '';
+    let writeErrA: string = '';
+    let writeErrB: string = '';
+
+    try {
+      jsonA = this.captureA();
+    } catch (e) {
+      errA = (e as Error).message ?? String(e);
+    }
+    try {
+      jsonB = this.captureB();
+    } catch (e) {
+      errB = (e as Error).message ?? String(e);
+    }
+
+    const pathA = `${filesDir}/capture_A_framenode.json`;
+    const pathB = `${filesDir}/capture_B_inspector.json`;
+    if (jsonA.length > 0) {
+      try {
+        this.writeToFile(pathA, jsonA);
+        this.captureAPath = pathA;
+      } catch (e) {
+        writeErrA = (e as Error).message ?? String(e);
+      }
+    }
+    if (jsonB.length > 0) {
+      try {
+        this.writeToFile(pathB, jsonB);
+        this.captureBPath = pathB;
+      } catch (e) {
+        writeErrB = (e as Error).message ?? String(e);
+      }
+    }
+
+    this.captureStatus =
+      `A(FrameNode): ${errA.length > 0 ? 'CAP_ERR ' + errA : jsonA.length + ' bytes'}${writeErrA.length > 0 ? ' WRITE_ERR ' + writeErrA : ''}\n` +
+      `B(InspectorTree): ${errB.length > 0 ? 'CAP_ERR ' + errB : jsonB.length + ' bytes'}${writeErrB.length > 0 ? ' WRITE_ERR ' + writeErrB : ''}`;
+    console.info(`[UIPerception] captureStatus=${this.captureStatus}`);
+  }
+
+  private testFilters(): void {
+    const ctx = getContext(this) as common.Context;
+    const filesDir = ctx.filesDir;
+    const configs: Array<Array<string>> = [
+      ['content'],
+      ['content', 'enabled', 'label', 'accessibilityText', 'accessibilityDescription'],
+      ['content', 'enabled', 'clickable', 'checked', 'selected', 'scrollable', 'accessibilityText'],
+    ];
+    const sizes: Array<string> = [];
+    configs.forEach((filters, idx) => {
+      let json = '';
+      let err = '';
+      try {
+        json = this.captureBFiltered(filters);
+      } catch (e) {
+        err = (e as Error).message ?? String(e);
+      }
+      const path = `${filesDir}/capture_B_filter${idx}.json`;
+      if (json.length > 0) {
+        try {
+          this.writeToFile(path, json);
+          sizes.push(`F${idx}[${filters.length}]: ${json.length}b`);
+        } catch (e) {
+          sizes.push(`F${idx}: WRITE_ERR`);
+        }
+      } else {
+        sizes.push(`F${idx}: ${err}`);
+      }
+    });
+    this.captureStatus = sizes.join(' | ');
+    console.info(`[UIPerception] filter test: ${this.captureStatus}`);
+  }
 
   build() {
     Column() {
@@ -59,7 +215,52 @@ struct Index {
       }
       .width('90%')
       .layoutWeight(1)
+
+      Divider()
+        .margin({ top: 8, bottom: 8 })
+
+      Button('抓取布局 (A+B 对比)')
+        .fontSize(16)
+        .backgroundColor('#4CAF50')
+        .margin({ bottom: 8 })
+        .onClick(() => {
+          this.captureBoth();
+        })
+
+      Button('测试 B filters')
+        .fontSize(16)
+        .backgroundColor('#2196F3')
+        .margin({ bottom: 8 })
+        .onClick(() => {
+          this.testFilters();
+        })
+
+      if (this.captureStatus.length > 0) {
+        Text(this.captureStatus)
+          .fontSize(12)
+          .fontColor('#666666')
+          .width('90%')
+          .margin({ bottom: 4 })
+      }
+      if (this.captureAPath.length > 0) {
+        Text(`A: ${this.captureAPath}`)
+          .fontSize(10)
+          .fontColor('#999999')
+          .width('90%')
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .margin({ bottom: 2 })
+      }
+      if (this.captureBPath.length > 0) {
+        Text(`B: ${this.captureBPath}`)
+          .fontSize(10)
+          .fontColor('#999999')
+          .width('90%')
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+      }
     }
+    .id('app_root')
     .width('100%')
     .height('100%')
     .alignItems(HorizontalAlign.Center)

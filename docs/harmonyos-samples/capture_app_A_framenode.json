@@ -1,0 +1,376 @@
+{
+  "type": "Column",
+  "id": "app_root",
+  "uniqueId": 5,
+  "x": 0,
+  "y": 38.85714340209961,
+  "width": 1320,
+  "height": 2622,
+  "hasInspectorInfo": true,
+  "children": [
+    {
+      "type": "Text",
+      "id": "",
+      "uniqueId": 6,
+      "x": 61.14285659790039,
+      "y": 70.85713958740234,
+      "width": 892,
+      "height": 98,
+      "hasInspectorInfo": true,
+      "children": []
+    },
+    {
+      "type": "Button",
+      "id": "",
+      "uniqueId": 7,
+      "x": 145.57142639160156,
+      "y": 122.85713958740234,
+      "width": 301,
+      "height": 140,
+      "hasInspectorInfo": true,
+      "children": [
+        {
+          "type": "Text",
+          "id": "",
+          "uniqueId": 8,
+          "x": 161.7142791748047,
+          "y": 132.2857208251953,
+          "width": 189,
+          "height": 74,
+          "hasInspectorInfo": true,
+          "children": []
+        }
+      ]
+    },
+    {
+      "type": "Row",
+      "id": "",
+      "uniqueId": 9,
+      "x": 28.285715103149414,
+      "y": 178.85714721679688,
+      "width": 1122,
+      "height": 98,
+      "hasInspectorInfo": true,
+      "children": [
+        {
+          "type": "Text",
+          "id": "",
+          "uniqueId": 10,
+          "x": 28.285715103149414,
+          "y": 183.42857360839844,
+          "width": 224,
+          "height": 66,
+          "hasInspectorInfo": true,
+          "children": []
+        },
+        {
+          "type": "Blank",
+          "id": "",
+          "uniqueId": 11,
+          "x": 92.28571319580078,
+          "y": 178.85714721679688,
+          "width": 760,
+          "height": 98,
+          "hasInspectorInfo": true,
+          "children": []
+        },
+        {
+          "type": "Toggle",
+          "id": "",
+          "uniqueId": 12,
+          "x": 311.1428527832031,
+          "y": 182.85714721679688,
+          "width": 126,
+          "height": 70,
+          "hasInspectorInfo": true,
+          "children": []
+        }
+      ]
+    },
+    {
+      "type": "TextInput",
+      "id": "",
+      "uniqueId": 13,
+      "x": 28.285715103149414,
+      "y": 222.85714721679688,
+      "width": 1122,
+      "height": 140,
+      "hasInspectorInfo": true,
+      "children": []
+    },
+    {
+      "type": "List",
+      "id": "",
+      "uniqueId": 14,
+      "x": 18.85714340209961,
+      "y": 278.8571472167969,
+      "width": 1188,
+      "height": 1557,
+      "hasInspectorInfo": true,
+      "children": [
+        {
+          "type": "ListItem",
+          "id": "",
+          "uniqueId": 17,
+          "x": 18.85714340209961,
+          "y": 278.8571472167969,
+          "width": 1188,
+          "height": 150,
+          "hasInspectorInfo": true,
+          "children": [
+            {
+              "type": "Row",
+              "id": "",
+              "uniqueId": 30,
+              "x": 18.85714340209961,
+              "y": 278.8571472167969,
+              "width": 1188,
+              "height": 150,
+              "hasInspectorInfo": true,
+              "children": [
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 31,
+                  "x": 30.85714340209961,
+                  "y": 290.8571472167969,
+                  "width": 168,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Blank",
+                  "id": "",
+                  "uniqueId": 32,
+                  "x": 78.85713958740234,
+                  "y": 290.8571472167969,
+                  "width": 876,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 33,
+                  "x": 329.1428527832031,
+                  "y": 292.1428527832031,
+                  "width": 60,
+                  "height": 57,
+                  "hasInspectorInfo": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ListItem",
+          "id": "",
+          "uniqueId": 19,
+          "x": 18.85714340209961,
+          "y": 333.71429443359375,
+          "width": 1188,
+          "height": 150,
+          "hasInspectorInfo": true,
+          "children": [
+            {
+              "type": "Row",
+              "id": "",
+              "uniqueId": 34,
+              "x": 18.85714340209961,
+              "y": 333.71429443359375,
+              "width": 1188,
+              "height": 150,
+              "hasInspectorInfo": true,
+              "children": [
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 35,
+                  "x": 30.85714340209961,
+                  "y": 345.71429443359375,
+                  "width": 168,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Blank",
+                  "id": "",
+                  "uniqueId": 36,
+                  "x": 78.85713958740234,
+                  "y": 345.71429443359375,
+                  "width": 876,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 37,
+                  "x": 329.1428527832031,
+                  "y": 347,
+                  "width": 60,
+                  "height": 57,
+                  "hasInspectorInfo": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ListItem",
+          "id": "",
+          "uniqueId": 21,
+          "x": 18.85714340209961,
+          "y": 388.5714416503906,
+          "width": 1188,
+          "height": 150,
+          "hasInspectorInfo": true,
+          "children": [
+            {
+              "type": "Row",
+              "id": "",
+              "uniqueId": 38,
+              "x": 18.85714340209961,
+              "y": 388.5714416503906,
+              "width": 1188,
+              "height": 150,
+              "hasInspectorInfo": true,
+              "children": [
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 39,
+                  "x": 30.85714340209961,
+                  "y": 400.5714416503906,
+                  "width": 112,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Blank",
+                  "id": "",
+                  "uniqueId": 40,
+                  "x": 62.85714340209961,
+                  "y": 400.5714416503906,
+                  "width": 932,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 41,
+                  "x": 329.1428527832031,
+                  "y": 401.8571472167969,
+                  "width": 60,
+                  "height": 57,
+                  "hasInspectorInfo": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ListItem",
+          "id": "",
+          "uniqueId": 23,
+          "x": 18.85714340209961,
+          "y": 443.4285583496094,
+          "width": 1188,
+          "height": 150,
+          "hasInspectorInfo": true,
+          "children": [
+            {
+              "type": "Row",
+              "id": "",
+              "uniqueId": 42,
+              "x": 18.85714340209961,
+              "y": 443.4285583496094,
+              "width": 1188,
+              "height": 150,
+              "hasInspectorInfo": true,
+              "children": [
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 43,
+                  "x": 30.85714340209961,
+                  "y": 455.4285583496094,
+                  "width": 168,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Blank",
+                  "id": "",
+                  "uniqueId": 44,
+                  "x": 78.85713958740234,
+                  "y": 455.4285583496094,
+                  "width": 876,
+                  "height": 66,
+                  "hasInspectorInfo": true,
+                  "children": []
+                },
+                {
+                  "type": "Text",
+                  "id": "",
+                  "uniqueId": 45,
+                  "x": 329.1428527832031,
+                  "y": 456.71429443359375,
+                  "width": 60,
+                  "height": 57,
+                  "hasInspectorInfo": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Divider",
+      "id": "",
+      "uniqueId": 24,
+      "x": 0,
+      "y": 731.7142944335938,
+      "width": 1320,
+      "height": 1,
+      "hasInspectorInfo": true,
+      "children": []
+    },
+    {
+      "type": "Button",
+      "id": "",
+      "uniqueId": 25,
+      "x": 99.57142639160156,
+      "y": 740,
+      "width": 623,
+      "height": 140,
+      "hasInspectorInfo": true,
+      "children": [
+        {
+          "type": "Text",
+          "id": "",
+          "uniqueId": 26,
+          "x": 115.71428680419922,
+          "y": 750.5714111328125,
+          "width": 511,
+          "height": 66,
+          "hasInspectorInfo": true,
+          "children": []
+        }
+      ]
+    }
+  ]
+}
