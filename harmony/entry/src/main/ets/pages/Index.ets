@@ -1,4 +1,5 @@
 import { FrameNode } from '@ohos.arkui.node';
+import router from '@ohos.router';
 import fs from '@ohos.file.fs';
 import common from '@ohos.app.ability.common';
 import { HarmonyInspectorParser } from '../perception/HarmonyInspectorParser';
@@ -316,6 +317,14 @@ struct Index {
         .margin({ bottom: 8 })
         .onClick(() => {
           this.testV5Algorithm();
+        })
+
+      Button('打开 Web Baseline (注入 JS 抓 H5)')
+        .fontSize(16)
+        .backgroundColor('#9C27B0')
+        .margin({ bottom: 8 })
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/WebBaseline' });
         })
 
       if (this.captureStatus.length > 0) {

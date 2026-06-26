@@ -1,0 +1,73 @@
+- screen:
+  - generic [focused] [ref=w1] [bounds=0,0,378,1101]:
+    - heading "Web Form Baseline" [level=1] [ref=w2] [bounds=16,32,362,60]:
+      - text "Web Form Baseline"
+    - paragraph "用于验证 iOS WKWebView 抓取链路。结构对应 Android native 消息首页，便于跨端 diff。" [ref=w3] [bounds=16,76,362,114]:
+      - text "用于验证 iOS WKWebView 抓取链路。结构对应 Android native 消息首页，便于跨端 diff。"
+    - generic [ref=w4] [bounds=16,130,362,157]:
+      - link "表单" [clickable] [ref=w5] [bounds=16,130,66,157]:
+        - text "表单"
+      - link "列表" [clickable] [ref=w6] [bounds=74,130,124,157]:
+        - text "列表"
+      - link "链接" [clickable] [ref=w7] [bounds=132,130,182,157]:
+        - text "链接"
+    - heading "用户注册表单" [level=2] [ref=w8] [bounds=16,181,362,202]:
+      - text "用户注册表单"
+    - generic [ref=w9] [bounds=16,210,362,691]:
+      - generic "用户名" [ref=w10] [bounds=32,238,346,253]:
+        - text "用户名"
+      - textbox "用户名" [clickable] [ref=w11] [bounds=32,257,346,296]
+      - generic "邮箱" [ref=w12] [bounds=32,308,346,323]:
+        - text "邮箱"
+      - textbox "邮箱" [clickable] [ref=w13] [bounds=32,327,346,367]
+      - generic "密码" [ref=w14] [bounds=32,379,346,394]:
+        - text "密码"
+      - textbox "密码" [clickable] [ref=w15] [bounds=32,398,346,437]
+      - generic "部门" [ref=w16] [bounds=32,449,346,465]:
+        - text "部门"
+      - combobox "部门" [clickable] [value=tech] [ref=w17] [bounds=32,469,346,510]:
+        - option "技术部" [selected] [value=tech]:
+          - text "技术部"
+        - option "产品部" [value=product]:
+          - text "产品部"
+        - option "设计部" [value=design]:
+          - text "设计部"
+      - generic "个人简介" [ref=w18] [bounds=32,522,346,537]:
+        - text "个人简介"
+      - textbox "个人简介" [ref=w19] [bounds=32,541,346,621]
+      - button "提交" [clickable] [ref=w20] [bounds=32,637,102,675]:
+        - text "提交"
+      - button "重置" [clickable] [ref=w21] [bounds=114,637,184,675]:
+        - text "重置"
+    - heading "消息列表" [level=2] [ref=w22] [bounds=16,715,362,735]:
+      - text "消息列表"
+    - list "梁晓舟 — 明天上班 苏芸 — 刚到工位 周霖 — 在开会 孙瀚 — 外出 李妍 — 请假 韩辰 — 在线" [ref=w23] [bounds=16,743,362,989]:
+      - listitem "梁晓舟 — 明天上班" [ref=w24] [bounds=52,759,346,795]:
+        - text "梁晓舟"
+        - text "— 明天上班"
+      - listitem "苏芸 — 刚到工位" [ref=w25] [bounds=52,795,346,831]:
+        - text "苏芸"
+        - text "— 刚到工位"
+      - listitem "周霖 — 在开会" [ref=w26] [bounds=52,831,346,867]:
+        - text "周霖"
+        - text "— 在开会"
+      - listitem "孙瀚 — 外出" [ref=w27] [bounds=52,867,346,902]:
+        - text "孙瀚"
+        - text "— 外出"
+      - listitem "李妍 — 请假" [ref=w28] [bounds=52,902,346,938]:
+        - text "李妍"
+        - text "— 请假"
+      - listitem "韩辰 — 在线" [ref=w29] [bounds=52,938,346,973]:
+        - text "韩辰"
+        - text "— 在线"
+    - heading "相关链接" [level=2] [ref=w30] [bounds=16,1013,362,1034]:
+      - text "相关链接"
+    - paragraph "回到表单 · 查看列表 · 关于本页面" [ref=w31] [bounds=16,1050,362,1069]:
+      - link "回到表单" [clickable] [ref=w32] [bounds=16,1050,80,1069]:
+        - text "回到表单"
+      - text "·"
+      - link "查看列表" [clickable] [ref=w33] [bounds=97,1050,161,1069]:
+        - text "查看列表"
+      - text "·"
+      - link "关于本页面" [clickable] [ref=w34] [bounds=177,1050,257,1069]:
+        - text "关于本页面"
